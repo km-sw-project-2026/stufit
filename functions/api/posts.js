@@ -3,5 +3,5 @@ export async function onRequestGet({ env }) {
     const result = await env.D1_DB.prepare('SELECT * FROM posts').all();
 
     // 가져온 데이터를 JSON 형식으로 반환합니다.
-    return Response.json(result.rows);
+    return Response.json(result.results);
 }
