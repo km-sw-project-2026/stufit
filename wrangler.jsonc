@@ -1,39 +1,42 @@
-/**
- * For more details on how to configure Wrangler, refer to:
- * https://developers.cloudflare.com/workers/wrangler/configuration/
- */
 {
-	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "stufit",
-	"main": "worker/index.js",
- 	"compatibility_date": "2026-01-24",
-	"assets": {
-		"not_found_handling": "single-page-application"
-	},
-	"observability": {
-		"enabled": true
-	}
-	/**
-	 * Smart Placement
-	 * https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement
-	 */
-	// "placement": {  "mode": "smart" }
-	/**
-	 * Bindings
-	 * Bindings allow your Worker to interact with resources on the Cloudflare Developer Platform, including
-	 * databases, object storage, AI inference, real-time communication and more.
-	 * https://developers.cloudflare.com/workers/runtime-apis/bindings/
-	 */
-	/**
-	 * Environment Variables
-	 * https://developers.cloudflare.com/workers/wrangler/configuration/#environment-variables
-	 * Note: Use secrets to store sensitive data.
-	 * https://developers.cloudflare.com/workers/configuration/secrets/
-	 */
-	// "vars": {  "MY_VARIABLE": "production_value" }
-	/**
-	 * Service Bindings (communicate between multiple Workers)
-	 * https://developers.cloudflare.com/workers/wrangler/configuration/#service-bindings
-	 */
-	// "services": [  {   "binding": "MY_SERVICE",   "service": "my-service"  } ]
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "stufit",  // 프로젝트 이름
+  "main": "worker/index.js",  // 메인 Worker 파일
+  "compatibility_date": "2026-01-24",  // Worker의 호환성 날짜
+  "assets": {
+    "not_found_handling": "single-page-application"  // 자산 처리 방식
+  },
+  "observability": {
+    "enabled": true  // Observability 기능 활성화
+  },
+  "d1_databases": [
+    {
+      "binding": "D1_DB",  // Worker 코드 내에서 사용할 바인딩 이름
+      "database_name": "stufit",  // 데이터베이스 이름
+      "database_id": "cc896ec3-95aa-4b4b-aed3-8bd90bdbe633"  // D1 데이터베이스의 고유 ID
+    }
+  ],
+  /**
+   * Smart Placement
+   * https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement
+   */
+  // "placement": {  "mode": "smart" }
+  /**
+   * Bindings
+   * Bindings allow your Worker to interact with resources on the Cloudflare Developer Platform, including
+   * databases, object storage, AI inference, real-time communication and more.
+   * https://developers.cloudflare.com/workers/runtime-apis/bindings/
+   */
+  /**
+   * Environment Variables
+   * https://developers.cloudflare.com/workers/wrangler/configuration/#environment-variables
+   * Note: Use secrets to store sensitive data.
+   * https://developers.cloudflare.com/workers/configuration/secrets/
+   */
+  // "vars": {  "MY_VARIABLE": "production_value" }
+  /**
+   * Service Bindings (communicate between multiple Workers)
+   * https://developers.cloudflare.com/workers/wrangler/configuration/#service-bindings
+   */
+  // "services": [  {   "binding": "MY_SERVICE",   "service": "my-service"  } ]
 }

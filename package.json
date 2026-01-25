@@ -8,7 +8,9 @@
 		"build": "vite build",
 		"lint": "eslint .",
 		"preview": "npm run build && vite preview",
-		"deploy": "npm run build && wrangler deploy"
+		"deploy": "npm run build && wrangler deploy",
+		"schema:generate": "npx wrangler d1 export stufit --remote --output=./database.sql",
+		"schema:apply": "wrangler d1 execute stufit --file=./database.sql"
 	},
 	"dependencies": {
 		"react": "^19.1.1",
