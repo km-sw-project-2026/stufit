@@ -5,4 +5,3 @@ export default async function handler(request: Request) {
     { headers: { 'Content-Type': 'application/json' } }
   );
 }
-ukyruytuytutututuyfuy
