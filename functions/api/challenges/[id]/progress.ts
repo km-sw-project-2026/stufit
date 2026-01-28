@@ -4,7 +4,7 @@ declare interface D1Database {
 }
 
 interface Env {
-  DB: D1Database;
+  D1_DB: D1Database;
 }
 
 type PagesFunction<T = any> = (context: { params: { id: string }, env: T }) => Promise<Response>;
@@ -13,13 +13,13 @@ type PagesFunction<T = any> = (context: { params: { id: string }, env: T }) => P
 export const onRequestGet: PagesFunction<Env> = async ({ params, env }) => {
   const challengeId = params.id;
   try {
-    const { results } = await env.DB.prepare(`
-      SELECT u.username, dp.date, dp.study_time_minutes, dp.is_checked 
-      FROM challenge_daily_progress dp
-      JOIN users u ON dp.user_id = u.user_id
-      WHERE dp.challenge_id = ?
-      ORDER BY dp.date DESC
-    `).bind(challengeId).all();
+    const { results } = await env.D1_DB.prepare(`
+      SELECT u.username, dp.date, dp.study_time_minutes, dp.is_checked 
+      FROM challenge_daily_progress dp
+      JOIN users u ON dp.user_id = u.user_id
+      WHERE dp.challenge_id = ?
+      ORDER BY dp.date DESC
+    `).bind(challengeId).all();
 
     return Response.json({ success: true, data: results });
   } catch (e) {

@@ -13,8 +13,8 @@ export async function onRequestPost(context: { request: Request; env: any }) {
 
   try {
     // 2. 아이디 중복 체크
-    const exists = await env.DB
-      .prepare("SELECT id FROM users WHERE username = ?")
+    const exists = await env.D1_DB
+      .prepare("SELECT user_id FROM users WHERE username = ?")
       .bind(username)
       .first();
 
@@ -26,7 +26,7 @@ export async function onRequestPost(context: { request: Request; env: any }) {
     }
 
     // 3. 회원 생성
-    await env.DB
+    await env.D1_DB
       .prepare("INSERT INTO users (username, password) VALUES (?, ?)")
       .bind(username, password)
       .run();

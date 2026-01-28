@@ -3,7 +3,7 @@ declare interface D1Database {
 }
 
 interface Env {
-  DB: D1Database;
+  D1_DB: D1Database;
 }
 
 type PagesFunction<T = any> = (context: { request: Request, params: { id: string }, env: T }) => Promise<Response>;
@@ -13,7 +13,7 @@ export const onRequest: PagesFunction<Env> = async ({ request, params, env }) =>
   const { userId, score } = await request.json() as { userId: string, score: number };
 
   try {
-    await env.DB.prepare(`
+    await env.D1_DB.prepare(`
       INSERT INTO challenge_results (user_id, challenge_id, score) 
       VALUES (?, ?, ?)
       ON CONFLICT(user_id, challenge_id) DO UPDATE SET score = excluded.score

@@ -23,13 +23,13 @@ export default async function handler(request: Request, { env, userId }: Handler
       return Response.json({ success: false, message: 'category 값 오류' }, { status: 400 });
     }
 
-    const exists = await env.D1_DB.prepare('SELECT 1 FROM challenges WHERE challenges_code = ?')
+    const exists = await env.D1_DB.prepare('SELECT 1 FROM challenges WHERE challenge_code = ?')
       .bind(inviteCode).first();
     if (exists) return Response.json({ success: false, message: 'inviteCode 중복' }, { status: 409 });
 
     const result = await env.D1_DB.prepare(
       `INSERT INTO challenges 
-       (title, category, max_members, goal, end_date, challenges_code, created_by_user_id, created_at)
+       (title, category, max_members, goal, end_date, challenge_code, created_by_user_id, created_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))`
     ).bind(challengeName, category, maxParticipants, goalDescription, endDate, inviteCode, userId).run();
 

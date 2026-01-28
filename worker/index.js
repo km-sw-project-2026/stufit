@@ -7,6 +7,10 @@ import { verifyToken } from '../functions/api/utils/jwt';
 import * as login from '../functions/api/auth/login';
 import * as register from '../functions/api/auth/register';
 
+// posts
+import * as posts from '../functions/api/posts';
+import * as postById from '../functions/api/post/[[id]]';
+
 // challenges extra
 import * as progress from '../functions/api/challenges/[id]/progress';
 import * as complete from '../functions/api/challenges/[id]/complete';
@@ -37,6 +41,16 @@ export default {
 
       if (pathname === '/api/auth/login') {
         return login.onRequestPost({ request, env });
+      }
+
+      // Posts API (인증 불필요)
+      if (pathname === '/api/posts') {
+        return posts.onRequestGet({ env });
+      }
+
+      const postMatch = pathname.match(/^\/api\/post\/(\d+)$/);
+      if (postMatch) {
+        return postById.onRequestGet({ env, params: { id: postMatch[1] } });
       }
 
       /* =========================

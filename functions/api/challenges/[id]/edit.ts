@@ -4,7 +4,7 @@ export default async function handler(
 ) {
   const method = request.method;
   const challengeId = params.id;
-  const db = env.DB;
+  const db = env.D1_DB;
 
   // GET /challenges/{id}/edit
   if (method === "GET") {

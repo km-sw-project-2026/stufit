@@ -8,7 +8,7 @@ export default async function handler(request: Request, { env, userId }: Handler
     const id = Number(new URL(request.url).pathname.split('/')[3]);
     if (Number.isNaN(id)) return new Response('Invalid challengeId', { status: 400 });
 
-    const challenge = await env.D1_DB.prepare('SELECT * FROM challenges WHERE challenges_id = ?')
+    const challenge = await env.D1_DB.prepare('SELECT * FROM challenges WHERE challenge_id = ?')
       .bind(id).first();
     if (!challenge) return Response.json({ success: false, message: '챌린지 없음' }, { status: 404 });
 
@@ -25,7 +25,7 @@ export default async function handler(request: Request, { env, userId }: Handler
         return Response.json({ success: false, message: '권한 없음' }, { status: 403 });
       }
 
-      await env.D1_DB.prepare('DELETE FROM challenges WHERE challenges_id = ?').bind(id).run();
+      await env.D1_DB.prepare('DELETE FROM challenges WHERE challenge_id = ?').bind(id).run();
       await env.D1_DB.prepare('DELETE FROM challenge_members WHERE challenge_id = ?').bind(id).run();
 
       return Response.json({ success: true, data: { challengeId: id }, message: '챌린지 삭제 완료' });

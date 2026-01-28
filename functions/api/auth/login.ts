@@ -12,8 +12,8 @@ export async function onRequestPost(context: { request: Request; env: any }) {
 
   try {
     // 2. 사용자 조회
-    const user = await env.DB
-      .prepare("SELECT id, password FROM users WHERE username = ?")
+    const user = await env.D1_DB
+      .prepare("SELECT user_id, password FROM users WHERE username = ?")
       .bind(username)
       .first();
 
@@ -29,7 +29,7 @@ export async function onRequestPost(context: { request: Request; env: any }) {
     return new Response(
       JSON.stringify({
         message: "로그인 성공",
-        userId: user.id
+        userId: user.user_id
       }),
       { status: 200 }
     );

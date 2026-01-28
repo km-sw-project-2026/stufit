@@ -6,7 +6,7 @@ export default async function handler(
     return new Response("Method Not Allowed", { status: 405 });
   }
 
-  const db = env.DB;
+  const db = env.D1_DB;
   const challengeId = params.id;
 
   // 참여자인지 확인

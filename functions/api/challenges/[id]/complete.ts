@@ -3,7 +3,7 @@ declare interface D1Database {
 }
 
 interface Env {
-  DB: D1Database;
+  D1_DB: D1Database;
 }
 
 type PagesFunction<T = any> = (context: { params: { id: string }, env: T }) => Promise<Response>;
@@ -11,7 +11,7 @@ type PagesFunction<T = any> = (context: { params: { id: string }, env: T }) => P
 export const onRequestPatch: PagesFunction<Env> = async ({ params, env }) => {
   const challengeId = params.id;
   try {
-    await env.DB.prepare("UPDATE challenges SET end_date = CURRENT_TIMESTAMP WHERE challenge_id = ?")
+    await env.D1_DB.prepare("UPDATE challenges SET end_date = CURRENT_TIMESTAMP WHERE challenge_id = ?")
       .bind(challengeId)
       .run();
 
