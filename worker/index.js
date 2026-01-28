@@ -1,60 +1,152 @@
-// import * as posts from "../functions/api/posts";
-// import * as postById from "../functions/api/post/[[id]]";
+import * as challengesIndex from '../functions/api/challenges/index';
+import * as challengeById from '../functions/api/challenges/[id]';
+import * as verify from '../functions/api/challenges/[id]/verify';
+import { verifyToken } from '../functions/api/utils/jwt';
 
-// export default {
-//   async fetch(request, env) {
-//     const url = new URL(request.url);
+// auth
+import * as login from '../functions/api/auth/login';
+import * as register from '../functions/api/auth/register';
 
-//     if (url.pathname === "/api/posts") {
-//       // /api/posts 경로로 요청이 들어오면 posts.onRequestGet 호출
-//       return posts.onRequestGet({ env });
-//     } else if (url.pathname.startsWith("/api/post/")) {
-//       // /api/post/:id 경로로 요청이 들어오면 ID 추출하여 postById.onRequestGet 호출
-//       const id = url.pathname.replace(/^\/api\/post\/+/, '');
-//       const context = { params: { id } };
-//       return postById.onRequestGet({ env, params: context.params });
-//     }
+// challenges extra
+import * as progress from '../functions/api/challenges/[id]/progress';
+import * as complete from '../functions/api/challenges/[id]/complete';
+import * as scores from '../functions/api/challenges/[id]/scores';
 
-//     // 위 두 조건에 맞지 않으면 404 응답
-//     return new Response(null, { status: 404 });
-//   }
-// }
-// worker/index.js
-// worker/index.js
-import * as challengesIndex from '../functions/api/challenges/index.ts';
-import * as challengeById from '../functions/api/challenges/[id].ts';
-import * as verify from '../functions/api/challenges/[id]/verify.ts';
-import { verifyToken } from '../functions/api/utils/jwt.ts';
+import challengeEdit from '../functions/api/challenges/[id]/edit';
+import challengeResult from '../functions/api/challenges/[id]/result';
+import challengeGiveupQuote from '../functions/api/challenges/[id]/giveup-quote';
+import challengeLeave from '../functions/api/challenges/[id]/leave';
 
 export default {
+  /**
+   * @param {Request} request
+   * @param {any} env
+   */
   async fetch(request, env) {
     try {
-      const token = request.headers.get('Authorization')?.split(' ')[1]; // Bearer {token}
-      const user = await verifyToken(token);
-      if (!user) return new Response('Unauthorized', { status: 401 });
-      const userId = user.userId;
-
       const url = new URL(request.url);
       const { pathname } = url;
+
+      /* =========================
+         0️⃣ 인증 필요 없는 API
+      ========================= */
+
+      if (pathname === '/api/auth/register') {
+        return register.onRequestPost({ request, env });
+      }
+
+      if (pathname === '/api/auth/login') {
+        return login.onRequestPost({ request, env });
+      }
+
+      /* =========================
+         1️⃣ 토큰 검증 (이 아래는 인증 필수)
+      ========================= */
+
+      const token = request.headers
+        .get('Authorization')
+        ?.replace('Bearer ', '');
+
+      const user = await verifyToken(token);
+      if (!user) {
+        return new Response('Unauthorized', { status: 401 });
+      }
+      const userId = user.userId;
+
+      /* =========================
+         2️⃣ 챌린지 목록
+      ========================= */
 
       if (pathname === '/api/challenges') {
         return challengesIndex.default(request, { env, userId });
       }
 
-      if (/^\/api\/challenges\/\d+\/verify$/.test(pathname)) {
-        const id = Number(pathname.split('/')[3]);
-        if (Number.isNaN(id)) return new Response('Invalid challengeId', { status: 400 });
-        return verify.default(request, { id, env, userId });
-      }
+      /* =========================
+         3️⃣ /api/challenges/:id 하위 기능
+      ========================= */
 
-      if (/^\/api\/challenges\/\d+$/.test(pathname)) {
-        const id = Number(pathname.split('/')[3]);
-        if (Number.isNaN(id)) return new Response('Invalid challengeId', { status: 400 });
-        return challengeById.default(request, { id, env, userId });
+      const match = pathname.match(/^\/api\/challenges\/(\d+)(?:\/(.+))?$/);
+      if (match) {
+        const id = match[1];
+        const action = match[2]; // undefined | progress | verify | edit ...
+
+        if (!action) {
+          // 상세 조회 / 삭제
+          return challengeById.default(request, {
+            id: Number(id),
+            env,
+            userId
+          });
+        }
+
+        switch (action) {
+          case 'verify':
+            return verify.default(request, {
+              id: Number(id),
+              env,
+              userId
+            });
+
+          case 'progress':
+            return progress.onRequestGet({
+              request,
+              env,
+              params: { id },
+              userId
+            });
+
+          case 'complete':
+            return complete.onRequestPatch({
+              request,
+              env,
+              params: { id },
+              userId
+            });
+
+          case 'scores':
+            return scores.onRequest({
+              request,
+              env,
+              params: { id },
+              userId
+            });
+
+          case 'edit':
+            return challengeEdit(request, {
+              env,
+              params: { id },
+              userId
+            });
+
+          case 'result':
+            return challengeResult(request, {
+              env,
+              params: { id },
+              userId
+            });
+
+          case 'giveup-quote':
+            return challengeGiveupQuote(request, {
+              env,
+              params: { id },
+              userId
+            });
+
+          case 'leave':
+            return challengeLeave(request, {
+              env,
+              params: { id },
+              userId
+            });
+
+          default:
+            return new Response('Not Found', { status: 404 });
+        }
       }
 
       return new Response('Not Found', { status: 404 });
     } catch (err) {
+      console.error(err);
       return new Response('Server Error', { status: 500 });
     }
   }
