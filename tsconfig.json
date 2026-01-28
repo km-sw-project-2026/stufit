@@ -6,7 +6,16 @@
     "strict": true,
     "esModuleInterop": true,
     "allowJs": true,
-    "outDir": "./dist"
+    "outDir": "./dist",
+
+    "typeRoots": [
+      "./types",
+      "./node_modules/@types"
+    ]
   },
-  "include": ["functions/**/*.ts", "worker/**/*.js"]
+  "include": [
+    "functions/**/*.ts",
+    "worker/**/*.js",
+    "types/**/*.d.ts"
+  ]
 }
