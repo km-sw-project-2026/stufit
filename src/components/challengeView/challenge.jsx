@@ -1,120 +1,7 @@
-import { useEffect, useState } from 'react';
-import Footer from './main/footer';
-import Header from './main/header';
-import Login from './main/login';
-import Signup from './main/signup';
-import CommunityQuicklink from './main/CommunityQuicklink';
-import Mainpage from './main/mainpage';
-import Attendance from './attendanceSection/attendance';
-import Challenge from './challengeView/challenge';
-import Community from './communityView/community';
-const Posts = () => {
-    const [posts, setPosts] = useState([]);
-    useEffect(() => {
-        const getPosts = async () => {
-            const resp = await fetch('/api/posts');
-            const postsResp = await resp.json();
-            setPosts(postsResp);
-        }
-        getPosts();
-    }, []);
-    return (
-        <>
-            {/* 헤더 영역 */}
-            <Header />
-
-            {/* <!-- 전체 페이지를 감싸는 컨테이너 --> */}
-            <div className="wrap">
-                {/* <!-- 메인 히어로 섹션: 서비스 소개 및 슬로건 표시 --> */}
-                <Mainpage />
-                {/* <!-- 출석체크 섹션: 7일 연속 출석 시 포인트 지급 --> */}
-                <div className="attendance-section hidden">
-                    <div className="attendance-header">
-                        <h1>출석체크</h1>
-                        <p>7일 연속 출석시 400포인트 지급!</p>
-                    </div>
-                    <div className="attendance-container">
-                        <div className="attendance-board">
-                            {/* <!-- 일주일 요일 표시 (일요일부터 토요일까지) --> */}
-                            <div className="attendance-days">
-                                <span>SUN</span>
-                                <span>MON</span>
-                                <span>TUE</span>
-                                <span>WED</span>
-                                <span>THU</span>
-                                <span>FRI</span>
-                                <span>SAT</span>
-                            </div>
-                            {/* <!-- 각 요일별 출석체크 카드 (일일 포인트 표시) --> */}
-                            <div className="attendance-cards">
-                                <div className="att-card">
-                                    <span className="label">일일 포인트</span>
-                                    <span className="point">100P</span>
-                                </div>
-                                <div className="att-card">
-                                    <span className="label">일일 포인트</span>
-                                    <span className="point">120P</span>
-                                </div>
-                                <div className="att-card">
-                                    <span className="label">일일 포인트</span>
-                                    <span className="point">140P</span>
-                                </div>
-                                <div className="att-card">
-                                    <span className="label">일일 포인트</span>
-                                    <span className="point">160P</span>
-                                </div>
-                                <div className="att-card">
-                                    <span className="label">일일 포인트</span>
-                                    <span className="point">180P</span>
-                                </div>
-                                <div className="att-card">
-                                    <span className="label">일일 포인트</span>
-                                    <span className="point">200P</span>
-                                </div>
-                                <div className="att-card">
-                                    <span className="label">일일 포인트</span>
-                                    <span className="point">220P</span>
-                                </div>
-                            </div>
-                        </div>
-                        {/* <!-- 연속 출석 일수 표시 --> */}
-                        <div className="attendance-footer">
-                            총 연속 출석체크일 수 : <span id="attendance-count">0</span>일
-                        </div>
-                    </div>
-                </div>
-                <div className="main">
-                    <h1>게임처럼 경쟁하고 보상을 얻으며<br />꾸준히 자기개발</h1>
-                    <p>학습 커뮤니티에서 공부 이야기를 나누고, 함께 챌린지에<br />도전해 목표를 완주해 보세요.</p>
-                </div>
-                <Attendance />
-                {/* <!-- 챌린지 바로가기 섹션: 챌린지 페이지로 이동하는 배너 --> */}
-                <ChallengeQuicklink />
-                {/* <!-- 개인 랭킹 섹션: 상위 10명의 랭킹 표시 --> */}
-                <RankingQuicklink />
-                {/* <!-- 아이템 상점 섹션: 포인트로 구매 가능한 아이템 표시 --> */}
-                <ShopQuicklink />
-                <Shop />
-                {/* <!-- 최신 커뮤니티 게시글 섹션: 인기글 및 최신 게시물 표시 --> */}
-                <CommunityQuicklink />
-            </div>
-            {/* <!-- 로그인 화면 섹션 (초기에는 숨김) --> */}
-            <Login />
-
-            {/* <!-- 회원가입 화면 섹션 --> */}
-            <Signup />
-
-            {/* <!-- 랭킹 화면 섹션 --> */}
-            <Ranking />
-
-            {/* <!-- 커뮤니티 화면 섹션 --> */}
-            <Community />
-
-            {/* <!-- 푸터 영역: 이용약관, 고객센터, SNS 링크 등 --> */}
-            <Footer />
-
-            {/* <!-- 전체 챌린지 모달: 모든 챌린지 목록 표시 --> */}
-            <div id="challenge-modal" className="modal hidden">
+function Challenge(){
+  return(
+    <>
+    <div id="challenge-modal" className="modal hidden">
                 <div className="modal-content">
                     <div className="ongoing-challenge-link">
                         <a href="#" id="go-to-ongoing-challenges">진행중인 챌린지 보러가기 →</a>
@@ -143,7 +30,7 @@ const Posts = () => {
                 </div>
             </div>
 
-            {/* <!-- 진행중인 챌린지 : 사용자가 참여 중인 챌린지만 표시 --> */}
+            {/* <!-- 진행중인 챌린지 모달: 사용자가 참여한 챌린지 목록 표시 --> */}
             <div id="ongoing-challenge-modal" className="modal hidden">
                 <div className="modal-content">
                     <div className="ongoing-challenge-link">
@@ -210,7 +97,7 @@ const Posts = () => {
 
                     <div className="detail-main">
                         <button className="close-detail-btn">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <line x1="18" y1="6" x2="6" y2="18"></line>
                                 <line x1="6" y1="6" x2="18" y2="18"></line>
                             </svg>
@@ -225,7 +112,7 @@ const Posts = () => {
                                     <span className="days-left">30일 남음</span>
                                 </div>
                                 <div className="progress-bar-bg">
-                                    <div className="progress-bar-fill" style="width: 50%;"></div>
+                                    <div className="progress-bar-fill" style={{ width: '50%' }}></div>
                                 </div>
                             </div>
                         </div>
@@ -327,8 +214,8 @@ const Posts = () => {
                         <div className="form-group half">
                             <label>카테고리</label>
                             <div className="select-wrapper">
-                                <select id="new-challenge-category">
-                                    <option value="" disabled selected>예: 공부</option>
+                                <select id="new-challenge-category" defaultValue="">
+                                    <option value="" disabled>예: 공부</option>
                                     <option value="study">공부</option>
                                     <option value="exercise">운동</option>
                                     <option value="daily">일상</option>
@@ -371,8 +258,8 @@ const Posts = () => {
                         <div className="form-group half">
                             <label>카테고리</label>
                             <div className="select-wrapper">
-                                <select id="edit-challenge-category">
-                                    <option value="" disabled selected>예: 공부</option>
+                                <select id="edit-challenge-category" defaultValue="">
+                                    <option value="" disabled>예: 공부</option>
                                     <option value="study">공부</option>
                                     <option value="exercise">운동</option>
                                     <option value="daily">일상</option>
@@ -416,9 +303,9 @@ const Posts = () => {
                 <div className="popup-overlay"></div>
                 <div className="popup-content confirm-modal-content">
                     <div className="confirm-text-area">
-                        <h3 className="confirm-title" style="word-break: keep-all; line-height: 1.4; margin-bottom: 20px;">끝까지 가보지 못한다면 '안 되는 이유'를<br />말할 자격이 없다</h3>
-                        <p className="confirm-subtitle" style="color: grey; font-size: 0.9rem; margin-bottom: 30px; font-weight: normal;">-챗지피티-</p>
-                        <p className="confirm-subtitle" style="margin-top: 0;">챌린지를 포기하시겠습니까?</p>
+                        <h3 className="confirm-title" style={{ wordBreak: 'keep-all', lineHeight: 1.4, marginBottom: '20px' }}>끝까지 가보지 못한다면 '안 되는 이유'를<br />말할 자격이 없다</h3>
+                        <p className="confirm-subtitle" style={{ color: 'grey', fontSize: '0.9rem', marginBottom: '30px', fontWeight: 'normal' }}>-챗지피티-</p>
+                        <p className="confirm-subtitle" style={{ marginTop: 0 }}>챌린지를 포기하시겠습니까?</p>
                     </div>
                     <div className="confirm-buttons">
                         <button className="confirm-btn cancel">취소</button>
@@ -430,9 +317,9 @@ const Posts = () => {
             {/* <!-- 커스텀 알림 모달: 일반적인 알림 메시지 표시 --> */}
             <div id="custom-alert-modal" className="popup-modal hidden">
                 <div className="popup-overlay"></div>
-                <div className="popup-content" style="width: 400px; text-align: center; padding: 40px;">
+                <div className="popup-content" style={{ width: '400px', textAlign: 'center', padding: '40px' }}>
                     <p id="custom-alert-text" style="margin-bottom: 25px; font-size: 1.1rem; color: #333; line-height: 1.5; font-weight: 500;"></p>
-                    <button id="custom-alert-close" className="start-challenge-btn" style="width: 120px; margin: 0 auto; padding: 12px;">확인</button>
+                    <button id="custom-alert-close" className="start-challenge-btn" style={{ width: '120px', margin: '0 auto', padding: '12px' }}>확인</button>
                 </div>
             </div>
 
@@ -460,72 +347,15 @@ const Posts = () => {
 
                     <div className="close-btn-wrapper position-top-right">
                         <svg className="close-challenge-over-x" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M18 6L6 18M6 6L18 18" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                            <path d="M18 6L6 18M6 6L18 18" stroke="#333" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
                     </div>
                 </div>
             </div>
-            <Challenge />
-            {/* <!-- New Post Modal (Notice Board) --> */}
-            <div id="new-post-modal" className="popup-modal hidden">
-                <div className="popup-overlay w-full h-full bg-black bg-opacity-50 fixed top-0 left-0 z-50"></div>
-                <div className="popup-content notice-board-popup">
-                    <h2 className="notice-board-title">notice board</h2>
+    </>
+  );
+}
+export default Challenge;
 
-                    <div className="notice-form-group row">
-                        <label>제목</label>
-                        <input type="text" className="notice-input" placeholder="예: 제목 작성하기" />
-                    </div>
 
-                    <div className="notice-form-group row top-align">
-                        <label>내용</label>
-                        <textarea className="notice-textarea" placeholder="예: 내용을 입력하세요"></textarea>
-                    </div>
 
-                    <button className="notice-submit-btn">글 작성하기</button>
-                </div>
-            </div>
-
-            <div id="community-reward-modal" className="popup-modal hidden">
-                <div className="popup-overlay reward-overlay"></div>
-                <div className="popup-content reward-popup">
-                    <img src="img/logo.png" alt="Stufit" className="reward-logo-img" />
-                    <h2 className="reward-title">커뮤니티 인기글 보상 안내</h2>
-                    <p className="reward-desc">
-                        인기글에 선정되시면<br />
-                        <span className="highlight">300포인트</span>를 지급해드려요!
-                    </p>
-                    <div className="reward-check-row">
-                        <input type="checkbox" id="dont-show-reward" />
-                        <label for="dont-show-reward">오늘하루 그만보기</label>
-                    </div>
-                    <button className="reward-confirm-btn">확인</button>
-                </div>
-            </div>
-
-            <div id="custom-confirm-modal" className="popup-modal hidden" style="z-index: 20000; display: flex; align-items: center; justify-content: center;">
-                <div className="popup-overlay" style="background: rgba(0,0,0,0.4);"></div>
-                <div className="popup-content custom-confirm-popup">
-                    <p id="custom-confirm-msg" className="confirm-msg">메시지</p>
-                    <div className="confirm-btn-row">
-                        <button id="custom-confirm-cancel" className="confirm-btn-cancel">취소</button>
-                        <button id="custom-confirm-ok" className="confirm-btn-ok">확인</button>
-                    </div>
-                </div>
-            </div>
-
-            <div id="custom-prompt-modal" className="popup-modal hidden" style="z-index: 20010; display: flex; align-items: center; justify-content: center;">
-                <div className="popup-overlay" style="background: rgba(0,0,0,0.4);"></div>
-                <div className="popup-content custom-prompt-popup">
-                    <h3 id="custom-prompt-title" className="prompt-title">입력해주세요</h3>
-                    <input type="text" id="custom-prompt-input" className="prompt-input" />
-                    <div className="confirm-btn-row">
-                        <button id="custom-prompt-cancel" className="confirm-btn-cancel">취소</button>
-                        <button id="custom-prompt-ok" className="confirm-btn-ok">확인</button>
-                    </div>
-                </div>
-            </div>
-        </>
-    );
-};
-export default Posts;
