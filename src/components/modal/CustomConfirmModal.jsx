@@ -1,7 +1,7 @@
 function CustomConfirmModal() {
     return (
-        <div id="custom-confirm-modal" className="popup-modal hidden" style="z-index: 20000; display: flex; align-items: center; justify-content: center;">
-            <div className="popup-overlay" style="background: rgba(0,0,0,0.4);"></div>
+        <div id="custom-confirm-modal" className="popup-modal hidden" style={{ zIndex: 20000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div className="popup-overlay" style={{ background: 'rgba(0,0,0,0.4)' }}></div>
             <div className="popup-content custom-confirm-popup">
                 <p id="custom-confirm-msg" className="confirm-msg">메시지</p>
                 <div className="confirm-btn-row">

@@ -11,7 +11,7 @@ function CommunityRewardModal() {
                 </p>
                 <div className="reward-check-row">
                     <input type="checkbox" id="dont-show-reward" />
-                    <label for="dont-show-reward">오늘하루 그만보기</label>
+                    <label htmlFor="dont-show-reward">오늘하루 그만보기</label>
                 </div>
                 <button className="reward-confirm-btn">확인</button>
             </div>

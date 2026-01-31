@@ -8,23 +8,23 @@ function ShopQuicklink () {
 
                     <div className="shop-content">
                         <a href="#" className="shop-more-link">
-                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#222" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#222" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                                 <circle cx="12" cy="12" r="10"></circle>
                                 <path d="M12 8l4 4-4 4M8 12h8"></path>
                             </svg>
                         </a>
-                        {/* <!-- 아이템 슬라이더 컨테이너 (좌우 버튼으로 탐색 가능) --> */}
+                        {/* 아이템 슬라이더 컨테이너 (좌우 버튼으로 탐색 가능) */}
                         <div className="shop-slider-container">
                             <button className="shop-nav prev">
-                                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#222" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#222" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
                             </button>
 
                             <div className="shop-items-wrapper">
                                 <div className="shop-item small">
-                                    <div className="item-circle" style="background-color: #fce4ec; border: 2px dashed #f48fb1;"></div>
+                                    <div className="item-circle" style={{backgroundColor: '#fce4ec', border: '2px dashed #f48fb1'}}></div>
                                 </div>
                                 <div className="shop-item medium">
-                                    <div className="item-circle" style="background-color: #e0f2f1; border: 1px solid #ddd;"></div>
+                                    <div className="item-circle" style={{backgroundColor: '#e0f2f1', border: '1px solid #ddd'}}></div>
                                 </div>
                                 <div className="shop-item active">
                                     <div className="item-circle rudolph-frame">
@@ -33,15 +33,15 @@ function ShopQuicklink () {
                                     <div className="active-indicator-dot"></div>
                                 </div>
                                 <div className="shop-item medium">
-                                    <div className="item-circle" style="background-color: #fff3e0; border: 1px solid #ddd;"></div>
+                                    <div className="item-circle" style={{backgroundColor: '#fff3e0', border: '1px solid #ddd'}}></div>
                                 </div>
                                 <div className="shop-item small">
-                                    <div className="item-circle" style="background-color: #e3f2fd; border: 1px solid #bbdefb;"></div>
+                                    <div className="item-circle" style={{backgroundColor: '#e3f2fd', border: '1px solid #bbdefb'}}></div>
                                 </div>
                             </div>
 
                             <button className="shop-nav next">
-                                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#222" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#222" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
                             </button>
                         </div>
 
