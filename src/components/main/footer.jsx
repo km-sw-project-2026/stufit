@@ -18,11 +18,11 @@ function Footer () {
                     <a href="#" className="social-icon talk">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="white" stroke="none">
                             <path d="M12 2C6.48 2 2 5.58 2 10c0 2.42 1.45 4.56 3.69 6l-.68 3.5c-.09.43.34.78.74.58l3.6-1.8C10.23 18.25 11.11 18.29 12 18.29c5.52 0 10-3.58 10-8s-4.48-8-10-8z" />
-                            <text x="12" y="11.5" font-family="Arial" font-size="6" fill="#666" text-anchor="middle" font-weight="bold">TALK</text>
+                            <text x="12" y="11.5" fontFamily="Arial" fontSize="6" fill="#666" textAnchor="middle" fontWeight="bold">TALK</text>
                         </svg>
                     </a>
                     <a href="#" className="social-icon insta">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
                             <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
                             <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
