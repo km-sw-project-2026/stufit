@@ -236,69 +236,7 @@ const Posts = () => {
                     </div>
                 </div>
                 {/* <!-- 아이템 상점 섹션: 포인트로 구매 가능한 아이템 표시 --> */}
-                <div className="shop-quicklink">
-                    <div className="shop-header">
-                        <h2>Item Shop</h2>
-                        <p>포인트를 모아서 여러가지 아이템을 구매하세요!</p>
-                    </div>
-
-                    <div className="shop-content">
-                        <a href="#" className="shop-more-link">
-                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#222" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <path d="M12 8l4 4-4 4M8 12h8"></path>
-                            </svg>
-                        </a>
-                        {/* <!-- 아이템 슬라이더 컨테이너 (좌우 버튼으로 탐색 가능) --> */}
-                        <div className="shop-slider-container">
-                            <button className="shop-nav prev">
-                                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#222" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
-                            </button>
-
-                            <div className="shop-items-wrapper">
-                                <div className="shop-item small">
-                                    <div className="item-circle" style="background-color: #fce4ec; border: 2px dashed #f48fb1;"></div>
-                                </div>
-                                <div className="shop-item medium">
-                                    <div className="item-circle" style="background-color: #e0f2f1; border: 1px solid #ddd;"></div>
-                                </div>
-                                <div className="shop-item active">
-                                    <div className="item-circle rudolph-frame">
-                                        <div className="rudolph-antlers"></div>
-                                    </div>
-                                    <div className="active-indicator-dot"></div>
-                                </div>
-                                <div className="shop-item medium">
-                                    <div className="item-circle" style="background-color: #fff3e0; border: 1px solid #ddd;"></div>
-                                </div>
-                                <div className="shop-item small">
-                                    <div className="item-circle" style="background-color: #e3f2fd; border: 1px solid #bbdefb;"></div>
-                                </div>
-                            </div>
-
-                            <button className="shop-nav next">
-                                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#222" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                            </button>
-                        </div>
-
-                        <div className="shop-item-info">
-                            <div className="shop-badge">프로필 액자</div>
-                            <div className="shop-name">귀여운 루돌프 머리띠</div>
-                            <div className="shop-price">3,000 P</div>
-                        </div>
-
-                        <div className="shop-pagination">
-                            <span className="dot"></span>
-                            <span className="dot"></span>
-                            <span className="dot active"></span>
-                            <span className="dot"></span>
-                            <span className="dot"></span>
-                            <span className="dot"></span>
-                            <span className="dot"></span>
-                            <span className="dot"></span>
-                        </div>
-                    </div>
-                </div>
+               <Shop />
                 {/* <!-- 최신 커뮤니티 게시글 섹션: 인기글 및 최신 게시물 표시 --> */}
                 <div className="community-quicklink">
                     <div className="community-header">
@@ -432,56 +370,7 @@ const Posts = () => {
             </div>
 
             {/* <!-- 랭킹 화면 섹션 --> */}
-            <div id="ranking-view" className="ranking-view hidden">
-                <div className="ranking-header-section">
-                    {/* <!-- 2등 --> */}
-                    <div className="rank-card rank-2">
-                        <div className="rank-icon-wrapper">
-                            <img src="img/2위.png" alt="2위" className="rank-img" />
-                        </div>
-                        <div className="rank-user-name">박현서</div>
-                        <div className="rank-user-label">점수</div>
-                        <div className="rank-user-score">1,998</div>
-                    </div>
-                    {/* <!-- 1등 --> */}
-                    <div className="rank-card rank-1">
-                        <div className="rank-icon-wrapper">
-                            <img src="img/1위.png" alt="1위" className="rank-img" />
-                        </div>
-                        <div className="rank-user-name">김예선</div>
-                        <div className="rank-user-label">점수</div>
-                        <div className="rank-user-score">3,447</div>
-                    </div>
-                    {/* <!-- 3등 --> */}
-                    <div className="rank-card rank-3">
-                        <div className="rank-icon-wrapper">
-                            <img src="img/3위.png" alt="3위" className="rank-img" />
-                        </div>
-                        <div className="rank-user-name">유태민</div>
-                        <div className="rank-user-label">점수</div>
-                        <div className="rank-user-score">1,358</div>
-                    </div>
-                </div>
-
-                <div className="ranking-list-container">
-                    <div className="ranking-search-bar">
-                        <input type="text" placeholder="Your name" />
-                        <button className="ranking-search-btn">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                        </button>
-                    </div>
-
-                    <div className="ranking-grid-list">
-                        {/* <!-- 4등 --> */}
-                        <div className="ranking-list-item">
-                            <div className="r-left"><span className="r-rank">4</span> <span className="r-name">신유빈</span></div>
-                            <div className="r-right"><span className="r-label">점수</span> <span className="r-score">985</span></div>
-                        </div>
-                    </div>
-                    {/* <!-- Scrollbar track visual --> */}
-                    <div className="custom-scroll-track"></div>
-                </div>
-            </div>
+            <Ranking />
 
             {/* <!-- 커뮤니티 화면 섹션 --> */}
             <div id="community-view" className="community-view hidden">
