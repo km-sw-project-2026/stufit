@@ -12,6 +12,7 @@ import CustomPromptModal from './modal/CustomPromptModal';
 const Home = () => {
     return (
         <>
+            {/* todo https://github.com/google-gemini/gemini-cli 를 사용하여 react 문법으로 수정 */}
             {/* <!-- 챌린지 상세보기 모달: 진행도, 목표, 참여현황 표시 --> */}
             <ChallengeDetailView />
 
