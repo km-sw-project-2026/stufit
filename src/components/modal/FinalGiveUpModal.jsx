@@ -1,6 +1,6 @@
-function FinalGiveUpModal() {
+function FinalGiveUpModal({ setModalOpen }) {
     return (
-        <div id="final-give-up-modal" className="popup-modal hidden">
+        <div id="final-give-up-modal" className="popup-modal">
             <div className="popup-overlay"></div>
             <div className="popup-content confirm-modal-content">
                 <div className="confirm-text-area">
@@ -11,7 +11,7 @@ function FinalGiveUpModal() {
                     <p className="confirm-subtitle" style={{ marginTop: 0 }}>챌린지를 포기하시겠습니까?</p>
                 </div>
                 <div className="confirm-buttons">
-                    <button className="confirm-btn cancel">취소</button>
+                    <button className="confirm-btn cancel" onClick={() => setModalOpen(false)}>취소</button>
                     <button className="confirm-btn real-giveup">정말 포기하기</button>
                 </div>
             </div>

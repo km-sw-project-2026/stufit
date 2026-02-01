@@ -1,6 +1,6 @@
-function GiveUpModal() {
+function GiveUpModal({ setModalOpen, setFinalModalOpen }) {
     return (
-        <div id="give-up-modal" className="popup-modal hidden">
+        <div id="give-up-modal" className="popup-modal">
             <div className="popup-overlay"></div>
             <div className="popup-content confirm-modal-content">
                 <div className="confirm-text-area">
@@ -9,8 +9,8 @@ function GiveUpModal() {
                     <p className="confirm-desc">나중에 이어서 불가능 합니다.</p>
                 </div>
                 <div className="confirm-buttons">
-                    <button className="confirm-btn cancel">취소</button>
-                    <button className="confirm-btn giveup">포기하기</button>
+                    <button className="confirm-btn cancel" onClick={() => setModalOpen(false)}>취소</button>
+                    <button className="confirm-btn giveup" onClick={() => { setModalOpen(false); setFinalModalOpen(true); }}>포기하기</button>
                 </div>
             </div>
         </div>

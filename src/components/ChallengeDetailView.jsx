@@ -1,8 +1,17 @@
-function ChallengeDetailView () {
-    return(
+import { useState } from "react";
+import GiveUpModal from "./modal/GiveUpModal";
+import FinalGiveUpModal from "./modal/FinalGiveUpModal";
+
+function ChallengeDetailView() {
+    const [modalOpen, setModalOpen] = useState(false);
+    const [finalModalOpen, setFinalModalOpen] = useState(false);
+    
+    const giveupHandler = () => setModalOpen(true);
+
+    return (
+        <>
             <div id="challenge-detail-view" className="modal">
                 <div className="detail-view-container">
-
                     <div className="detail-sidebar">
                         <h2>MEMBER</h2>
                         <div className="member-list">
@@ -126,12 +135,16 @@ function ChallengeDetailView () {
                         </div>
 
                         <div className="detail-actions">
-                            <button className="btn-giveup">give up</button>
+                            <button className="btn-giveup" onClick={giveupHandler}>give up</button>
                             <button className="btn-complete">complete</button>
                         </div>
                     </div>
                 </div>
             </div>
+
+            {modalOpen && <GiveUpModal setModalOpen={setModalOpen} setFinalModalOpen={setFinalModalOpen} />}
+            {finalModalOpen && <FinalGiveUpModal setModalOpen={setFinalModalOpen} />}
+        </>
     );
 };
 export default ChallengeDetailView;
