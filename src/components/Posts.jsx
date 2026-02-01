@@ -5,9 +5,9 @@ import Login from './main/login';
 import Signup from './main/signup';
 import CommunityQuicklink from './main/CommunityQuicklink';
 import Mainpage from './main/mainpage';
-import Attendance from './attendanceSection/attendance';
-import Challenge from './challengeView/challenge';
-import Community from './communityView/community';
+import Attendance from './attendanceSection/Attendance';
+import Challenge from './challengeView/Challenge';
+import Community from './communityView/Community';
 const Posts = () => {
     const [posts, setPosts] = useState([]);
     useEffect(() => {
