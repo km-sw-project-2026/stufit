@@ -1,6 +1,6 @@
 function OngoingChallenge() {
     return (
-        <div id="ongoing-challenge-modal" className="modal hidden">
+        <div id="ongoing-challenge-modal" className="modal">
             <div className="modal-content">
                 <div className="ongoing-challenge-link">
                     <a href="#" id="back-to-all-challenges">챌린지 전체보기 →</a>
