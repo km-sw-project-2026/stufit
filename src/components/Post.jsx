@@ -7,9 +7,19 @@ const Post = () => {
 
     useEffect(() => {
         const getPost = async () => {
-            const resp = await fetch(`/api/post/${id}`);
-            const postResp = await resp.json();
-            setPost(postResp);
+            try {
+                const resp = await fetch(`/api/post/${id}`);
+                if (!resp.ok) {
+                    console.error('Failed to fetch post', resp.status);
+                    setPost(null);
+                    return;
+                }
+                const postResp = await resp.json();
+                setPost(postResp);
+            } catch (err) {
+                console.error('Error fetching post', err);
+                setPost(null);
+            }
         };
 
         getPost();

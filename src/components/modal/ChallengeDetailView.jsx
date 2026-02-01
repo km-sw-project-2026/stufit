@@ -1,6 +1,6 @@
 function ChallengeDetailView () {
     return(
-            <div id="challenge-detail-view" className="modal hidden">
+            <div id="challenge-detail-view" className="modal">
                 <div className="detail-view-container">
 
                     <div className="detail-sidebar">

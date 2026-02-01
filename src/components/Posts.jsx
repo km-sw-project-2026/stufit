@@ -29,9 +29,19 @@ const Posts = () => {
     const [posts, setPosts] = useState([]);
     useEffect(() => {
         const getPosts = async () => {
-            const resp = await fetch('/api/posts');
-            const postsResp = await resp.json();
-            setPosts(postsResp);
+            try {
+                const resp = await fetch('/api/posts');
+                if (!resp.ok) {
+                    console.error('Failed to fetch posts', resp.status);
+                    setPosts([]);
+                    return;
+                }
+                const postsResp = await resp.json();
+                setPosts(postsResp);
+            } catch (err) {
+                console.error('Error fetching posts', err);
+                setPosts([]);
+            }
         }
         getPosts();
     }, []);
