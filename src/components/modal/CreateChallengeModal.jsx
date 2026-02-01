@@ -8,29 +8,38 @@ function CreateChallengeModal({ setCreateChallengeOpen, closeCreateChallengeModa
   const [inviteCode, setInviteCode] = useState('');
 
   const createChallenge = async () => {
-    if (!challengeName || !category || !duration) {
+    if (!challengeName || !category || !duration || !goalDescription || !inviteCode) {
       alert('필수 항목을 모두 입력해주세요.');
       return;
     }
 
-    // 🔹 오늘 날짜 기준으로 start / end 계산
-    const startDate = new Date();
+    // 로그인한 사용자 확인
+    const username = localStorage.getItem('username');
+    if (!username) {
+      alert('로그인이 필요합니다.');
+      return;
+    }
+
+    // 오늘 날짜 기준으로 종료일 계산
     const endDate = new Date();
-    endDate.setDate(startDate.getDate() + Number(duration));
+    endDate.setDate(endDate.getDate() + Number(duration));
 
     try {
       const response = await fetch('/api/challenges', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-Username': username
+        },
         body: JSON.stringify({
           challengeName,
           category,
-          startDate: startDate.toISOString().slice(0, 10),
+          maxParticipants: 10, // 기본값
           endDate: endDate.toISOString().slice(0, 10),
           goalDescription,
-          inviteCode,
+          inviteCode
         }),
-      });   
+      });
 
       const result = await response.json();
 
@@ -39,11 +48,10 @@ function CreateChallengeModal({ setCreateChallengeOpen, closeCreateChallengeModa
         return;
       }
 
-      alert('챌린지가 성공적으로 생성되었습니다.');
-      setCreateChallengeOpen(false);
+      alert('챌린지가 성공적으로 생성되었습니다!');
       closeCreateChallengeModal();
     } catch (error) {
-      console.error(error);
+      console.error('챌린지 생성 오류:', error);
       alert('서버 오류가 발생했습니다.');
     }
   };
