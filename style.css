@@ -3158,9 +3158,7 @@ body {
     align-items: center;
 }
 
-.comm-left-actions {
-    /* empty for now or reply button */
-}
+
 
 .comm-right-actions {
     display: flex;
@@ -3431,3 +3429,5 @@ body {
     border-color: #176B5F;
     outline: none;
 }
+
+
