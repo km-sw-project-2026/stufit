@@ -3431,3 +3431,13 @@ body {
 }
 
 
+
+.attendance-footer {
+    margin-top: -20px;         /* 흰 박스와의 간격을 넉넉히 */
+    /* 가운데 정렬 */
+    width: 100%;
+    font-size: 20px;          /* 글자 크기를 큼지막하게 */
+    font-weight: 800;         /* 아주 굵게 */
+    color: black;           /* 세련된 짙은색 */
+}
+
