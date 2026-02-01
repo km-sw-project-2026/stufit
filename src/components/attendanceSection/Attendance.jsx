@@ -1,6 +1,6 @@
 function Attendance(){
   return(
-                <div className="attendance-section hidden">
+                <div className="attendance-section">
                     <div className="attendance-header">
                         <h1>출석체크</h1>
                         <p>7일 연속 출석시 400포인트 지급!</p>

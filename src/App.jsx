@@ -2,6 +2,8 @@ import { Routes, Route } from 'react-router-dom';
 import Home from './components/Home';
 import Header from './components/main/Header';
 import ChallengeDetailView from './components/ChallengeDetailView';
+import Attendance from './components/attendanceSection/Attendance';
+
 function App() {
   return (
     <>
@@ -9,6 +11,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/challenge" element={<ChallengeDetailView />} />
+        <Route path="/attendance" element={<Attendance />} />
       </Routes>
     </>
   );
