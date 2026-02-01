@@ -79,52 +79,6 @@
 //                                 </div>
 //                             </div>
 //                         </div>
-//                         <div id="post-detail-view" className="hidden">
-//                             <div className="post-detail-board">
-//                                 <div className="pd-header">
-//                                     <div className="pd-header-top" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px'}}>
-//                                         <h2 className="pd-title" style={{margin: 0, fontSize: '32px', fontWeight: 700, color: '#000'}}>제목</h2>
-//                                         <button className="close-detail-text-btn" style={{background: 'none', border: 'none', color: '#999', fontSize: '24px', cursor: 'pointer'}}>×</button>
-//                                     </div>
-
-//                                     <div className="pd-meta-row" style={{border: 'none', padding: 0}}>
-//                                         <div className="pd-user-info">
-//                                             <div className="pd-avatar"></div>
-//                                             <div className="pd-user-text">
-//                                                 <span className="pd-username">작성자</span>
-//                                                 <span className="pd-date-view">2025.12.29 12:15 조회수 0</span>
-//                                             </div>
-//                                         </div>
-//                                         <div className="pd-actions">
-//                                             <button className="pd-btn edit hidden">수정하기</button>
-//                                             <button className="pd-btn delete hidden">삭제하기</button>
-//                                             <div className="pd-stats">
-//                                                 <span className="pd-like">♡ 0</span>
-//                                                 <span className="pd-comment">💬 0</span>
-//                                             </div>
-//                                         </div>
-//                                     </div>
-//                                 </div>
-
-//                                 <div className="pd-divider" style={{height: '1px', background: '#eee', margin: '30px 0'}}></div>
-
-//                                 <div className="pd-body">
-//                                     <div className="pd-content">내용</div>
-//                                 </div>
-
-//                                 <div className="pd-divider" style={{height: '1px', background: '#eee', margin: '40px 0'}}></div>
-
-//                                 <div className="pd-comments-section">
-//                                     <div className="comment-input-area" style={{border: '2px solid #ddd', borderRadius: '16px', padding: '8px 10px 8px 24px', marginBottom: '40px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#fff', transition: 'border-color 0.2s'}}>
-//                                         <input type="text" placeholder="댓글 추가..." className="comment-input" style={{border: 'none', padding: '12px 0', fontSize: '15px', width: '100%', outline: 'none', background: 'transparent'}} />
-//                                         <button className="comment-submit-btn" style={{background: '#176B5F', color: 'white', padding: '10px 26px', borderRadius: '12px', fontWeight: 700, flexShrink: 0, marginLeft: '15px', border: 'none', cursor: 'pointer', fontSize: '14px', boxShadow: '0 4px 10px rgba(23, 107, 95, 0.2)'}}>등록</button>
-//                                     </div>
-//                                     <div className="comments-list">
-//                                         {/* {/* Comments will be injected here */}
-//                                     </div>
-//                                 </div>
-//                             </div>
-//                         </div>
 //                     </div>
 //                 </div>
 //             </div>
@@ -232,73 +186,92 @@
 
 
 import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 // 모달 파일 경로가 맞는지 꼭 확인하세요!
 import CommunityRewardModal from '../modal/CommunityRewardModal';
+import NewPostModal from '../modal/NewPostModal';
+import PostDetailView from './PostDetailView';
+import SidebarMenu from './SidebarMenu';
+import Popular from './Popular';
+import Tips from './Tips';
+import DataSharing from './DataSharing';
+import MyPost from './MyPost';
 
 function Community() {
     // 1. 모달 상태 관리 (선생님 방식)
     const [isModalOpen, setModalOpen] = useState(false);
 
+    const [isNewPostModalOpen, setNewPostModalOpen] = useState(false);
+    const newPost = () => setNewPostModalOpen(true);
+
+    // Post detail state & handlers
+    const [showPostDetail, setShowPostDetail] = useState(false);
+    const [selectedPost, setSelectedPost] = useState(null);
+
+    const detailPostView = (post) => {
+        setSelectedPost(post);
+        setShowPostDetail(true);
+    };
+
+    const closeDetailView = () => {
+        setShowPostDetail(false);
+        setSelectedPost(null);
+    };
+
     // 2. 페이지 진입 시 실행 (오늘 하루 그만보기 로직)
     useEffect(() => {
-        const hideUntil = localStorage.getItem('hideCommunityRewardModal');
-        const today = new Date().toDateString(); // 오늘 날짜 문자열 (예: "Sun Feb 01 2026")
-
-        // 저장된 날짜가 오늘과 다를 때만 팝업을 켭니다.
-        if (hideUntil !== today) {
-            setModalOpen(true);
-        }
+        // 복구: 사용자가 이전에 체크한 "오늘하루 그만보기" 값을 제거해서
+        // 커뮤니티 진입 시 항상 팝업이 뜨도록 합니다.
+        localStorage.removeItem('hideCommunityRewardModal');
+        setModalOpen(true);
     }, []);
+
+    // 라우팅: 쿼리 스트링(tab) 동기화 및 네비게이션 헬퍼
+    const navigate = useNavigate();
+    const location = useLocation();
+    const params = new URLSearchParams(location.search);
+    const currentTab = params.get('tab') || 'popular';
+    const [activeTab, setActiveTab] = useState(currentTab);
+
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        const t = params.get('tab') || 'popular';
+        setActiveTab(t);
+    }, [location.search]);
+
+    // URL에 탭 파라미터가 없으면 기본 탭을 'popular'로 채워 넣습니다 (replace 해서 히스토리 오염 방지)
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        if (!params.get('tab')) {
+            navigate({ pathname: location.pathname, search: '?tab=popular' }, { replace: true });
+            setActiveTab('popular');
+        }
+    }, [location.pathname, location.search, navigate]);
+
+    const goToTab = (tab) => {
+        if (tab === activeTab) return;
+        navigate({ pathname: '/community', search: `?tab=${tab}` });
+        setActiveTab(tab);
+    };
 
     return (
         <div id="community-view" className="community-view">
             <div className="community-layout">
                 {/* 사이드바 영역 */}
-                <div className="community-sidebar">
-                    <div className="sidebar-menu">
-                        <div className="menu-header">Jamawar Crowne Plaza</div>
-                        <div className="menu-item" id="menu-popular">Popular Posts</div>
-                        <div className="menu-item" id="menu-tips">Tips & How-To</div>
-                        <div className="menu-item active" id="menu-data">Data Sharing</div>
-                        <div className="menu-item" id="menu-mypost">My Post</div>
-                    </div>
-                </div>
+                <SidebarMenu activeTab={activeTab} goToTab={goToTab} />
 
                 {/* 메인 컨텐츠 영역 */}
                 <div className="community-main">
-                    <div id="community-feed-view">
-                        <div className="community-title-section">
-                            <h2>Latest Community</h2>
-                            <p>다양한 질문과 정보를 나누며 커뮤니티를 즐겨보세요</p>
-                        </div>
-
-                        <div className="community-board-container">
-                            <div className="community-feed">
-                                {/* 게시글 카드 예시 */}
-                                <div className="feed-card">
-                                    <div className="feed-header">
-                                        <div className="feed-user-info">
-                                            <div className="feed-user-avatar"></div>
-                                            <span className="feed-user-name">수학 고민러</span>
-                                        </div>
-                                        <div className="feed-meta">
-                                            <span className="like-count">♡ 34</span>
-                                            <span className="comment-count">💬 17</span>
-                                        </div>
-                                    </div>
-                                    <div className="feed-content">
-                                        <h3>미적분 문제 질문이요!</h3>
-                                        <p>치환적분 문제인데 도와주세요</p>
-                                    </div>
-                                </div>
-                                {/* 추가 게시글들은 여기에 동일한 구조로 들어갑니다 */}
-                            </div>
-
-                            <div className="community-board-sidebar">
-                                <button className="btn-new-post">New Post</button>
-                            </div>
-                        </div>
-                    </div>
+                    {/* 메인과 상세를 서로 교체해서 보여 줍니다 */}
+                    {!showPostDetail ? (
+                        activeTab === 'popular' ? <Popular onOpenPost={detailPostView} onNewPost={newPost} /> :
+                        activeTab === 'tips' ? <Tips onOpenPost={detailPostView} onNewPost={newPost} /> :
+                        activeTab === 'data' ? <DataSharing onOpenPost={detailPostView} onNewPost={newPost} /> :
+                        activeTab === 'mypost' ? <MyPost onOpenPost={detailPostView} onNewPost={newPost} /> :
+                        <DataSharing onOpenPost={detailPostView} onNewPost={newPost} />
+                    ) : (
+                        <PostDetailView post={selectedPost} onClose={closeDetailView} />
+                    )}
                 </div>
             </div>
 
@@ -306,6 +279,10 @@ function Community() {
             {isModalOpen && (
                 <CommunityRewardModal onClose={() => setModalOpen(false)} />
             )}
+            {isNewPostModalOpen && (
+                <NewPostModal onClose={() => setNewPostModalOpen(false)} />
+            )}
+            
         </div>
     );
 }
