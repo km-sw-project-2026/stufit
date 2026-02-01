@@ -3432,12 +3432,11 @@ body {
 
 
 
-.attendance-footer {
-    margin-top: -20px;         /* 흰 박스와의 간격을 넉넉히 */
-    /* 가운데 정렬 */
-    width: 100%;
-    font-size: 20px;          /* 글자 크기를 큼지막하게 */
-    font-weight: 800;         /* 아주 굵게 */
-    color: black;           /* 세련된 짙은색 */
+/* 흰 박스 밖으로 완전히 분리된 스타일 */
+.attendance-footer-outside {
+    text-align: right;   /* 이미지와 동일하게 오른쪽 정렬 */
+    font-size: 20px;     /* 시원하게 큰 글씨 */
+    color: #fff;        
 }
+
 
