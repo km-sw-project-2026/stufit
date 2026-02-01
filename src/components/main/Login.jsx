@@ -21,7 +21,12 @@ function Login() {
         alert(data.message);
         return;
       }
-      localStorage.setItem("user", id);
+
+      // 사용자 정보 저장 (username만 사용)
+      localStorage.setItem("username", id);
+      localStorage.setItem("joinDate", new Date().toLocaleDateString('ko-KR'));
+      
+      alert('로그인 성공!');
       navigate("/challenge");
     } catch {
       alert("서버 오류");

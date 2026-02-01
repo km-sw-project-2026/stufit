@@ -1,19 +1,17 @@
-import CommunityRewardModal from './modal/CommunityRewardModal';
-import CreateChallengeModal from './modal/CreateChallengeModal';
-import FinalGiveUpModal from './modal/FinalGiveUpModal';
-import GiveUpModal from './modal/GiveUpModal';
-import ChallengeDetailView from './ChallengeDetailView';
-import EditChallengeModal from './modal/EditChallengeModal';
-import CustomAlertModal from './modal/CustomAlertModal';
-import ChallengeOverModal from './modal/ChallengeOverModal';
-import NewPostModal from './modal/NewPostModal';
-import CustomPromptModal from './modal/CustomPromptModal';
-import Header from './main/Header';
+import MainPage from './main/MainPage';
+import ChallengeQuicklink from './main/ChallengeQuicklink';
+import RankingQuicklink from './main/RankingQuicklink';
+import CommunityQuicklink from './main/CommunityQuicklink';
+import Footer from './main/Footer';
 
 const Home = () => {
     return (
         <>
-            home
+            <MainPage />
+            <ChallengeQuicklink />
+            <RankingQuicklink />
+            <CommunityQuicklink />
+            <Footer />
         </>
     );
 };
