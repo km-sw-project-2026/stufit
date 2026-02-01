@@ -3430,6 +3430,21 @@ body {
     outline: none;
 }
 
+/* ==========================================
+   마이페이지 모달
+   ========================================== */
+.mypage-modal {
+    position: fixed;
+    top: 43%;
+    left: 85%;
+    transform: translate(-50%, -50%);
+    background: white;
+    border-radius: 20px;
+    padding: 40px;
+    width: 550px;
+    box-shadow: 0 10px 50px rgba(0,0,0,0.15);
+    z-index: 1001;
+}
 
 
 /* 흰 박스 밖으로 완전히 분리된 스타일 */
@@ -3438,5 +3453,4 @@ body {
     font-size: 20px;     /* 시원하게 큰 글씨 */
     color: #fff;        
 }
-
 
