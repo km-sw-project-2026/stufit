@@ -78,6 +78,19 @@ body {
     margin: 0 5px;
 }
 
+.header .auth .mypage-link {
+    background: none;
+    border: none;
+    color: #333;
+    font-size: 14px;
+    cursor: pointer;
+    font-family: 'Noto Sans KR', sans-serif;
+}
+
+.header .auth .mypage-link:hover {
+    color: #096B68;
+}
+
 /* ==========================================
    메인 히어로 섹션: 서비스 소개 및 배경 이미지
    ========================================== */
@@ -157,8 +170,6 @@ body {
     
     animation: blink-caret .75s step-end infinite;
     
-    
-    visibility: hidden;
 }
 
 .challenge-quicklink h2.typing-started {
@@ -638,7 +649,7 @@ body {
 }
 
 .stat-item {
-    display: flex;
+    /* display: flex; */
     align-items: center;
     gap: 4px;
     font-size: 12px;
@@ -3420,17 +3431,3 @@ body {
     border-color: #176B5F;
     outline: none;
 }
-
-
-/* 흰 박스 밖 푸터 스타일 */
-.attendance-footer {
-    margin-top: 30px;         /* 박스와의 충분한 간격 */
-    width: 100%;              /* 전체 너비 사용 */
-    font-size: 20px;          /* 전체 글자 크기 키움 */
-    font-weight: 800;         /* 아주 두껍게 */
-    color: #333333;           /* 진한 회색 */
-    letter-spacing: -1px;     /* 글자 간격 살짝 좁힘 */
-}
-
-
-

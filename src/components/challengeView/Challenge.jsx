@@ -1,10 +1,12 @@
-function Challenge() {
+import React from 'react';
 
+function Challenge({ closeChallengeModal }) {
     return (
-        <div id="challenge-modal" className="modal hidden">
+        <div id="challenge-modal" className="modal">
             <div className="modal-content">
                 <div className="ongoing-challenge-link">
-                    <a href="#" id="go-to-ongoing-challenges" >진행중인 챌린지 보러가기 →</a>
+                    {/* '진행중인 챌린지 보러가기' 클릭 시 OngoingChallenge 모달로 돌아가기 */}
+                    <a href="#" id="go-to-ongoing-challenges" onClick={closeChallengeModal}>진행중인 챌린지 보러가기 →</a>
                 </div>
                 <div className="modal-header-top">
                     <div className="header-left">
@@ -27,4 +29,5 @@ function Challenge() {
         </div>
     );
 }
+
 export default Challenge;
