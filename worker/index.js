@@ -30,14 +30,7 @@ export default {
     try {
       const url = new URL(request.url);
       const { pathname } = url;
-
-      // Bypass worker for non-API routes so static assets (favicon, images, etc.)
-      // are served by the dev server/origin and don't get routed through
-      // the API authentication logic below.
-      if (!pathname.startsWith('/api')) {
-        return env.ASSETS.fetch(request);
-      }
-
+      
       /* =========================
          0️⃣ 인증 필요 없는 API
       ========================= */
