@@ -3437,8 +3437,8 @@ body {
    ========================================== */
 .mypage-modal {
     position: fixed;
-    top: 50%;
-    left: 50%;
+    top: 43%;
+    left: 85%;
     transform: translate(-50%, -50%);
     background: white;
     border-radius: 20px;
@@ -3566,7 +3566,7 @@ body {
 
 .stat-label {
     font-size: 13px;
-    color: #888;
+    color: #000;
     margin-bottom: 8px;
 }
 

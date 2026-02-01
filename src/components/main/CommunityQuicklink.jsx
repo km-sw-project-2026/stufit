@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom';
+
 function  CommunityQuicklink() {
     return (
         <div className="community-quicklink">
@@ -10,7 +12,7 @@ function  CommunityQuicklink() {
 
             <div className="community-container">
                 <div className="community-nav-row">
-                    <a href="#" className="community-more">바로가기 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7" /></svg></a>
+                    <Link to="/community" className="community-more">바로가기 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7" /></svg></Link>
                 </div>
                 {/* 커뮤니티 게시글 카드 그리드 (Q&A, TIP, 자료공유 등) */}
                 <div className="community-cards-wrapper">
