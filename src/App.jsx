@@ -1,10 +1,10 @@
 import { Routes, Route } from 'react-router-dom';
-import Posts from './components/Posts';
+import Home from './components/Home';
 import Post from './components/Post';
 function App(){
   return(
     <Routes>
-      <Route path="/" element={<Posts />} />
+      <Route path="/" element={<Home />} />
       <Route path="/post/:id" element={<Post />} />
     </Routes> 
   );

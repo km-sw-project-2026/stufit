@@ -1,4 +1,4 @@
-function Challenge(){
+function Challenge() {
   return(
     <>
     <div id="challenge-modal" className="modal hidden">
@@ -12,7 +12,7 @@ function Challenge(){
                             <div className="search-bar">
                                 <input type="text" id="all-challenge-code-input" placeholder="Enter code" />
                                 <button className="search-icon" id="all-challenge-code-btn">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                         <circle cx="11" cy="11" r="8"></circle>
                                         <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                                     </svg>
@@ -25,12 +25,12 @@ function Challenge(){
                     </div>
 
                     <div className="challenge-grid">
-                        {/* <!-- Challenges will be added here --> */}
+                        {/* Challenges will be added here */} 
                     </div>
                 </div>
             </div>
 
-            {/* <!-- 진행중인 챌린지 모달: 사용자가 참여한 챌린지 목록 표시 --> */}
+            {/* 진행중인 챌린지 모달: 사용자가 참여한 챌린지 목록 표시 */} 
             <div id="ongoing-challenge-modal" className="modal hidden">
                 <div className="modal-content">
                     <div className="ongoing-challenge-link">
@@ -42,7 +42,7 @@ function Challenge(){
                             <div className="search-bar">
                                 <input type="text" id="ongoing-challenge-code-input" placeholder="Enter code" />
                                 <button className="search-icon" id="ongoing-challenge-code-btn">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                         <circle cx="11" cy="11" r="8"></circle>
                                         <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                                     </svg>
@@ -55,12 +55,12 @@ function Challenge(){
                     </div>
 
                     <div className="challenge-grid">
-                        {/* <!-- User created challenges will appear here --> */}
+                        {/* User created challenges will appear here */} 
                     </div>
                 </div>
             </div>
 
-            {/* <!-- 챌린지 상세보기 모달: 진행도, 목표, 참여현황 표시 --> */}
+            {/* 챌린지 상세보기 모달: 진행도, 목표, 참여현황 표시 */} 
             <div id="challenge-detail-view" className="modal hidden">
                 <div className="detail-view-container">
 
@@ -194,7 +194,7 @@ function Challenge(){
                 </div>
             </div>
 
-            {/* <!-- 새로운 챌린지 생성 모달: 이름, 기간, 목표 등 입력 --> */}
+            {/* 새로운 챌린지 생성 모달: 이름, 기간, 목표 등 입력 */} 
             <div id="create-challenge-modal" className="popup-modal hidden">
                 <div className="popup-overlay"></div>
                 <div className="popup-content">
@@ -221,7 +221,7 @@ function Challenge(){
                                     <option value="daily">일상</option>
                                 </select>
                                 <div className="select-arrow">
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
                                 </div>
                             </div>
                         </div>
@@ -238,7 +238,7 @@ function Challenge(){
                 </div>
             </div>
 
-            {/* <!-- 챌린지 수정 모달: 기존 챌린지 정보 수정 --> */}
+            {/* 챌린지 수정 모달: 기존 챌린지 정보 수정 */} 
             <div id="edit-challenge-modal" className="popup-modal hidden">
                 <div className="popup-overlay"></div>
                 <div className="popup-content">
@@ -265,7 +265,7 @@ function Challenge(){
                                     <option value="daily">일상</option>
                                 </select>
                                 <div className="select-arrow">
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
                                 </div>
                             </div>
                         </div>
@@ -282,7 +282,7 @@ function Challenge(){
                 </div>
             </div>
             
-            {/* <!-- 챌린지 포기 확인 모달 (1단계): 포기 여부 확인 --> */}
+            {/* 챌린지 포기 확인 모달 (1단계): 포기 여부 확인 */} 
             <div id="give-up-modal" className="popup-modal hidden">
                 <div className="popup-overlay"></div>
                 <div className="popup-content confirm-modal-content">
@@ -298,7 +298,7 @@ function Challenge(){
                 </div>
             </div>
 
-            {/* <!-- 챌린지 최종 포기 확인 모달 (2단계): 명언과 함께 최종 확인 --> */}
+            {/* 챌린지 최종 포기 확인 모달 (2단계): 명언과 함께 최종 확인 */} 
             <div id="final-give-up-modal" className="popup-modal hidden">
                 <div className="popup-overlay"></div>
                 <div className="popup-content confirm-modal-content">
@@ -314,16 +314,16 @@ function Challenge(){
                 </div>
             </div>
 
-            {/* <!-- 커스텀 알림 모달: 일반적인 알림 메시지 표시 --> */}
+            {/* 커스텀 알림 모달: 일반적인 알림 메시지 표시 */} 
             <div id="custom-alert-modal" className="popup-modal hidden">
                 <div className="popup-overlay"></div>
                 <div className="popup-content" style={{ width: '400px', textAlign: 'center', padding: '40px' }}>
-                    <p id="custom-alert-text" style="margin-bottom: 25px; font-size: 1.1rem; color: #333; line-height: 1.5; font-weight: 500;"></p>
+                    <p id="custom-alert-text" style={{marginBottom: '25px', fontSize: '1.1rem', color: '#333', lineHeight: 1.5, fontWeight: 500}}></p>
                     <button id="custom-alert-close" className="start-challenge-btn" style={{ width: '120px', margin: '0 auto', padding: '12px' }}>확인</button>
                 </div>
             </div>
 
-            {/* <!-- 챌린지 완료 모달: 최종 점수 입력 및 순위 표시 --> */}
+            {/* 챌린지 완료 모달: 최종 점수 입력 및 순위 표시 */} 
             <div id="challenge-over-modal" className="popup-modal hidden">
                 <div className="popup-overlay"></div>
                 <div className="popup-content challenge-over-content">
@@ -341,7 +341,7 @@ function Challenge(){
                     <div id="challenge-over-ranking-view" className="hidden">
                         <p className="subtitle">최종순위</p>
                         <div className="ranking-list">
-                            {/* <!-- Dynamic Content --> */}
+                            {/* Dynamic Content */} 
                         </div>
                     </div>
 
@@ -354,8 +354,6 @@ function Challenge(){
             </div>
     </>
   );
-}
+};
 export default Challenge;
-
-
 

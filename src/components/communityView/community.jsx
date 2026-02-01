@@ -2,7 +2,7 @@ function Community(){
   return(
     <div id="community-view" className="community-view hidden">
                 <div className="community-layout">
-                    {/* <!-- 사이드바 --> */}
+                    {/* {/* 사이드바 */}
                     <div className="community-sidebar">
                         <div className="sidebar-menu">
                             <div className="menu-header">Jamawar Crowne Plaza</div>
@@ -13,7 +13,7 @@ function Community(){
                         </div>
                     </div>
 
-                    {/* <!-- 메인 컨텐츠 --> */}
+                    {/* {/* 메인 컨텐츠 */}
                     <div className="community-main">
                         <div id="community-feed-view">
                             <div className="community-title-section">
@@ -82,12 +82,12 @@ function Community(){
                         <div id="post-detail-view" className="hidden">
                             <div className="post-detail-board">
                                 <div className="pd-header">
-                                    <div className="pd-header-top" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
-                                        <h2 className="pd-title" style="margin: 0; font-size: 32px; font-weight: 700; color: #000;">제목</h2>
-                                        <button className="close-detail-text-btn" style="background: none; border: none; color: #999; font-size: 24px; cursor: pointer;">×</button>
+                                    <div className="pd-header-top" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px'}}>
+                                        <h2 className="pd-title" style={{margin: 0, fontSize: '32px', fontWeight: 700, color: '#000'}}>제목</h2>
+                                        <button className="close-detail-text-btn" style={{background: 'none', border: 'none', color: '#999', fontSize: '24px', cursor: 'pointer'}}>×</button>
                                     </div>
 
-                                    <div className="pd-meta-row" style="border: none; padding: 0;">
+                                    <div className="pd-meta-row" style={{border: 'none', padding: 0}}>
                                         <div className="pd-user-info">
                                             <div className="pd-avatar"></div>
                                             <div className="pd-user-text">
@@ -106,21 +106,21 @@ function Community(){
                                     </div>
                                 </div>
 
-                                <div className="pd-divider" style="height: 1px; background: #eee; margin: 30px 0;"></div>
+                                <div className="pd-divider" style={{height: '1px', background: '#eee', margin: '30px 0'}}></div>
 
                                 <div className="pd-body">
                                     <div className="pd-content">내용</div>
                                 </div>
 
-                                <div className="pd-divider" style="height: 1px; background: #eee; margin: 40px 0;"></div>
+                                <div className="pd-divider" style={{height: '1px', background: '#eee', margin: '40px 0'}}></div>
 
                                 <div className="pd-comments-section">
-                                    <div className="comment-input-area" style="border: 2px solid #ddd; border-radius: 16px; padding: 8px 10px 8px 24px; margin-bottom: 40px; display: flex; align-items: center; justify-content: space-between; background-color: #fff; transition: border-color 0.2s;">
-                                        <input type="text" placeholder="댓글 추가..." className="comment-input" style="border: none; padding: 12px 0; font-size: 15px; width: 100%; outline: none; background: transparent;" />
-                                        <button className="comment-submit-btn" style="background: #176B5F; color: white; padding: 10px 26px; border-radius: 12px; font-weight: 700; flex-shrink: 0; margin-left: 15px; border: none; cursor: pointer; font-size: 14px; box-shadow: 0 4px 10px rgba(23, 107, 95, 0.2);">등록</button>
+                                    <div className="comment-input-area" style={{border: '2px solid #ddd', borderRadius: '16px', padding: '8px 10px 8px 24px', marginBottom: '40px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#fff', transition: 'border-color 0.2s'}}>
+                                        <input type="text" placeholder="댓글 추가..." className="comment-input" style={{border: 'none', padding: '12px 0', fontSize: '15px', width: '100%', outline: 'none', background: 'transparent'}} />
+                                        <button className="comment-submit-btn" style={{background: '#176B5F', color: 'white', padding: '10px 26px', borderRadius: '12px', fontWeight: 700, flexShrink: 0, marginLeft: '15px', border: 'none', cursor: 'pointer', fontSize: '14px', boxShadow: '0 4px 10px rgba(23, 107, 95, 0.2)'}}>등록</button>
                                     </div>
                                     <div className="comments-list">
-                                        {/* <!-- Comments will be injected here --> */}
+                                        {/* {/* Comments will be injected here */}
                                     </div>
                                 </div>
                             </div>
