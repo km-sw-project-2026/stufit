@@ -7,7 +7,7 @@ import Header from './main/Header';
 import Login from './main/Login';
 import Signup from './main/Signup';
 import CommunityQuicklink from './main/CommunityQuicklink';
-import Mainpage from './main/mainpage';
+import Mainpage from './main/Mainpage';
 import Attendance from './attendanceSection/Attendance';
 import Challenge from './challengeView/Challenge';
 import Community from './communityView/Community';
@@ -89,13 +89,14 @@ const Posts = () => {
             <Challenge />
 
             {/* 진행중인 챌린지 뷰: 사용자가 참여 중인 챌린지만 표시 */}
-            <OngoingChallenge />
+            <OngoingChallenge/>
 
             {/* 챌린지 상세보기 모달: 진행도, 목표, 참여현황 표시 */}
             <ChallengeDetailView />
 
             {/* 새로운 챌린지 생성 모달: 이름, 기간, 목표 등 입력 */}
             <CreateChallengeModal />
+
             {/* 챌린지 수정 모달: 기존 챌린지 정보 수정 */}
             <EditChallengeModal />
 

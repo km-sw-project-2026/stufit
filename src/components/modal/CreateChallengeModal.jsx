@@ -1,6 +1,7 @@
-function CreateChallengeModal() {
+
+function CreateChallengeModal({ setCreateChallengeOpen, closeCreateChallengeModal }) {
     return (
-        <div id="create-challenge-modal" className="popup-modal hidden">
+        <div id="create-challenge-modal" className="popup-modal">
             <div className="popup-overlay"></div>
             <div className="popup-content">
                 <div className="form-group">
@@ -39,7 +40,7 @@ function CreateChallengeModal() {
                     <label>코드 입력 (선택)</label>
                     <input type="text" id="new-challenge-code" placeholder="예: KIM" />
                 </div>
-                <button className="start-challenge-btn">챌린지 시작하기</button>
+                <button className="start-challenge-btn" onClick={closeCreateChallengeModal}>챌린지 시작하기</button>
             </div>
         </div>
     );

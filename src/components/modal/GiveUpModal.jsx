@@ -16,5 +16,4 @@ function GiveUpModal({ setModalOpen, setFinalModalOpen }) {
         </div>
     );
 };
-
 export default GiveUpModal;
