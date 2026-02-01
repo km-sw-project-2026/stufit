@@ -33,7 +33,6 @@ function OngoingChallenge({ CreateChallengeOpen }) {
                             <button className="create-challenge-btn"  onClick={CreateChallengeHandler} >챌린지 만들기</button>
                         </div>
                     </div>
-
                     <div className="challenge-grid">
                         {/* User created challenges will appear here */}
                     </div>
@@ -42,5 +41,5 @@ function OngoingChallenge({ CreateChallengeOpen }) {
             {createChallengeModalOpen && <CreateChallengeModal setCreateChallengeOpen={setCreateChallengeOpen} closeCreateChallengeModal={closeCreateChallengeModal}  />}
         </>
     );
-}
+};
 export default OngoingChallenge;
