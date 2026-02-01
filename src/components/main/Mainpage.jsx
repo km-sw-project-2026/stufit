@@ -1,4 +1,4 @@
-function Mainpage() {
+function MainPage() {
     return (
         <div className="main">
             <h1>게임처럼 경쟁하고 보상을 얻으며<br />꾸준히 자기개발</h1>
@@ -6,4 +6,4 @@ function Mainpage() {
         </div>
     );
 };
-export default Mainpage;
+export default MainPage;

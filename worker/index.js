@@ -6,6 +6,7 @@ import { verifyToken } from '../functions/api/utils/jwt';
 // auth
 import * as login from '../functions/api/auth/login';
 import * as register from '../functions/api/auth/register';
+import * as logout from '../functions/api/auth/logout';
 
 // posts
 import * as posts from '../functions/api/posts';
@@ -43,6 +44,10 @@ export default {
         return login.onRequestPost({ request, env });
       }
 
+      if (pathname === '/api/auth/logout') {
+        return logout.onRequestPost({ request, env });
+      }
+
       // Posts API (인증 불필요)
       if (pathname === '/api/posts') {
         return posts.onRequestGet({ env });
@@ -54,18 +59,32 @@ export default {
       }
 
       /* =========================
-         1️⃣ 토큰 검증 (이 아래는 인증 필수)
+         1️⃣ 사용자 인증 (username 기반)
       ========================= */
 
-      const token = request.headers
-        .get('Authorization')
-        ?.replace('Bearer ', '');
-
-      const user = await verifyToken(token);
-      if (!user) {
-        return new Response('Unauthorized', { status: 401 });
+      // username으로 userId 조회 (간단한 인증)
+      const username = request.headers.get('X-Username');
+      
+      if (!username) {
+        return new Response(JSON.stringify({ message: '로그인이 필요합니다.' }), { 
+          status: 401,
+          headers: { 'Content-Type': 'application/json' }
+        });
       }
-      const userId = user.userId;
+
+      const userRow = await env.D1_DB
+        .prepare('SELECT user_id FROM users WHERE username = ?')
+        .bind(username)
+        .first();
+
+      if (!userRow) {
+        return new Response(JSON.stringify({ message: '사용자를 찾을 수 없습니다.' }), { 
+          status: 401,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+
+      const userId = userRow.user_id;
 
       /* =========================
          2️⃣ 챌린지 목록
