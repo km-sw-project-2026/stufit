@@ -5,6 +5,8 @@ import Header from './components/main/Header';
 import Login from './components/main/Login';
 import Signup from './components/main/Signup';
 import OngoingChallenge from './components/challengeView/OngoingChallenge';  
+import ChallengeDetailView from './components/ChallengeDetailView';
+import Attendance from './components/attendanceSection/Attendance';
 
 function App() {
   return (
@@ -16,6 +18,8 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/challenge" element={<OngoingChallenge />} />
+        <Route path="/challenge" element={<ChallengeDetailView />} />
+        <Route path="/attendance" element={<Attendance />} />
       </Routes>
     </>
   );
