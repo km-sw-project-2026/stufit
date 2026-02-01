@@ -1,10 +1,10 @@
 function Challenge() {
-    
+
     return (
         <div id="challenge-modal" className="modal hidden">
             <div className="modal-content">
                 <div className="ongoing-challenge-link">
-                    <a href="#" id="go-to-ongoing-challenges">진행중인 챌린지 보러가기 →</a>
+                    <a href="#" id="go-to-ongoing-challenges" >진행중인 챌린지 보러가기 →</a>
                 </div>
                 <div className="modal-header-top">
                     <div className="header-left">
@@ -19,11 +19,7 @@ function Challenge() {
                             </button>
                         </div>
                     </div>
-                    <div className="header-right">
-                        <button className="create-challenge-btn">챌린지 만들기</button>
-                    </div>
                 </div>
-
                 <div className="challenge-grid">
                     {/* Challenges will be added here */}
                 </div>
