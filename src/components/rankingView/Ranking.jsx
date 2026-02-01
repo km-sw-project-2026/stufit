@@ -1,7 +1,7 @@
 function Ranking() {
     return (
 
-        <div id="ranking-view" className="ranking-view hidden">
+        <div id="ranking-view" className="ranking-view">
             <div className="ranking-header-section">
                 {/* {/* 2등 */}
                 <div className="rank-card rank-2">
