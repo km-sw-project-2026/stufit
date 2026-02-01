@@ -35,7 +35,7 @@ export default {
       // are served by the dev server/origin and don't get routed through
       // the API authentication logic below.
       if (!pathname.startsWith('/api')) {
-        return fetch(request);
+        return env.ASSETS.fetch(request);
       }
 
       /* =========================
