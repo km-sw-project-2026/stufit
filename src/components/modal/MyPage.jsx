@@ -57,14 +57,14 @@ function MyPage({ isOpen, onClose }) {
         <button className="modal-close-btn" onClick={onClose}>×</button>
         
         <div className="mypage-header">
-          <div className="profile-image">
+          <div className="profile-img">
             <img src="/img/Profile2.png" alt="프로필" />
           </div>
           <div className="profile-info">
             <div className="profile-name-score">
               <h3>{userData.username}</h3>
               <div className="score-badge">
-                <span className="score-icon">🏆</span>
+                <img src="/img/Challenger.png" alt="챌린저" className="score-icon" />
                 <span className="score-value">{userData.score}</span>
                 <span className="score-help">ⓘ</span>
               </div>
