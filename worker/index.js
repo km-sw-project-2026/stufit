@@ -177,6 +177,12 @@ export default {
         }
       }
 
+      // Posts authenticated actions (edit / delete)
+      const postMatchAuth = pathname.match(/^\/api\/post\/(\d+)$/);
+      if (postMatchAuth) {
+        return postById.default(request, { env, params: { id: postMatchAuth[1] }, userId });
+      }
+
       return new Response('Not Found', { status: 404 });
     } catch (err) {
       console.error(err);
