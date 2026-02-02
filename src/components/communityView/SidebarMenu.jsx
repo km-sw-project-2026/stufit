@@ -4,7 +4,7 @@ function SidebarMenu({ activeTab, goToTab }) {
     return (
         <div className="community-sidebar">
             <div className="sidebar-menu">
-                <div className="menu-header">Jamawar Crowne Plaza</div>
+                <div className="menu-header">General Board</div>
                 <div
                     className={`menu-item ${activeTab === 'popular' ? 'active' : ''}`}
                     id="menu-popular"

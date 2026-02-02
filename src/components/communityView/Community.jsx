@@ -220,10 +220,14 @@ function Community() {
 
     // 2. 페이지 진입 시 실행 (오늘 하루 그만보기 로직)
     useEffect(() => {
-        // 복구: 사용자가 이전에 체크한 "오늘하루 그만보기" 값을 제거해서
-        // 커뮤니티 진입 시 항상 팝업이 뜨도록 합니다.
-        localStorage.removeItem('hideCommunityRewardModal');
-        setModalOpen(true);
+        // localStorage에 저장된 날짜 확인
+        const hiddenDate = localStorage.getItem('hideCommunityRewardModal');
+        const today = new Date().toDateString();
+        
+        // 저장된 날짜가 없거나, 저장된 날짜가 오늘이 아니면 팝업 표시
+        if (!hiddenDate || hiddenDate !== today) {
+            setModalOpen(true);
+        }
     }, []);
 
     // 라우팅: 쿼리 스트링(tab) 동기화 및 네비게이션 헬퍼
