@@ -8,8 +8,23 @@ function Header() {
 
     useEffect(() => {
         // 로그인 상태 확인
-        const username = localStorage.getItem('username');
-        setIsLoggedIn(!!username);
+        const checkLoginStatus = () => {
+            const username = localStorage.getItem('username');
+            setIsLoggedIn(!!username);
+        };
+
+        checkLoginStatus();
+
+        // storage 이벤트 리스너 추가 (다른 탭에서의 변경 감지)
+        window.addEventListener('storage', checkLoginStatus);
+        
+        // 커스텀 이벤트 리스너 추가 (같은 탭에서의 변경 감지)
+        window.addEventListener('loginStatusChanged', checkLoginStatus);
+
+        return () => {
+            window.removeEventListener('storage', checkLoginStatus);
+            window.removeEventListener('loginStatusChanged', checkLoginStatus);
+        };
     }, []);
 
     const handleMyPageClick = () => {

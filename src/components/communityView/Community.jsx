@@ -223,8 +223,14 @@ function Community() {
     
     // localStorage에서 게시글 불러오기
     const loadPostsFromStorage = () => {
-        // 초기화: 기존 localStorage 데이터 삭제
-        localStorage.removeItem('communityPosts');
+        try {
+            const savedPosts = localStorage.getItem('communityPosts');
+            if (savedPosts) {
+                return JSON.parse(savedPosts);
+            }
+        } catch (error) {
+            console.error('게시글 불러오기 실패:', error);
+        }
         return defaultPosts;
     };
     
@@ -336,7 +342,13 @@ function Community() {
     }, [location.pathname, location.search, navigate]);
 
     const goToTab = (tab) => {
-        if (tab === activeTab) return;
+        // PostDetailView가 열려있으면 닫기
+        if (showPostDetail) {
+            setShowPostDetail(false);
+            setSelectedPost(null);
+        }
+        
+        if (tab === activeTab && !showPostDetail) return;
         navigate({ pathname: '/community', search: `?tab=${tab}` });
         setActiveTab(tab);
     };
