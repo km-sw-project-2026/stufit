@@ -34,8 +34,9 @@ export async function onRequestPost(context: { request: Request; env: any }) {
       { status: 200 }
     );
   } catch (err) {
+    console.error("로그인 오류:", err);
     return new Response(
-      JSON.stringify({ message: "서버 오류", err }),
+      JSON.stringify({ message: "서버 오류", error: err instanceof Error ? err.message : String(err) }),
       { status: 500 }
     );
   }

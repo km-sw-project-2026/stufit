@@ -29,6 +29,7 @@ function Header() {
                     <Link to="/challenge" id="challenge-link">챌린지</Link>
                     <Link to="/ranking" id="ranking-link">랭킹</Link>
                     <Link to="/community" id="community-link">커뮤니티</Link>
+                    <Link to="/shop" id="shop-link">상점</Link>
                 </div>
                 {/* 사용자 인증 영역: 로그인 및 회원가입 링크 */}
                 <div className="auth">

@@ -1,68 +1,54 @@
+import { useState } from 'react';
+import ShopAll from './ShopAll';
+import ShopProfileFrame from './ShopProfileFrame';
+import ShopProfileBG from './ShopProfileBG';
+import ShopProfileImage from './ShopProfileImage';
+import ShopWishlist from './ShopWishlist';
+import ShopSidebar from './ShopSidebar';
+import '../shopView/Shop.css';
+
 function Shop() {
+    const [activeCategory, setActiveCategory] = useState('all');
+
+    const itemCounts = {
+        all: 8,
+        frame: 4,
+        bg: 6,
+        image: 6,
+        cart: 5,
+    };
+
+    const renderContent = () => {
+        switch (activeCategory) {
+            case 'all':
+                return <ShopAll />;
+            case 'frame':
+                return <ShopProfileFrame />;
+            case 'bg':
+                return <ShopProfileBG />;
+            case 'image':
+                return <ShopProfileImage />;
+            case 'cart':
+                return <ShopWishlist />;
+            default:
+                return <ShopAll />;
+        }
+    };
+
     return (
-        <div className="shop-quicklink">
-            <div className="shop-header">
-                <h2>Item Shop</h2>
-                <p>포인트를 모아서 여러가지 아이템을 구매하세요!</p>
-            </div>
+        <div className="shop-container">
+            {/* 왼쪽 사이드바 */}
+            <ShopSidebar activeCategory={activeCategory} setActiveCategory={setActiveCategory} />
 
-            <div className="shop-content">
-                <a href="#" className="shop-more-link">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#222" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <path d="M12 8l4 4-4 4M8 12h8"></path>
-                    </svg>
-                </a>
-                {/* 아이템 슬라이더 컨테이너 (좌우 버튼으로 탐색 가능) */}
-                <div className="shop-slider-container">
-                    <button className="shop-nav prev">
-                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#222" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
-                    </button>
-
-                    <div className="shop-items-wrapper">
-                        <div className="shop-item small">
-                            <div className="item-circle" style={{backgroundColor: '#fce4ec', border: '2px dashed #f48fb1'}}></div>
-                        </div>
-                        <div className="shop-item medium">
-                            <div className="item-circle" style={{backgroundColor: '#e0f2f1', border: '1px solid #ddd'}}></div>
-                        </div>
-                        <div className="shop-item active">
-                            <div className="item-circle rudolph-frame">
-                                <div className="rudolph-antlers"></div>
-                            </div>
-                            <div className="active-indicator-dot"></div>
-                        </div>
-                        <div className="shop-item medium">
-                            <div className="item-circle" style={{backgroundColor: '#fff3e0', border: '1px solid #ddd'}}></div>
-                        </div>
-                        <div className="shop-item small">
-                            <div className="item-circle" style={{backgroundColor: '#e3f2fd', border: '1px solid #bbdefb'}}></div>
-                        </div>
-                    </div>
-
-                    <button className="shop-nav next">
-                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#222" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                    </button>
+            {/* 오른쪽 콘텐츠 */}
+            <div className="shop-main">
+                <div className="shop-count">
+                    <span className="shop-count-number">{itemCounts[activeCategory] ?? 0}</span> 항목이 있어요
                 </div>
-
-                <div className="shop-item-info">
-                    <div className="shop-badge">프로필 액자</div>
-                    <div className="shop-name">귀여운 루돌프 머리띠</div>
-                    <div className="shop-price">3,000 P</div>
-                </div>
-
-                <div className="shop-pagination">
-                    <span className="dot"></span>
-                    <span className="dot"></span>
-                    <span className="dot active"></span>
-                    <span className="dot"></span>
-                    <span className="dot"></span>
-                    <span className="dot"></span>
-                    <span className="dot"></span>
-                    <span className="dot"></span>
-                </div>
+                {renderContent()}
             </div>
         </div>
     );
-};
+}
+
 export default Shop;
