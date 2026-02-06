@@ -26,6 +26,9 @@ function Login() {
       localStorage.setItem("username", id);
       localStorage.setItem("joinDate", new Date().toLocaleDateString('ko-KR'));
       
+      // 로그인 상태 변경 이벤트 발생
+      window.dispatchEvent(new Event('loginStatusChanged'));
+      
       alert('로그인 성공!');
       navigate("/challenge");
     } catch {
