@@ -2,11 +2,42 @@ import { useState } from "react";
 import GiveUpModal from "./modal/GiveUpModal";
 import FinalGiveUpModal from "./modal/FinalGiveUpModal";
 
-function ChallengeDetailView() {
+function ChallengeDetailView({ challenge, onClose }) {
     const [modalOpen, setModalOpen] = useState(false);
     const [finalModalOpen, setFinalModalOpen] = useState(false);
     
     const giveupHandler = () => setModalOpen(true);
+
+    // 챌린지 나가기 성공 시 호출
+    const handleLeaveSuccess = () => {
+        setFinalModalOpen(false);
+        // 부모 컴포넌트에 알림 (목록 새로고침)
+        if (onClose) {
+            onClose();
+        }
+    };
+
+    // Props 기본값 설정
+    const title = challenge?.title || '챌린지';
+    const goal = challenge?.goal || '아침 6시 기상';
+    const category = challenge?.category || '';
+
+    // 카테고리 한글 변환
+    const getCategoryName = (cat) => {
+        const categoryMap = {
+            'STUDY': '공부',
+            'EXERCISE': '운동',
+            'DAILY': '일상'
+        };
+        return categoryMap[cat] || cat;
+    };
+
+    // 날짜 포맷팅
+    const formatDate = (dateString) => {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        return `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')}`;
+    };
 
     return (
         <>
@@ -44,7 +75,7 @@ function ChallengeDetailView() {
 
 
                     <div className="detail-main">
-                        <button className="close-detail-btn">
+                        <button className="close-detail-btn" onClick={onClose}>
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <line x1="18" y1="6" x2="6" y2="18"></line>
                                 <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -68,7 +99,7 @@ function ChallengeDetailView() {
 
                         <div className="detail-card">
                             <h3>챌린지 목표</h3>
-                            <div className="goal-box">아침 6시 기상</div>
+                            <div className="goal-box">{goal}</div>
                             <button className="submit-btn">제출하기</button>
                         </div>
 
@@ -143,7 +174,7 @@ function ChallengeDetailView() {
             </div>
 
             {modalOpen && <GiveUpModal setModalOpen={setModalOpen} setFinalModalOpen={setFinalModalOpen} />}
-            {finalModalOpen && <FinalGiveUpModal setModalOpen={setFinalModalOpen} />}
+            {finalModalOpen && <FinalGiveUpModal setModalOpen={setFinalModalOpen} challengeId={challenge?.challenge_id} onLeave={handleLeaveSuccess} />}
         </>
     );
 };

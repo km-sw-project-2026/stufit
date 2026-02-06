@@ -1,4 +1,29 @@
-function ChallengeDetailModal({ onClose }) {
+function ChallengeDetailModal({ onClose, challenge }) {
+  // challenge props가 없으면 기본값 사용
+  const title = challenge?.title || '챌린지';
+  const description = challenge?.description || '';
+  const goal = challenge?.goal || '';
+  const endDate = challenge?.end_date || '';
+  const maxMembers = challenge?.max_members || 1;
+  const category = challenge?.category || '';
+
+  // 카테고리 한글 변환
+  const getCategoryName = (cat) => {
+    const categoryMap = {
+      'STUDY': '공부',
+      'EXERCISE': '운동',
+      'DAILY': '일상'
+    };
+    return categoryMap[cat] || cat;
+  };
+
+  // 날짜 포맷팅
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')}`;
+  };
+
   const members = [
     { name: '김예선' },
     { name: '유태민' },
@@ -41,6 +66,17 @@ function ChallengeDetailModal({ onClose }) {
           </button>
 
           <div className="detail-card">
+            <h3>챌린지 정보</h3>
+            <div style={{ marginBottom: '15px' }}>
+              <p><strong>제목:</strong> {title}</p>
+              <p><strong>설명:</strong> {description}</p>
+              <p><strong>카테고리:</strong> {getCategoryName(category)}</p>
+              <p><strong>종료일:</strong> {formatDate(endDate)}</p>
+              <p><strong>최대 인원:</strong> {maxMembers}명</p>
+            </div>
+          </div>
+
+          <div className="detail-card">
             <h3>챌린지 진행도</h3>
             <div className="progress-area">
               <div className="progress-info">
@@ -56,7 +92,7 @@ function ChallengeDetailModal({ onClose }) {
 
           <div className="detail-card">
             <h3>챌린지 목표</h3>
-            <div className="goal-box">아침 6시 기상</div>
+            <div className="goal-box">{goal}</div>
             <button className="submit-btn">제출하기</button>
           </div>
 
