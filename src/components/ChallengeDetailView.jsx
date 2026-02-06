@@ -112,7 +112,7 @@ function ChallengeDetailView({ challenge, onClose }) {
                         </button>
 
                         <div className="detail-card">
-                            <h3>챌린지 진행도</h3>
+                            <h3 className="detail-title-left">챌린지 진행도</h3>
                             <div className="progress-area">
                                 <div className="progress-info">
                                     <span className="days-elapsed">0일 경과</span>
@@ -127,7 +127,7 @@ function ChallengeDetailView({ challenge, onClose }) {
 
 
                         <div className="detail-card">
-                            <h3>챌린지 목표</h3>
+                            <h3 className="detail-title-left">챌린지 목표</h3>
                             <div className="goal-box">{goal}</div>
                             <button className="submit-btn">제출하기</button>
                         </div>
@@ -136,7 +136,7 @@ function ChallengeDetailView({ challenge, onClose }) {
                         <div className="detail-card status-card">
                             {(category === 'STUDY' || category === 'EXERCISE') ? (
                                 <>
-                                    <h3>타이머</h3>
+                                    <h3 className="detail-title-left">타이머</h3>
                                     <div className="timer-display">
                                         <div className="timer-time">{formatTimer(timerSeconds)}</div>
                                         <div className="timer-controls">
