@@ -50,7 +50,7 @@ function NewPostModal({ category = 'popular', onClose = () => {}, onSubmit = () 
                 role="dialog"
                 aria-modal="true"
             >
-                <h2 className="notice-board-title">새 글 작성</h2>
+                <h2 className="notice-board-title">Notice Board</h2>
 
                 <div className="notice-form-group row">
                     <label>제목</label>

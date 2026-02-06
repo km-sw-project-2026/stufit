@@ -3806,31 +3806,49 @@ body {
     margin: 0;
 }
 
-.score-badge {
+.score-container {
     display: flex;
     align-items: center;
-    gap: 5px;
-    background: linear-gradient(135deg, #4A90E2 0%, #357ABD 100%);
-    padding: 6px 12px;
-    border-radius: 20px;
-    color: white;
-    font-size: 13px;
-    font-weight: 600;
 }
 
 .score-icon {
-    width: 16px;
-    height: 16px;
+    width: 60px;
+    height: 48px;
     display: inline-block;
+    flex-shrink: 0;
+}
+
+.score-right-section {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.score-progress-bar {
+    width: 60px;
+    height: 8px;
+    background: #d0d0d0;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.score-progress-fill {
+    height: 100%;
+    background: #333;
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+.score-bottom {
+    display: flex;
+    align-items: center;
+    gap: 4px;
 }
 
 .score-value {
     font-weight: 700;
-}
-
-.score-help {
-    font-size: 11px;
-    opacity: 0.8;
+    font-size: 15px;
+    color: #333;
 }
 
 .join-date {
@@ -4034,4 +4052,146 @@ body {
     font-size: 15px;
     padding: 40px 20px;
     grid-column: 1 / -1;
+}
+
+/* ==========================================
+   티어 가이드 페이지
+   ========================================== */
+.tier-guide-view {
+    min-height: calc(100vh - 200px);
+    padding: 60px 40px;
+    background: #f9f9f9;
+}
+
+.tier-guide-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    background: white;
+    padding: 50px;
+    border-radius: 20px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+}
+
+.tier-guide-title {
+    font-size: 32px;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 40px;
+    color: #222;
+}
+
+.tier-icons-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 30px 0;
+    border-bottom: 3px solid #ddd;
+    margin-bottom: 50px;
+}
+
+.tier-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+.tier-icon-img {
+    width: 60px;
+    height: 60px;
+    object-fit: contain;
+}
+
+.tier-score {
+    font-size: 16px;
+    font-weight: 700;
+    color: #333;
+    margin: 0;
+}
+
+.tier-content-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 50px;
+}
+
+.tier-section {
+    display: flex;
+    flex-direction: column;
+}
+
+.tier-section-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #222;
+    margin-bottom: 20px;
+}
+
+.tier-description {
+    font-size: 16px;
+    color: #555;
+    margin-bottom: 30px;
+}
+
+.tier-calculation h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 12px;
+    margin-top: 25px;
+}
+
+.tier-calculation ul {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 20px 0;
+}
+
+.tier-calculation li {
+    font-size: 15px;
+    color: #555;
+    line-height: 1.8;
+    padding-left: 0;
+}
+
+.tier-subtitle {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.tier-note {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 25px;
+}
+
+.tier-score-table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1px solid #ddd;
+}
+
+.tier-score-table thead {
+    background: #f5f5f5;
+}
+
+.tier-score-table th {
+    padding: 15px;
+    text-align: center;
+    font-weight: 600;
+    color: #333;
+    border: 1px solid #ddd;
+}
+
+.tier-score-table td {
+    padding: 15px;
+    text-align: center;
+    color: #555;
+    border: 1px solid #ddd;
+}
+
+.tier-score-table tbody tr:hover {
+    background: #fafafa;
 }

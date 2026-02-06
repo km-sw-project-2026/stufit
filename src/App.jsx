@@ -8,6 +8,7 @@ import Signup from './components/main/Signup';
 import Attendance from './components/attendanceSection/Attendance';
 import Ranking from './components/rankingView/Ranking';
 import Community from './components/communityView/Community';
+import TierGuide from './components/main/TierGuide';
 
 
 function App() {
@@ -23,6 +24,7 @@ function App() {
         <Route path="/attendance" element={<Attendance />} />
         <Route path="/ranking" element={<Ranking />} />
         <Route path="/community" element={<Community />} />
+        <Route path="/tier-guide" element={<TierGuide />} />
 
       </Routes>
     </>
