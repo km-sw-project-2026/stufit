@@ -613,23 +613,49 @@ function OngoingChallenge() {
     const [createChallengeModalOpen, setCreateChallengeOpen] = useState(false);
     const [isChallengeModalVisible, setIsChallengeModalVisible] = useState(false);
     const [selectedChallenge, setSelectedChallenge] = useState(null);
+    const [loading, setLoading] = useState(false);
 
-    // 초기 데이터는 비워둠 (챌린지 만들기를 통해 추가)
+    // 초기 데이터는 비워둠 (서버에서 불러옴)
     const [challenges, setChallenges] = useState([]);
 
     // 수정 모달 상태 관리
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [challengeToEdit, setChallengeToEdit] = useState(null);
 
-    // 새 챌린지 추가 함수
-    const handleCreateChallenge = (newChallenge) => {
-        const challengeWithId = {
-            ...newChallenge,
-            challenge_id: Date.now(),
-            created_at: new Date().toISOString(),
-        };
-        setChallenges(prev => [...prev, challengeWithId]);
-        setCreateChallengeOpen(false);
+    // 서버에서 챌린지 목록 불러오기
+    const fetchChallenges = async () => {
+        const username = localStorage.getItem('username');
+        if (!username) return;
+
+        setLoading(true);
+        try {
+            const response = await fetch('/api/challenges', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Username': username
+                }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                setChallenges(data.challenges || []);
+            }
+        } catch (error) {
+            console.error('챌린지 목록 불러오기 실패:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // 컴포넌트 마운트 시 챌린지 목록 불러오기
+    useEffect(() => {
+        fetchChallenges();
+    }, []);
+
+    // 새 챌린지 추가 후 목록 새로고침
+    const handleCreateChallenge = () => {
+        fetchChallenges();
     };
 
     // 기존 챌린지 수정 함수
@@ -644,10 +670,16 @@ function OngoingChallenge() {
 
     const CreateChallengeHandler = () => setCreateChallengeOpen(true);
     const allChallenge = () => setIsChallengeModalVisible(true);
-    const closeCreateChallengeModal = () => setCreateChallengeOpen(false);
+    const closeCreateChallengeModal = () => {
+        setCreateChallengeOpen(false);
+        fetchChallenges(); // 챌린지 생성 후 목록 새로고침
+    };
     const closeChallengeModal = () => setIsChallengeModalVisible(false);
     const openChallengeDetail = (challenge) => setSelectedChallenge(challenge);
-    const closeChallengeDetail = () => setSelectedChallenge(null);
+    const closeChallengeDetail = () => {
+        setSelectedChallenge(null);
+        fetchChallenges(); // 챌린지 상세보기 닫은 후 목록 새로고침
+    };
 
     const openEditModal = (challenge) => {
         setChallengeToEdit(challenge);
@@ -752,7 +784,11 @@ function OngoingChallenge() {
                         </div>
 
                         <div className="challenge-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px' }}>
-                            {challenges.length > 0 ? (
+                            {loading ? (
+                                <p style={{ textAlign: 'center', gridColumn: 'span 2', color: '#888', padding: '50px' }}>
+                                    챌린지를 불러오는 중...
+                                </p>
+                            ) : challenges.length > 0 ? (
                                 challenges.map(challenge => (
                                     <ChallengeCard key={challenge.challenge_id} challenge={challenge} />
                                 ))
