@@ -17,7 +17,7 @@ function TierGuide() {
     <>
       <div className="tier-guide-view">
         <div className="tier-guide-container">
-          <h1 className="tier-guide-title">티어 전적도 가이드</h1>
+          <h1 className="tier-guide-title">티어 전척도 가이드</h1>
           
           <div className="tier-icons-row">
             {tiers.map((tier, index) => (
