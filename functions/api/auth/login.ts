@@ -1,60 +1,69 @@
-export async function onRequestPost(context: { request: Request; env: any }) {
-  try {
-    const { request, env } = context;
+import { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import Footer from "./Footer";
 
-    if (!env?.D1_DB) {
-      console.error("❌ D1_DB 없음");
-      return new Response(
-        JSON.stringify({ message: "서버 설정 오류입니다." }),
-        { status: 500, headers: { "Content-Type": "application/json" } }
-      );
-    }
+function Login() {
+  const [id, setId] = useState("");
+  const [pw, setPw] = useState("");
+  const navigate = useNavigate();
 
-    let body;
+  const handleLogin = async () => {
     try {
-      body = await request.json();
-    } catch (parseErr) {
-      console.error("❌ JSON 파싱 오류:", parseErr);
-      return new Response(
-        JSON.stringify({ message: "요청 본문이 유효하지 않습니다." }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
-      );
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: id, password: pw }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data.message);
+        return;
+      }
+
+      // 사용자 정보 저장 (username만 사용)
+      localStorage.setItem("username", id);
+      localStorage.setItem("joinDate", new Date().toLocaleDateString('ko-KR'));
+
+      // 로그인 상태 변경 이벤트 발생
+      window.dispatchEvent(new Event('loginStatusChanged'));
+
+      alert('로그인 성공!');
+      navigate("/challenge");
+    } catch {
+      alert("서버 오류");
     }
+  };
 
-    const { username, password } = body;
+  return (
+    <>
+      <div id="login-view" className="login-view">
+        <div className="login-container-view">
+          <div className="input-group">
+            <label htmlFor="login-id-view">아이디</label>
+            <input type="text"id="login-id-view"placeholder="아이디를 입력해주세요."value={id}onChange={(e) => setId(e.target.value)}/>
+          </div>
 
-    if (!username || !password) {
-      return new Response(
-        JSON.stringify({ message: "username과 password는 필수입니다." }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
-      );
-    }
+          <div className="input-group">
+            <label htmlFor="login-pw-view">비밀번호</label>
+            <input type="password"id="login-pw-view"placeholder="비밀번호를 입력해주세요."value={pw}onChange={(e) => setPw(e.target.value)}/>
+          </div>
+          <div className="button-group">
+            <button className="login-btn" onClick={handleLogin}>로그인</button>
+            <Link to="/signup" className="signup-btn">회원가입</Link>
+          </div>
 
-    // 사용자 조회
-    const user = await env.D1_DB
-      .prepare("SELECT user_id, password FROM users WHERE username = ?")
-      .bind(username)
-      .first();
+          <div className="login-footer-links">
+            <a href="#">아이디 찾기</a>
+            <a href="#">비밀번호 찾기</a>
+          </div>
+        </div>
+      </div>
 
-    if (!user || user.password !== password) {
-      return new Response(
-        JSON.stringify({ message: "아이디 또는 비밀번호가 틀렸습니다." }),
-        { status: 401, headers: { "Content-Type": "application/json" } }
-      );
-    }
-
-    return new Response(
-      JSON.stringify({
-        message: "로그인 성공",
-        userId: user.user_id
-      }),
-      { status: 200, headers: { "Content-Type": "application/json" } }
-    );
-  } catch (err) {
-    console.error("❌ LOGIN ERROR:", err?.message);
-    return new Response(
-      JSON.stringify({ message: "서버 오류가 발생했습니다." }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
-    );
-  }
+      <Footer />
+    </>
+  );
 }
+
+export default Login;

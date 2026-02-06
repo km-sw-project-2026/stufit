@@ -1,4 +1,7 @@
+import { useNavigate } from 'react-router-dom';
+
 function ShopQuicklink () {
+    const navigate = useNavigate();
     return(
         <div className="shop-quicklink">
                     <div className="shop-header">
@@ -7,7 +10,7 @@ function ShopQuicklink () {
                     </div>
 
                     <div className="shop-content">
-                        <a href="#" className="shop-more-link">
+                        <a href="#" className="shop-more-link" onClick={(e) => { e.preventDefault(); navigate('/shop'); }}>
                             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#222" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                                 <circle cx="12" cy="12" r="10"></circle>
                                 <path d="M12 8l4 4-4 4M8 12h8"></path>
