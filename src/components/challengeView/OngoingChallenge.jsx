@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import CreateChallengeModal from '../modal/CreateChallengeModal';
 import Challenge from './Challenge';
+import ChallengeDetailView from '../ChallengeDetailView';
 
 function OngoingChallenge() {
     const [createChallengeModalOpen, setCreateChallengeOpen] = useState(false);
     const [isChallengeModalVisible, setIsChallengeModalVisible] = useState(false);
     const [challenges, setChallenges] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [selectedChallenge, setSelectedChallenge] = useState(null);
 
     // 챌린지 목록 불러오기
     const fetchChallenges = async () => {
@@ -56,6 +58,17 @@ function OngoingChallenge() {
     // Challenge 모달 닫기
     const closeChallengeModal = () => setIsChallengeModalVisible(false);
 
+    // 챌린지 상세 보기 모달 열기
+    const openChallengeDetail = (challenge) => {
+        setSelectedChallenge(challenge);
+    };
+
+    // 챌린지 상세 보기 모달 닫기 및 목록 새로고침
+    const closeChallengeDetail = () => {
+        setSelectedChallenge(null);
+        fetchChallenges(); // 챌린지 나가기 후 목록 새로고침
+    };
+
     // 날짜 포맷팅
     const formatDate = (dateString) => {
         const date = new Date(dateString);
@@ -102,7 +115,7 @@ function OngoingChallenge() {
                     </div>
                 </div>
                 <div className="challenge-card-footer">
-                    <button className="challenge-detail-btn">자세히 보기</button>
+                    <button className="challenge-detail-btn" onClick={() => openChallengeDetail(challenge)}>자세히 보기</button>
                 </div>
             </div>
         );
@@ -158,6 +171,9 @@ function OngoingChallenge() {
 
             {/* Challenge 모달 (전체 챌린지) */}
             {isChallengeModalVisible && <Challenge closeChallengeModal={closeChallengeModal} />}
+
+            {/* 챌린지 상세 보기 모달 */}
+            {selectedChallenge && <ChallengeDetailView challenge={selectedChallenge} onClose={closeChallengeDetail} />}
         </>
     );
 }

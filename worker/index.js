@@ -185,8 +185,11 @@ export default {
 
       return new Response('Not Found', { status: 404 });
     } catch (err) {
-      console.error(err);
-      return new Response('Server Error', { status: 500 });
+      console.error("❌ WORKER ERROR:", err?.message || String(err));
+      return new Response(
+        JSON.stringify({ message: '서버 오류가 발생했습니다.' }),
+        { status: 500, headers: { "Content-Type": "application/json" } }
+      );
     }
   }
 };
