@@ -5,6 +5,11 @@ function MyPage({ isOpen, onClose }) {
   const [userData, setUserData] = useState(null);
   const navigate = useNavigate();
 
+  const handleTierGuideClick = () => {
+    onClose();
+    navigate('/tier-guide');
+  };
+
   useEffect(() => {
     if (isOpen) {
       // 로그인 정보 가져오기 (localStorage에서)
@@ -63,10 +68,19 @@ function MyPage({ isOpen, onClose }) {
           <div className="profile-info">
             <div className="profile-name-score">
               <h3>{userData.username}</h3>
-              <div className="score-badge">
+              <div className="score-container">
                 <img src="/img/Challenger.png" alt="챌린저" className="score-icon" />
-                <span className="score-value">{userData.score}</span>
-                <span className="score-help">ⓘ</span>
+                <div className="score-right-section">
+                  <div className="score-bottom">
+                    <span className="score-value">{userData.score}</span>
+                    <button className="score-help-btn" title="점수 정보" onClick={handleTierGuideClick}>
+                      <span>?</span>
+                    </button>
+                  </div>
+                  <div className="score-progress-bar">
+                    <div className="score-progress-fill" style={{width: '70%'}}></div>
+                  </div>
+                </div>
               </div>
             </div>
             <p className="join-date">stufit에 {userData.joinDate} 가입</p>

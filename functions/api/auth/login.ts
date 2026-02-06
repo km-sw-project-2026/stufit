@@ -1,43 +1,69 @@
-export async function onRequestPost(context: { request: Request; env: any }) {
-  const { request, env } = context;
-  const { username, password } = await request.json();
+import { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import Footer from "./Footer";
 
-  // 1. 입력값 검증
-  if (!username || !password) {
-    return new Response(
-      JSON.stringify({ message: "username과 password는 필수입니다." }),
-      { status: 400 }
-    );
-  }
+function Login() {
+  const [id, setId] = useState("");
+  const [pw, setPw] = useState("");
+  const navigate = useNavigate();
 
-  try {
-    // 2. 사용자 조회
-    const user = await env.D1_DB
-      .prepare("SELECT user_id, password FROM users WHERE username = ?")
-      .bind(username)
-      .first();
+  const handleLogin = async () => {
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: id, password: pw }),
+      });
 
-    // 3. 로그인 실패
-    if (!user || user.password !== password) {
-      return new Response(
-        JSON.stringify({ message: "아이디 또는 비밀번호가 틀렸습니다." }),
-        { status: 401 }
-      );
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data.message);
+        return;
+      }
+
+      // 사용자 정보 저장 (username만 사용)
+      localStorage.setItem("username", id);
+      localStorage.setItem("joinDate", new Date().toLocaleDateString('ko-KR'));
+
+      // 로그인 상태 변경 이벤트 발생
+      window.dispatchEvent(new Event('loginStatusChanged'));
+
+      alert('로그인 성공!');
+      navigate("/challenge");
+    } catch {
+      alert("서버 오류");
     }
+  };
 
-    // 4. 로그인 성공
-    return new Response(
-      JSON.stringify({
-        message: "로그인 성공",
-        userId: user.user_id
-      }),
-      { status: 200 }
-    );
-  } catch (err) {
-    console.error("로그인 오류:", err);
-    return new Response(
-      JSON.stringify({ message: "서버 오류", error: err instanceof Error ? err.message : String(err) }),
-      { status: 500 }
-    );
-  }
+  return (
+    <>
+      <div id="login-view" className="login-view">
+        <div className="login-container-view">
+          <div className="input-group">
+            <label htmlFor="login-id-view">아이디</label>
+            <input type="text"id="login-id-view"placeholder="아이디를 입력해주세요."value={id}onChange={(e) => setId(e.target.value)}/>
+          </div>
+
+          <div className="input-group">
+            <label htmlFor="login-pw-view">비밀번호</label>
+            <input type="password"id="login-pw-view"placeholder="비밀번호를 입력해주세요."value={pw}onChange={(e) => setPw(e.target.value)}/>
+          </div>
+          <div className="button-group">
+            <button className="login-btn" onClick={handleLogin}>로그인</button>
+            <Link to="/signup" className="signup-btn">회원가입</Link>
+          </div>
+
+          <div className="login-footer-links">
+            <a href="#">아이디 찾기</a>
+            <a href="#">비밀번호 찾기</a>
+          </div>
+        </div>
+      </div>
+
+      <Footer />
+    </>
+  );
 }
+
+export default Login;

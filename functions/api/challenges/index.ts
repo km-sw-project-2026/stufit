@@ -57,9 +57,9 @@ export default async function handler(request: Request, { env, userId }: Handler
     );
   }
 
-  const { challengeName, category, maxParticipants, endDate, goalDescription, inviteCode } = body;
+  const { challengeName, category, maxParticipants, endDate, goalDescription, inviteCode, timerHours, timerMinutes } = body;
 
-  console.log('Received data:', { challengeName, category, maxParticipants, endDate, goalDescription, inviteCode });
+  console.log('Received data:', { challengeName, category, maxParticipants, endDate, goalDescription, inviteCode, timerHours, timerMinutes });
 
   // ========== 3️⃣ 입력 검증 (try 밖에서 - 400 에러) ==========
   
@@ -130,8 +130,8 @@ export default async function handler(request: Request, { env, userId }: Handler
     const insertResult = await env.D1_DB
       .prepare(
         `INSERT INTO challenges 
-         (title, description, category, max_members, goal, end_date, challenge_code, created_by_user_id, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`
+         (title, description, category, max_members, goal, end_date, challenge_code, created_by_user_id, timer_hours, timer_minutes, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`
       )
       .bind(
         challengeName,
@@ -141,7 +141,9 @@ export default async function handler(request: Request, { env, userId }: Handler
         goalDescription,
         endDate,
         inviteCode,
-        userId
+        userId,
+        timerHours || 0,
+        timerMinutes || 0
       )
       .run();
 

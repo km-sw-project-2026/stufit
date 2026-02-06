@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 
-function NewPostModal({ category = 'popular', onClose = () => {}, onSubmit = () => {} }) {
-    const [title, setTitle] = useState('');
-    const [content, setContent] = useState('');
+function EditPostModal({ post, onClose = () => {}, onSubmit = () => {} }) {
+    const [title, setTitle] = useState(post?.title || '');
+    const [content, setContent] = useState(post?.content || '');
 
     // ESC 키로 닫기
     useEffect(() => {
@@ -12,6 +12,14 @@ function NewPostModal({ category = 'popular', onClose = () => {}, onSubmit = () 
         document.addEventListener('keydown', handler);
         return () => document.removeEventListener('keydown', handler);
     }, [onClose]);
+
+    // post가 변경되면 값 업데이트
+    useEffect(() => {
+        if (post) {
+            setTitle(post.title || '');
+            setContent(post.content || '');
+        }
+    }, [post]);
 
     const handleSubmit = () => {
         if (!title.trim()) {
@@ -23,19 +31,17 @@ function NewPostModal({ category = 'popular', onClose = () => {}, onSubmit = () 
             return;
         }
 
-        const newPost = {
+        const updatedPost = {
+            ...post,
             title: title.trim(),
-            content: content.trim(),
-            category: category
+            content: content.trim()
         };
 
-        onSubmit(newPost);
-        setTitle('');
-        setContent('');
+        onSubmit(updatedPost);
     };
 
     return (
-        <div id="new-post-modal" className="popup-modal" style={{position: 'fixed', inset: 0, zIndex: 60}}>
+        <div id="edit-post-modal" className="popup-modal" style={{position: 'fixed', inset: 0, zIndex: 60}}>
             <div
                 className="popup-overlay"
                 onClick={onClose}
@@ -50,7 +56,7 @@ function NewPostModal({ category = 'popular', onClose = () => {}, onSubmit = () 
                 role="dialog"
                 aria-modal="true"
             >
-                <h2 className="notice-board-title">Notice Board</h2>
+                <h2 className="notice-board-title">notice board</h2>
 
                 <div className="notice-form-group row">
                     <label>제목</label>
@@ -79,4 +85,4 @@ function NewPostModal({ category = 'popular', onClose = () => {}, onSubmit = () 
     );
 };
 
-export default NewPostModal;
+export default EditPostModal;

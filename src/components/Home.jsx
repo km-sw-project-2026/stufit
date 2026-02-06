@@ -1,9 +1,10 @@
-import MainPage from './main/MainPage';
+import MainPage from './main/Mainpage';
 import ChallengeQuicklink from './main/ChallengeQuicklink';
 import RankingQuicklink from './main/RankingQuicklink';
 import ShopQuicklink from './main/ShopQuicklink';
 import CommunityQuicklink from './main/CommunityQuicklink';
 import Footer from './main/Footer';
+import ShopQuicklink from './main/ShopQuicklink';
 
 const Home = () => {
     return (

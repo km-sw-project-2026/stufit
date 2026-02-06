@@ -1,12 +1,173 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import GiveUpModal from "./modal/GiveUpModal";
 import FinalGiveUpModal from "./modal/FinalGiveUpModal";
+import CustomAlertModal from "./modal/CustomAlertModal";
 
-function ChallengeDetailView() {
+function ChallengeDetailView({ challenge, onClose }) {
     const [modalOpen, setModalOpen] = useState(false);
     const [finalModalOpen, setFinalModalOpen] = useState(false);
-    
+    const [alertOpen, setAlertOpen] = useState(false);
+    const [timerSeconds, setTimerSeconds] = useState(0);
+    const [isTimerRunning, setIsTimerRunning] = useState(false);
+    const [progressPercent, setProgressPercent] = useState(0);
+    const [submittedToday, setSubmittedToday] = useState(false);
+    const [submitLoading, setSubmitLoading] = useState(false);
+    const [elapsedDays, setElapsedDays] = useState(0);
+    const [remainingDays, setRemainingDays] = useState(0);
+
+    // 타이머 초기화
+    useEffect(() => {
+        if (challenge?.timer_hours || challenge?.timer_minutes) {
+            const totalSeconds = (challenge.timer_hours || 0) * 3600 + (challenge.timer_minutes || 0) * 60;
+            setTimerSeconds(totalSeconds);
+        }
+    }, [challenge]);
+
+    // 타이머 시작/종료
+    useEffect(() => {
+        let interval;
+        if (isTimerRunning && timerSeconds > 0) {
+            interval = setInterval(() => {
+                setTimerSeconds(prev => Math.max(0, prev - 1));
+            }, 1000);
+        }
+        return () => clearInterval(interval);
+    }, [isTimerRunning, timerSeconds]);
+
+    const getTotalDays = () => {
+        if (!challenge?.category) return null;
+        const categoryDays = {
+            DAILY: 30,
+            SHORT: 20
+        };
+
+        return categoryDays[challenge.category] || 30;
+    };
+
+    const loadProgress = async () => {
+        const username = localStorage.getItem('username');
+        if (!username || !challenge?.challenge_id) {
+            setProgressPercent(0);
+            setSubmittedToday(false);
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/challenges/${challenge.challenge_id}/progress`, {
+                headers: { 'X-Username': username }
+            });
+
+            if (!response.ok) {
+                return;
+            }
+
+            const result = await response.json();
+            const rows = Array.isArray(result?.data) ? result.data : [];
+            const userRows = rows.filter(row => row.username === username);
+            const count = userRows.length;
+            const today = new Date().toISOString().slice(0, 10);
+                const totalDays = getTotalDays();
+                const total = totalDays || 0;
+                const elapsed = Math.min(count, total);
+
+                if (total <= 0) {
+                    setProgressPercent(0);
+                    setElapsedDays(0);
+                    setRemainingDays(0);
+                } else {
+                    setProgressPercent(Math.min((elapsed / total) * 100, 100));
+                    setElapsedDays(elapsed);
+                    setRemainingDays(Math.max(total - elapsed, 0));
+                }
+
+                setSubmittedToday(userRows.some(row => row.date === today));
+        } catch (error) {
+            console.error('진행도 조회 오류:', error);
+        }
+    };
+
+    // 진행도 로드 (오늘 제출 여부 포함)
+    useEffect(() => {
+        loadProgress();
+    }, [challenge]);
+
     const giveupHandler = () => setModalOpen(true);
+
+    const handleSubmitProgress = async () => {
+        if (submitLoading) return;
+
+        if (submittedToday) {
+            alert('오늘은 이미 제출했습니다.');
+            return;
+        }
+
+        const username = localStorage.getItem('username');
+        if (!username || !challenge?.challenge_id) {
+            alert('로그인이 필요합니다.');
+            return;
+        }
+
+        setSubmitLoading(true);
+        try {
+            const response = await fetch(`/api/challenges/${challenge.challenge_id}/verify`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Username': username
+                }
+            });
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                alert(result?.message || '제출에 실패했습니다.');
+                return;
+            }
+
+            await loadProgress();
+        } catch (error) {
+            console.error('제출 오류:', error);
+            alert('제출 중 오류가 발생했습니다.');
+        } finally {
+            setSubmitLoading(false);
+        }
+    };
+
+    // 챌린지 나가기 성공 시 호출
+    const handleLeaveSuccess = () => {
+        setFinalModalOpen(false);
+        setAlertOpen(true);
+    };
+
+    // Props 기본값 설정
+    const title = challenge?.title || '챌린지';
+    const goal = challenge?.goal || '아침 6시 기상';
+    const category = challenge?.category || '';
+
+    // 카테고리 한글 변환
+    const getCategoryName = (cat) => {
+        const categoryMap = {
+            'STUDY': '공부',
+            'EXERCISE': '운동',
+            'DAILY': '일상'
+        };
+        return categoryMap[cat] || cat;
+    };
+
+    // 날짜 포맷팅
+    const formatDate = (dateString) => {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        return `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')}`;
+    };
+
+    // 타이머 포맷팅 (HH:MM:SS)
+    const formatTimer = (seconds) => {
+        const hours = Math.floor(seconds / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+        const secs = seconds % 60;
+        return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    };
 
     return (
         <>
@@ -44,7 +205,7 @@ function ChallengeDetailView() {
 
 
                     <div className="detail-main">
-                        <button className="close-detail-btn">
+                        <button className="close-detail-btn" onClick={onClose}>
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <line x1="18" y1="6" x2="6" y2="18"></line>
                                 <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -52,86 +213,111 @@ function ChallengeDetailView() {
                         </button>
 
                         <div className="detail-card">
-                            <h3>챌린지 진행도</h3>
+                            <h3 className="detail-title-left">챌린지 진행도</h3>
                             <div className="progress-area">
                                 <div className="progress-info">
-                                    <span className="days-elapsed">0일 경과</span>
-                                    <span className="percentage">50%</span>
-                                    <span className="days-left">30일 남음</span>
+                                    <span className="days-elapsed">{elapsedDays}일 경과</span>
+                                    <span className="percentage">{Math.round(progressPercent)}%</span>
+                                    <span className="days-left">{remainingDays}일 남음</span>
                                 </div>
                                 <div className="progress-bar-bg">
-                                    <div className="progress-bar-fill" style={{ width: '50%' }}></div>
+                                    <div className="progress-bar-fill" style={{ width: `${progressPercent}%` }}></div>
                                 </div>
                             </div>
                         </div>
 
 
                         <div className="detail-card">
-                            <h3>챌린지 목표</h3>
-                            <div className="goal-box">아침 6시 기상</div>
-                            <button className="submit-btn">제출하기</button>
+                            <h3 className="detail-title-left">챌린지 목표</h3>
+                            <div className="goal-box">{goal}</div>
+                            <button
+                                className="submit-btn"
+                                onClick={handleSubmitProgress}
+                                disabled={submittedToday || submitLoading}
+                            >
+                                {submittedToday ? '오늘 제출 완료' : submitLoading ? '제출 중...' : '제출하기'}
+                            </button>
                         </div>
 
 
                         <div className="detail-card status-card">
-                            <h3>참여 현황</h3>
-                            <div className="status-grid">
-                                <div className="status-item">
-                                    <div className="status-user">
-                                        <div className="status-avatar">
-                                            <img src="img/Profile.png" alt="Profile" />
+                            {(category === 'STUDY' || category === 'EXERCISE') ? (
+                                <>
+                                    <h3 className="detail-title-left">타이머</h3>
+                                    <div className="timer-display">
+                                        <div className="timer-time">{formatTimer(timerSeconds)}</div>
+                                        <div className="timer-controls">
+                                            <button 
+                                                className="timer-btn"
+                                                onClick={() => setIsTimerRunning(!isTimerRunning)}
+                                            >
+                                                {isTimerRunning ? '⏸ 일시정지' : '▶ 시작'}
+                                            </button>
                                         </div>
-                                        <span>김예선</span>
                                     </div>
-                                    <span className="status-label success">인증 완료</span>
-                                </div>
-                                <div className="status-item">
-                                    <div className="status-user">
-                                        <div className="status-avatar">
-                                            <img src="img/Profile.png" alt="Profile" />
+                                </>
+                            ) : (
+                                <>
+                                    <h3>참여 현황</h3>
+                                    <div className="status-grid">
+                                        <div className="status-item">
+                                            <div className="status-user">
+                                                <div className="status-avatar">
+                                                    <img src="img/Profile.png" alt="Profile" />
+                                                </div>
+                                                <span>김예선</span>
+                                            </div>
+                                            <span className="status-label success">인증 완료</span>
                                         </div>
-                                        <span>이정민</span>
-                                    </div>
-                                    <span className="status-label danger">미제출</span>
-                                </div>
-                                <div className="status-item">
-                                    <div className="status-user">
-                                        <div className="status-avatar">
-                                            <img src="img/Profile.png" alt="Profile" />
+                                        <div className="status-item">
+                                            <div className="status-user">
+                                                <div className="status-avatar">
+                                                    <img src="img/Profile.png" alt="Profile" />
+                                                </div>
+                                                <span>이정민</span>
+                                            </div>
+                                            <span className="status-label danger">미제출</span>
                                         </div>
-                                        <span>이정민</span>
-                                    </div>
-                                    <span className="status-label danger">미제출</span>
-                                </div>
+                                        <div className="status-item">
+                                            <div className="status-user">
+                                                <div className="status-avatar">
+                                                    <img src="img/Profile.png" alt="Profile" />
+                                                </div>
+                                                <span>이정민</span>
+                                            </div>
+                                            <span className="status-label danger">미제출</span>
+                                        </div>
 
-                                <div className="status-item">
-                                    <div className="status-user">
-                                        <div className="status-avatar">
-                                            <img src="img/Profile.png" alt="Profile" />
+                                        <div className="status-item">
+                                            <div className="status-user">
+                                                <div className="status-avatar">
+                                                    <img src="img/Profile.png" alt="Profile" />
+                                                </div>
+                                                <span>유태민</span>
+                                            </div>
+                                            <span className="status-label success">인증 완료</span>
                                         </div>
-                                        <span>유태민</span>
-                                    </div>
-                                    <span className="status-label success">인증 완료</span>
-                                </div>
-                                <div className="status-item">
-                                    <div className="status-user">
-                                        <div className="status-avatar">
-                                            <img src="img/Profile.png" alt="Profile" />
+                                        <div className="status-item">
+                                            <div className="status-user">
+                                                <div className="status-avatar">
+                                                    <img src="img/Profile.png" alt="Profile" />
+                                                </div>
+                                                <span>박현서</span>
+                                            </div>
+                                            <span className="status-label warning">인증 실패</span>
                                         </div>
-                                        <span>박현서</span>
-                                    </div>
-                                    <span className="status-label warning">인증 실패</span>
-                                </div>
-                                <div className="status-item">
-                                    <div className="status-user">
-                                        <div className="status-avatar">
-                                            <img src="img/Profile.png" alt="Profile" />
+                                        <div className="status-item">
+                                            <div className="status-user">
+                                                <div className="status-avatar">
+                                                    <img src="img/Profile.png" alt="Profile" />
+                                                </div>
+                                                <span>박현서</span>
+                                            </div>
+                                            <span className="status-label warning">인증 실패</span>
                                         </div>
-                                        <span>박현서</span>
                                     </div>
-                                    <span className="status-label warning">인증 실패</span>
-                                </div>
-                            </div>
+                                </>
+                            )}
                         </div>
 
                         <div className="detail-actions">
@@ -143,7 +329,24 @@ function ChallengeDetailView() {
             </div>
 
             {modalOpen && <GiveUpModal setModalOpen={setModalOpen} setFinalModalOpen={setFinalModalOpen} />}
-            {finalModalOpen && <FinalGiveUpModal setModalOpen={setFinalModalOpen} />}
+            {finalModalOpen && (
+                <FinalGiveUpModal
+                    setModalOpen={setFinalModalOpen}
+                    challengeId={challenge?.challenge_id}
+                    onLeave={handleLeaveSuccess}
+                />
+            )}
+            {alertOpen && (
+                <CustomAlertModal
+                    message="챌린지를 완전히 포기했습니다."
+                    onClose={() => {
+                        setAlertOpen(false);
+                        if (onClose) {
+                            onClose();
+                        }
+                    }}
+                />
+            )}
         </>
     );
 };
