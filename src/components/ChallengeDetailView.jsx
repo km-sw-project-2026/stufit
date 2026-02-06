@@ -1,11 +1,32 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import GiveUpModal from "./modal/GiveUpModal";
 import FinalGiveUpModal from "./modal/FinalGiveUpModal";
 
 function ChallengeDetailView({ challenge, onClose }) {
     const [modalOpen, setModalOpen] = useState(false);
     const [finalModalOpen, setFinalModalOpen] = useState(false);
-    
+    const [timerSeconds, setTimerSeconds] = useState(0);
+    const [isTimerRunning, setIsTimerRunning] = useState(false);
+
+    // 타이머 초기화
+    useEffect(() => {
+        if (challenge?.timer_hours || challenge?.timer_minutes) {
+            const totalSeconds = (challenge.timer_hours || 0) * 3600 + (challenge.timer_minutes || 0) * 60;
+            setTimerSeconds(totalSeconds);
+        }
+    }, [challenge]);
+
+    // 타이머 시작/종료
+    useEffect(() => {
+        let interval;
+        if (isTimerRunning && timerSeconds > 0) {
+            interval = setInterval(() => {
+                setTimerSeconds(prev => Math.max(0, prev - 1));
+            }, 1000);
+        }
+        return () => clearInterval(interval);
+    }, [isTimerRunning, timerSeconds]);
+
     const giveupHandler = () => setModalOpen(true);
 
     // 챌린지 나가기 성공 시 호출
@@ -37,6 +58,14 @@ function ChallengeDetailView({ challenge, onClose }) {
         if (!dateString) return '';
         const date = new Date(dateString);
         return `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')}`;
+    };
+
+    // 타이머 포맷팅 (HH:MM:SS)
+    const formatTimer = (seconds) => {
+        const hours = Math.floor(seconds / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+        const secs = seconds % 60;
+        return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
     };
 
     return (
@@ -105,64 +134,83 @@ function ChallengeDetailView({ challenge, onClose }) {
 
 
                         <div className="detail-card status-card">
-                            <h3>참여 현황</h3>
-                            <div className="status-grid">
-                                <div className="status-item">
-                                    <div className="status-user">
-                                        <div className="status-avatar">
-                                            <img src="img/Profile.png" alt="Profile" />
+                            {(category === 'STUDY' || category === 'EXERCISE') ? (
+                                <>
+                                    <h3>타이머</h3>
+                                    <div className="timer-display">
+                                        <div className="timer-time">{formatTimer(timerSeconds)}</div>
+                                        <div className="timer-controls">
+                                            <button 
+                                                className="timer-btn"
+                                                onClick={() => setIsTimerRunning(!isTimerRunning)}
+                                            >
+                                                {isTimerRunning ? '⏸ 일시정지' : '▶ 시작'}
+                                            </button>
                                         </div>
-                                        <span>김예선</span>
                                     </div>
-                                    <span className="status-label success">인증 완료</span>
-                                </div>
-                                <div className="status-item">
-                                    <div className="status-user">
-                                        <div className="status-avatar">
-                                            <img src="img/Profile.png" alt="Profile" />
+                                </>
+                            ) : (
+                                <>
+                                    <h3>참여 현황</h3>
+                                    <div className="status-grid">
+                                        <div className="status-item">
+                                            <div className="status-user">
+                                                <div className="status-avatar">
+                                                    <img src="img/Profile.png" alt="Profile" />
+                                                </div>
+                                                <span>김예선</span>
+                                            </div>
+                                            <span className="status-label success">인증 완료</span>
                                         </div>
-                                        <span>이정민</span>
-                                    </div>
-                                    <span className="status-label danger">미제출</span>
-                                </div>
-                                <div className="status-item">
-                                    <div className="status-user">
-                                        <div className="status-avatar">
-                                            <img src="img/Profile.png" alt="Profile" />
+                                        <div className="status-item">
+                                            <div className="status-user">
+                                                <div className="status-avatar">
+                                                    <img src="img/Profile.png" alt="Profile" />
+                                                </div>
+                                                <span>이정민</span>
+                                            </div>
+                                            <span className="status-label danger">미제출</span>
                                         </div>
-                                        <span>이정민</span>
-                                    </div>
-                                    <span className="status-label danger">미제출</span>
-                                </div>
+                                        <div className="status-item">
+                                            <div className="status-user">
+                                                <div className="status-avatar">
+                                                    <img src="img/Profile.png" alt="Profile" />
+                                                </div>
+                                                <span>이정민</span>
+                                            </div>
+                                            <span className="status-label danger">미제출</span>
+                                        </div>
 
-                                <div className="status-item">
-                                    <div className="status-user">
-                                        <div className="status-avatar">
-                                            <img src="img/Profile.png" alt="Profile" />
+                                        <div className="status-item">
+                                            <div className="status-user">
+                                                <div className="status-avatar">
+                                                    <img src="img/Profile.png" alt="Profile" />
+                                                </div>
+                                                <span>유태민</span>
+                                            </div>
+                                            <span className="status-label success">인증 완료</span>
                                         </div>
-                                        <span>유태민</span>
-                                    </div>
-                                    <span className="status-label success">인증 완료</span>
-                                </div>
-                                <div className="status-item">
-                                    <div className="status-user">
-                                        <div className="status-avatar">
-                                            <img src="img/Profile.png" alt="Profile" />
+                                        <div className="status-item">
+                                            <div className="status-user">
+                                                <div className="status-avatar">
+                                                    <img src="img/Profile.png" alt="Profile" />
+                                                </div>
+                                                <span>박현서</span>
+                                            </div>
+                                            <span className="status-label warning">인증 실패</span>
                                         </div>
-                                        <span>박현서</span>
-                                    </div>
-                                    <span className="status-label warning">인증 실패</span>
-                                </div>
-                                <div className="status-item">
-                                    <div className="status-user">
-                                        <div className="status-avatar">
-                                            <img src="img/Profile.png" alt="Profile" />
+                                        <div className="status-item">
+                                            <div className="status-user">
+                                                <div className="status-avatar">
+                                                    <img src="img/Profile.png" alt="Profile" />
+                                                </div>
+                                                <span>박현서</span>
+                                            </div>
+                                            <span className="status-label warning">인증 실패</span>
                                         </div>
-                                        <span>박현서</span>
                                     </div>
-                                    <span className="status-label warning">인증 실패</span>
-                                </div>
-                            </div>
+                                </>
+                            )}
                         </div>
 
                         <div className="detail-actions">

@@ -4,12 +4,20 @@ function CreateChallengeModal({ setCreateChallengeOpen, closeCreateChallengeModa
   const [challengeName, setChallengeName] = useState('');
   const [category, setCategory] = useState('');
   const [duration, setDuration] = useState('');
+  const [timerHours, setTimerHours] = useState('');
+  const [timerMinutes, setTimerMinutes] = useState('');
   const [goalDescription, setGoalDescription] = useState('');
   const [inviteCode, setInviteCode] = useState('');
 
   const createChallenge = async () => {
     if (!challengeName || !category || !duration || !goalDescription || !inviteCode) {
       alert('필수 항목을 모두 입력해주세요.');
+      return;
+    }
+
+    // 공부, 운동 카테고리는 타이머 필수
+    if ((category === 'STUDY' || category === 'EXERCISE') && (!timerHours || !timerMinutes)) {
+      alert('공부/운동 카테고리는 타이머 시간을 설정해주세요.');
       return;
     }
 
@@ -37,7 +45,9 @@ function CreateChallengeModal({ setCreateChallengeOpen, closeCreateChallengeModa
           maxParticipants: 10, // 기본값
           endDate: endDate.toISOString().slice(0, 10),
           goalDescription,
-          inviteCode
+          inviteCode,
+          timerHours: category === 'STUDY' || category === 'EXERCISE' ? Number(timerHours) : null,
+          timerMinutes: category === 'STUDY' || category === 'EXERCISE' ? Number(timerMinutes) : null
         }),
       });
 
@@ -114,6 +124,35 @@ function CreateChallengeModal({ setCreateChallengeOpen, closeCreateChallengeModa
             </div>
           </div>
         </div>
+
+        {(category === 'STUDY' || category === 'EXERCISE') && (
+          <div className="form-row">
+            <div className="form-group half">
+              <label>타이머 시간</label>
+              <input
+                type="number"
+                id="timer-hours"
+                placeholder="예: 1"
+                min="0"
+                value={timerHours}
+                onChange={(e) => setTimerHours(e.target.value)}
+              />
+            </div>
+
+            <div className="form-group half">
+              <label>타이머 분</label>
+              <input
+                type="number"
+                id="timer-minutes"
+                placeholder="예: 30"
+                min="0"
+                max="59"
+                value={timerMinutes}
+                onChange={(e) => setTimerMinutes(e.target.value)}
+              />
+            </div>
+          </div>
+        )}
 
         <div className="form-group">
           <label>목표</label>

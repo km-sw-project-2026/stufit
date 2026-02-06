@@ -1011,6 +1011,7 @@ body {
     border-radius: 20px;
     padding: 30px;
     box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    text-align: center;
 }
 
 .detail-card h3 {
@@ -1018,6 +1019,7 @@ body {
     font-weight: 700;
     margin-bottom: 20px;
     color: #333;
+    text-align: center;
 }
 
 
