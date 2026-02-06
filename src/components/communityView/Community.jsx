@@ -202,7 +202,70 @@ function Community() {
     const [isModalOpen, setModalOpen] = useState(false);
 
     const [isNewPostModalOpen, setNewPostModalOpen] = useState(false);
-    const newPost = () => setNewPostModalOpen(true);
+    const [currentCategory, setCurrentCategory] = useState('popular');
+    
+    // 기본 게시글 데이터
+    const defaultPosts = {
+        popular: [
+            { id: 11, title: '인기: 미적분 베스트', content: '많은 좋아요를 받은 문제풀이 공유글', author: '인기유저', likes: 0, comments: 0, date: '2025.12.01', category: 'popular', liked: false },
+            { id: 12, title: '인기: 공부 팁 모음', content: '효율적 공부법 정리', author: '팁러', likes: 0, comments: 0, date: '2025.12.05', category: 'popular', liked: false }
+        ],
+        tips: [
+            { id: 21, title: '효율적 공부법', content: '짧고 굵게 집중하는 방법들...', author: '팁글러', likes: 0, comments: 0, date: '2025.10.12', category: 'tips', liked: false },
+            { id: 22, title: '시간관리 팁', content: '포모도로 기법 활용법', author: '시간관리러', likes: 0, comments: 0, date: '2025.11.01', category: 'tips', liked: false }
+        ],
+        data: [
+            { id: 1, title: '미적분 문제 질문이요!', content: '치환적분 문제인데 도와주세요', author: '수학 고민러', likes: 0, comments: 0, date: '2025.12.29 12:15', category: 'data', liked: false },
+            { id: 2, title: '한국사 정리 노트 공유', content: '시대별 요점 정리본 업로드합니다.', author: '역사 덕후', likes: 0, comments: 0, date: '2025.11.10 09:00', category: 'data', liked: false }
+        ],
+        mypost: []
+    };
+    
+    // localStorage에서 게시글 불러오기
+    const loadPostsFromStorage = () => {
+        // 초기화: 기존 localStorage 데이터 삭제
+        localStorage.removeItem('communityPosts');
+        return defaultPosts;
+    };
+    
+    // 게시글 상태 관리
+    const [posts, setPosts] = useState(loadPostsFromStorage);
+    
+    // posts가 변경될 때마다 localStorage에 저장
+    useEffect(() => {
+        try {
+            localStorage.setItem('communityPosts', JSON.stringify(posts));
+        } catch (error) {
+            console.error('게시글 저장 실패:', error);
+        }
+    }, [posts]);
+    
+    const newPost = (category) => {
+        setCurrentCategory(category || activeTab);
+        setNewPostModalOpen(true);
+    };
+    
+    // 새 게시글 추가 함수
+    const handleAddPost = (newPost) => {
+        const username = localStorage.getItem('username') || '익명';
+        const postWithDetails = {
+            ...newPost,
+            id: Date.now(),
+            author: username,
+            likes: 0,
+            comments: 0,
+            liked: false,
+            date: new Date().toLocaleString('ko-KR'),
+        };
+        
+        setPosts(prev => ({
+            ...prev,
+            [newPost.category]: [...prev[newPost.category], postWithDetails],
+            mypost: [...prev.mypost, postWithDetails]
+        }));
+        
+        setNewPostModalOpen(false);
+    };
 
     // Post detail state & handlers
     const [showPostDetail, setShowPostDetail] = useState(false);
@@ -216,6 +279,26 @@ function Community() {
     const closeDetailView = () => {
         setShowPostDetail(false);
         setSelectedPost(null);
+    };
+
+    // 게시글 삭제 함수
+    const handleDeletePost = (postId) => {
+        setPosts(prev => ({
+            popular: prev.popular.filter(p => p.id !== postId),
+            tips: prev.tips.filter(p => p.id !== postId),
+            data: prev.data.filter(p => p.id !== postId),
+            mypost: prev.mypost.filter(p => p.id !== postId)
+        }));
+    };
+
+    // 게시글 수정 함수
+    const handleEditPost = (updatedPost) => {
+        setPosts(prev => ({
+            popular: prev.popular.map(p => p.id === updatedPost.id ? updatedPost : p),
+            tips: prev.tips.map(p => p.id === updatedPost.id ? updatedPost : p),
+            data: prev.data.map(p => p.id === updatedPost.id ? updatedPost : p),
+            mypost: prev.mypost.map(p => p.id === updatedPost.id ? updatedPost : p)
+        }));
     };
 
     // 2. 페이지 진입 시 실행 (오늘 하루 그만보기 로직)
@@ -268,13 +351,18 @@ function Community() {
                 <div className="community-main">
                     {/* 메인과 상세를 서로 교체해서 보여 줍니다 */}
                     {!showPostDetail ? (
-                        activeTab === 'popular' ? <Popular onOpenPost={detailPostView} onNewPost={newPost} /> :
-                        activeTab === 'tips' ? <Tips onOpenPost={detailPostView} onNewPost={newPost} /> :
-                        activeTab === 'data' ? <DataSharing onOpenPost={detailPostView} onNewPost={newPost} /> :
-                        activeTab === 'mypost' ? <MyPost onOpenPost={detailPostView} onNewPost={newPost} /> :
-                        <DataSharing onOpenPost={detailPostView} onNewPost={newPost} />
+                        activeTab === 'popular' ? <Popular posts={posts.popular} onOpenPost={detailPostView} onNewPost={() => newPost('popular')} /> :
+                        activeTab === 'tips' ? <Tips posts={posts.tips} onOpenPost={detailPostView} onNewPost={() => newPost('tips')} /> :
+                        activeTab === 'data' ? <DataSharing posts={posts.data} onOpenPost={detailPostView} onNewPost={() => newPost('data')} /> :
+                        activeTab === 'mypost' ? <MyPost posts={posts.mypost} onOpenPost={detailPostView} onNewPost={() => newPost('mypost')} /> :
+                        <DataSharing posts={posts.data} onOpenPost={detailPostView} onNewPost={() => newPost('data')} />
                     ) : (
-                        <PostDetailView post={selectedPost} onClose={closeDetailView} />
+                        <PostDetailView 
+                            post={selectedPost} 
+                            onClose={closeDetailView} 
+                            onDeletePost={handleDeletePost}
+                            onEditPost={handleEditPost}
+                        />
                     )}
                 </div>
             </div>
@@ -284,7 +372,11 @@ function Community() {
                 <CommunityRewardModal onClose={() => setModalOpen(false)} />
             )}
             {isNewPostModalOpen && (
-                <NewPostModal onClose={() => setNewPostModalOpen(false)} />
+                <NewPostModal 
+                    category={currentCategory} 
+                    onClose={() => setNewPostModalOpen(false)} 
+                    onSubmit={handleAddPost}
+                />
             )}
             
         </div>

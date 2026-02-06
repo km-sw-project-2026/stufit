@@ -1,10 +1,6 @@
 import React from 'react';
 
-function Tips({ onOpenPost, onNewPost }) {
-    const posts = [
-        { id: 21, title: '효율적 공부법', content: '짧고 굵게 집중하는 방법들...', author: '팁글러', likes: 12, comments: 4, date: '2025.10.12' },
-        { id: 22, title: '시간관리 팁', content: '포모도로 기법 활용법', author: '시간관리러', likes: 18, comments: 5, date: '2025.11.01' }
-    ];
+function Tips({ posts = [], onOpenPost, onNewPost }) {
 
     return (
         <div id="community-tips-view">
