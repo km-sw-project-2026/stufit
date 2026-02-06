@@ -1,4 +1,4 @@
-import MainPage from './main/MainPage';
+import MainPage from './main/Mainpage';
 import ChallengeQuicklink from './main/ChallengeQuicklink';
 import RankingQuicklink from './main/RankingQuicklink';
 import CommunityQuicklink from './main/CommunityQuicklink';
