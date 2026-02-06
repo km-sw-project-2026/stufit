@@ -25,7 +25,6 @@ function FinalGiveUpModal({ setModalOpen, challengeId, onLeave }) {
             console.log("🟡 API 응답 데이터:", data);
 
             if (response.ok) {
-                alert('챌린지를 나갔습니다.');
                 setModalOpen(false);
                 // 부모 컴포넌트에 콜백
                 if (onLeave) {
