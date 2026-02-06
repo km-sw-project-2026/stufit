@@ -15,6 +15,11 @@ function ChallengeDetailView({ challenge, onClose }) {
     const [elapsedDays, setElapsedDays] = useState(0);
     const [remainingDays, setRemainingDays] = useState(0);
 
+    useEffect(() => {
+        document.body.classList.add('modal-open');
+        return () => document.body.classList.remove('modal-open');
+    }, []);
+
     // 타이머 초기화
     useEffect(() => {
         if (challenge?.timer_hours || challenge?.timer_minutes) {
