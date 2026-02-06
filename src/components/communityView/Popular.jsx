@@ -1,10 +1,6 @@
 import React from 'react';
 
-function Popular({ onOpenPost, onNewPost }) {
-    const posts = [
-        { id: 11, title: '인기: 미적분 베스트', content: '많은 좋아요를 받은 문제풀이 공유글', author: '인기유저', likes: 99, comments: 42, date: '2025.12.01' },
-        { id: 12, title: '인기: 공부 팁 모음', content: '효율적 공부법 정리', author: '팁러', likes: 78, comments: 21, date: '2025.12.05' }
-    ];
+function Popular({ posts = [], onOpenPost, onNewPost }) {
 
     return (
         <div id="community-popular-view">
