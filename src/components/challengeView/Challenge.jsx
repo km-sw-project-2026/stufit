@@ -19,9 +19,32 @@ function Challenge({ closeChallengeModal, onCreateSuccess }) {
 
             if (response.ok) {
                 const data = await response.json();
-                // 코드가 없는 챌린지만 필터링
                 const publicChallenges = (data.challenges || []).filter(ch => !ch.challenge_code);
-                setChallenges(publicChallenges);
+                if (publicChallenges.length > 0) {
+                    setChallenges(publicChallenges);
+                    return;
+                }
+            }
+
+            // 공개 목록이 비어있을 때는 내 챌린지 중 코드 없는 것만 표시 (생성 직후 반영용)
+            const username = localStorage.getItem('username');
+            if (!username) {
+                setChallenges([]);
+                return;
+            }
+
+            const fallbackResponse = await fetch('/api/challenges', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Username': username
+                }
+            });
+
+            if (fallbackResponse.ok) {
+                const fallbackData = await fallbackResponse.json();
+                const fallbackChallenges = (fallbackData.challenges || []).filter(ch => !ch.challenge_code);
+                setChallenges(fallbackChallenges);
             }
         } catch (error) {
             console.error('챌린지 목록 불러오기 실패:', error);
@@ -40,11 +63,18 @@ function Challenge({ closeChallengeModal, onCreateSuccess }) {
 
     const closeCreateChallengeModal = () => {
         setCreateChallengeModalOpen(false);
-        fetchChallenges(); // 모달 닫힐 때도 공개 목록 새로고침
     };
 
-    const handleCreateSuccess = () => {
-        fetchChallenges();
+    const handleCreateSuccess = (createdChallenge) => {
+        if (createdChallenge && !createdChallenge.challenge_code) {
+            setChallenges((prev) => {
+                const exists = prev.some((ch) => ch.challenge_id === createdChallenge.challenge_id);
+                return exists ? prev : [createdChallenge, ...prev];
+            });
+        } else {
+            fetchChallenges();
+        }
+
         if (onCreateSuccess) onCreateSuccess();
     };
 

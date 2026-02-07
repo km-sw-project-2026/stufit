@@ -204,73 +204,88 @@ function Community() {
     const [isNewPostModalOpen, setNewPostModalOpen] = useState(false);
     const [currentCategory, setCurrentCategory] = useState('popular');
     
-    // 기본 게시글 데이터
-    const defaultPosts = {
-        popular: [
-            { id: 11, title: '인기: 미적분 베스트', content: '많은 좋아요를 받은 문제풀이 공유글', author: '인기유저', likes: 0, comments: 0, date: '2025.12.01', category: 'popular', liked: false },
-            { id: 12, title: '인기: 공부 팁 모음', content: '효율적 공부법 정리', author: '팁러', likes: 0, comments: 0, date: '2025.12.05', category: 'popular', liked: false }
-        ],
-        tips: [
-            { id: 21, title: '효율적 공부법', content: '짧고 굵게 집중하는 방법들...', author: '팁글러', likes: 0, comments: 0, date: '2025.10.12', category: 'tips', liked: false },
-            { id: 22, title: '시간관리 팁', content: '포모도로 기법 활용법', author: '시간관리러', likes: 0, comments: 0, date: '2025.11.01', category: 'tips', liked: false }
-        ],
-        data: [
-            { id: 1, title: '미적분 문제 질문이요!', content: '치환적분 문제인데 도와주세요', author: '수학 고민러', likes: 0, comments: 0, date: '2025.12.29 12:15', category: 'data', liked: false },
-            { id: 2, title: '한국사 정리 노트 공유', content: '시대별 요점 정리본 업로드합니다.', author: '역사 덕후', likes: 0, comments: 0, date: '2025.11.10 09:00', category: 'data', liked: false }
-        ],
+    // 게시글 상태 관리 (서버 연동)
+    const [posts, setPosts] = useState({
+        popular: [],
+        tips: [],
+        data: [],
         mypost: []
-    };
-    
-    // localStorage에서 게시글 불러오기
-    const loadPostsFromStorage = () => {
-        try {
-            const savedPosts = localStorage.getItem('communityPosts');
-            if (savedPosts) {
-                return JSON.parse(savedPosts);
-            }
-        } catch (error) {
-            console.error('게시글 불러오기 실패:', error);
-        }
-        return defaultPosts;
-    };
-    
-    // 게시글 상태 관리
-    const [posts, setPosts] = useState(loadPostsFromStorage);
-    
-    // posts가 변경될 때마다 localStorage에 저장
+    });
+
+    const username = localStorage.getItem('username');
+
+    // 서버에서 게시글 불러오기
     useEffect(() => {
-        try {
-            localStorage.setItem('communityPosts', JSON.stringify(posts));
-        } catch (error) {
-            console.error('게시글 저장 실패:', error);
-        }
-    }, [posts]);
+        const fetchPosts = async () => {
+            try {
+                const response = await fetch('/api/posts', {
+                    method: 'GET'
+                });
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.success) {
+                        const allPosts = result.data;
+                        
+                        // 카테고리별 분류
+                        const classifiedPosts = {
+                            popular: allPosts.filter(p => p.category === 'popular'),
+                            tips: allPosts.filter(p => p.category === 'tips'),
+                            data: allPosts.filter(p => p.category === 'data'),
+                            mypost: allPosts.filter(p => p.author === username)
+                        };
+                        setPosts(classifiedPosts);
+                    }
+                }
+            } catch (error) {
+                console.error('게시글 불러오기 실패:', error);
+            }
+        };
+
+        fetchPosts();
+    }, [username]);
     
     const newPost = (category) => {
         setCurrentCategory(category || activeTab);
         setNewPostModalOpen(true);
     };
     
-    // 새 게시글 추가 함수
-    const handleAddPost = (newPost) => {
-        const username = localStorage.getItem('username') || '익명';
-        const postWithDetails = {
-            ...newPost,
-            id: Date.now(),
-            author: username,
-            likes: 0,
-            comments: 0,
-            liked: false,
-            date: new Date().toLocaleString('ko-KR'),
-        };
-        
-        setPosts(prev => ({
-            ...prev,
-            [newPost.category]: [...prev[newPost.category], postWithDetails],
-            mypost: [...prev.mypost, postWithDetails]
-        }));
-        
-        setNewPostModalOpen(false);
+    // 새 게시글 추가 함수 (API 호출)
+    const handleAddPost = async (newPost) => {
+        try {
+            const response = await fetch('/api/posts', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Username': username || '익명' // 인증 헤더
+                },
+                body: JSON.stringify(newPost)
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                if (result.success) {
+                    const createdPost = result.data;
+                    
+                    setPosts(prev => ({
+                        ...prev,
+                        [createdPost.category]: [createdPost, ...prev[createdPost.category]],
+                        mypost: username === createdPost.author ? [createdPost, ...prev.mypost] : prev.mypost
+                    }));
+                    setNewPostModalOpen(false);
+                } else {
+                    alert('게시글 작성 실패: ' + result.message);
+                }
+            } else {
+                 if (response.status === 401) {
+                     alert('로그인이 필요합니다.');
+                 } else {
+                     alert('서버 오류가 발생했습니다.');
+                 }
+            }
+        } catch (error) {
+            console.error('게시글 작성 중 오류:', error);
+            alert('네트워크 오류가 발생했습니다.');
+        }
     };
 
     // Post detail state & handlers
@@ -287,24 +302,80 @@ function Community() {
         setSelectedPost(null);
     };
 
-    // 게시글 삭제 함수
-    const handleDeletePost = (postId) => {
-        setPosts(prev => ({
-            popular: prev.popular.filter(p => p.id !== postId),
-            tips: prev.tips.filter(p => p.id !== postId),
-            data: prev.data.filter(p => p.id !== postId),
-            mypost: prev.mypost.filter(p => p.id !== postId)
-        }));
+    // 게시글 삭제 함수 (API 연동)
+    const handleDeletePost = async (postId) => {
+        if (!window.confirm('정말 삭제하시겠습니까?')) return;
+
+        try {
+            const response = await fetch(`/api/post/${postId}`, {
+                method: 'DELETE',
+                headers: {
+                    'X-Username': username || '익명'
+                }
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                if (result.success) {
+                    setPosts(prev => ({
+                        popular: prev.popular.filter(p => p.id !== postId),
+                        tips: prev.tips.filter(p => p.id !== postId),
+                        data: prev.data.filter(p => p.id !== postId),
+                        mypost: prev.mypost.filter(p => p.id !== postId)
+                    }));
+                    
+                    // 상세 뷰가 열려있으면 닫기
+                    if (showPostDetail && selectedPost && selectedPost.id === postId) {
+                        closeDetailView();
+                    }
+                } else {
+                    alert('삭제 실패: ' + result.message);
+                }
+            } else {
+                alert('삭제 권한이 없거나 서버 오류입니다.');
+            }
+        } catch (error) {
+            console.error('삭제 중 오류:', error);
+            alert('네트워크 오류가 발생했습니다.');
+        }
     };
 
-    // 게시글 수정 함수
-    const handleEditPost = (updatedPost) => {
-        setPosts(prev => ({
-            popular: prev.popular.map(p => p.id === updatedPost.id ? updatedPost : p),
-            tips: prev.tips.map(p => p.id === updatedPost.id ? updatedPost : p),
-            data: prev.data.map(p => p.id === updatedPost.id ? updatedPost : p),
-            mypost: prev.mypost.map(p => p.id === updatedPost.id ? updatedPost : p)
-        }));
+    // 게시글 수정 함수 (API 연동)
+    const handleEditPost = async (updatedPost) => {
+        try {
+            const response = await fetch(`/api/post/${updatedPost.id}`, {
+                method: 'PUT',
+                headers: {
+                     'Content-Type': 'application/json',
+                    'X-Username': username || '익명'
+                },
+                body: JSON.stringify({
+                    title: updatedPost.title,
+                    content: updatedPost.content
+                })
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                if (result.success) {
+                    // 서버에서 받은 업데이트된 데이터로 상태 갱신
+                    // (날짜 등 서버 데이터 활용 가능하나 일단 클라이언트 상태 업데이트)
+                    setPosts(prev => ({
+                        popular: prev.popular.map(p => p.id === updatedPost.id ? { ...p, ...updatedPost } : p),
+                        tips: prev.tips.map(p => p.id === updatedPost.id ? { ...p, ...updatedPost } : p),
+                        data: prev.data.map(p => p.id === updatedPost.id ? { ...p, ...updatedPost } : p),
+                        mypost: prev.mypost.map(p => p.id === updatedPost.id ? { ...p, ...updatedPost } : p)
+                    }));
+                } else {
+                     alert('수정 실패: ' + result.message);
+                }
+            } else {
+                 alert('수정 권한이 없거나 서버 오류입니다.');
+            }
+        } catch (error) {
+            console.error('수정 중 오류:', error);
+            alert('네트워크 오류가 발생했습니다.');
+        }
     };
 
     // 2. 페이지 진입 시 실행 (오늘 하루 그만보기 로직)
