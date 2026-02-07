@@ -55,6 +55,15 @@ function Challenge({ closeChallengeModal, onCreateSuccess }) {
 
     useEffect(() => {
         fetchChallenges();
+
+        const handleFocus = () => fetchChallenges();
+        window.addEventListener('focus', handleFocus);
+        const intervalId = setInterval(fetchChallenges, 10000);
+
+        return () => {
+            window.removeEventListener('focus', handleFocus);
+            clearInterval(intervalId);
+        };
     }, []);
 
     const handleCreateChallenge = () => {
