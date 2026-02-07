@@ -9,7 +9,7 @@ function formatDate(d) {
     return dt.toLocaleString();
 }
 
-function PostDetailView({ post, onClose, onDeletePost, onEditPost }) {
+function PostDetailView({ post, onClose, onDeletePost, onEditPost, onUpdatePostState }) {
     // ESC 키로 닫기
     useEffect(() => {
         const handler = (e) => {
@@ -30,88 +30,127 @@ function PostDetailView({ post, onClose, onDeletePost, onEditPost }) {
     const username = localStorage.getItem('username') || '익명';
     const isMyPost = postState?.author === username;
 
-    // 댓글 localStorage에서 불러오기
-    const loadCommentsFromStorage = (postId) => {
-        try {
-            const savedComments = localStorage.getItem(`comments_${postId}`);
-            if (savedComments) {
-                return JSON.parse(savedComments);
-            }
-        } catch (error) {
-            console.error('댓글 불러오기 실패:', error);
-        }
-        return post?.commentList || [];
-    };
+    const mapComment = (row) => ({
+        id: row.comment_id,
+        author: row.username || '익명',
+        text: row.content,
+        date: row.created_at,
+        likes: Number(row.like_count) || 0,
+        liked: Boolean(row.user_liked)
+    });
 
-    const [comments, setComments] = useState(loadCommentsFromStorage(post?.id));
+    const [comments, setComments] = useState([]);
 
     useEffect(() => {
         setPostState(post || {});
-        setComments(loadCommentsFromStorage(post?.id));
-    }, [post]);
+        if (!post?.id) return;
 
-    // 댓글이 변경될 때마다 localStorage에 저장
-    useEffect(() => {
-        if (post?.id && comments.length > 0) {
+        const fetchComments = async () => {
             try {
-                localStorage.setItem(`comments_${post.id}`, JSON.stringify(comments));
+                const headers = {};
+                if (username) headers['X-Username'] = username;
+                const response = await fetch(`/api/post/${post.id}/comments`, { headers });
+                if (!response.ok) return;
+                const payload = await response.json();
+                const list = (payload.data || []).map(mapComment);
+                setComments(list);
             } catch (error) {
-                console.error('댓글 저장 실패:', error);
+                console.error('댓글 불러오기 실패:', error);
             }
-        }
-    }, [comments, post?.id]);
+        };
 
-    const handleAddComment = () => {
+        fetchComments();
+    }, [post, username]);
+
+    const handleAddComment = async () => {
         const text = newComment && newComment.trim();
         if (!text) return;
-        const c = {
-            id: Date.now(),
-            author: username,
-            text,
-            date: new Date().toISOString(),
-            likes: 0,
-            liked: false
-        };
-        setComments((s) => [...s, c]);
-        setNewComment('');
-        
-        // 댓글 수 증가
-        const newCommentCount = (postState?.comments || 0) + 1;
-        const updatedPost = { ...postState, comments: newCommentCount };
-        setPostState(updatedPost);
-        
-        // 부모 컴포넌트에도 업데이트
-        if (onEditPost) {
-            onEditPost(updatedPost);
-        }
-    };
 
-    const handleLikePost = () => {
-        const isLiked = postState.liked || false;
-        const updatedPost = {
-            ...postState,
-            liked: !isLiked,
-            likes: isLiked ? (postState.likes || 1) - 1 : (postState.likes || 0) + 1
-        };
-        setPostState(updatedPost);
-        
-        if (onEditPost) {
-            onEditPost(updatedPost);
-        }
-    };
+        if (!post?.id) return;
+        try {
+            const response = await fetch(`/api/post/${post.id}/comments`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Username': username
+                },
+                body: JSON.stringify({ content: text })
+            });
 
-    const handleLikeComment = (id) => {
-        setComments((list) => list.map((c) => {
-            if (c.id === id) {
-                const isLiked = c.liked || false;
-                return {
-                    ...c,
-                    liked: !isLiked,
-                    likes: isLiked ? (c.likes || 1) - 1 : (c.likes || 0) + 1
-                };
+            const payload = await response.json();
+            if (!response.ok) {
+                alert(payload.message || '댓글 작성에 실패했습니다.');
+                return;
             }
-            return c;
-        }));
+
+            const created = payload.data ? mapComment(payload.data) : null;
+            if (created) {
+                setComments((s) => [...s, created]);
+            }
+            setNewComment('');
+
+            const newCommentCount = (postState?.comments || 0) + 1;
+            const updatedPost = { ...postState, comments: newCommentCount };
+            setPostState(updatedPost);
+            if (onUpdatePostState) onUpdatePostState(updatedPost);
+        } catch (error) {
+            console.error('댓글 작성 실패:', error);
+            alert('댓글 작성에 실패했습니다.');
+        }
+    };
+
+    const handleLikePost = async () => {
+        if (!post?.id) return;
+        try {
+            const response = await fetch(`/api/post/${post.id}/like`, {
+                method: 'POST',
+                headers: { 'X-Username': username }
+            });
+            const payload = await response.json();
+            if (!response.ok) {
+                alert(payload.message || '좋아요 처리에 실패했습니다.');
+                return;
+            }
+
+            const updatedPost = {
+                ...postState,
+                liked: Boolean(payload.data?.liked),
+                likes: Number(payload.data?.count) || 0
+            };
+            setPostState(updatedPost);
+            if (onUpdatePostState) onUpdatePostState(updatedPost);
+        } catch (error) {
+            console.error('좋아요 처리 실패:', error);
+            alert('좋아요 처리에 실패했습니다.');
+        }
+    };
+
+    const handleLikeComment = async (id) => {
+        try {
+            const response = await fetch(`/api/comment/${id}/like`, {
+                method: 'POST',
+                headers: { 'X-Username': username }
+            });
+            const payload = await response.json();
+            if (!response.ok) {
+                alert(payload.message || '좋아요 처리에 실패했습니다.');
+                return;
+            }
+
+            setComments((list) => list.map((c) => {
+                if (c.id === id) {
+                    return {
+                        ...c,
+                        liked: Boolean(payload.data?.liked),
+                        likes: Number(payload.data?.count) || 0
+                    };
+                }
+                return c;
+            }));
+        } catch (error) {
+            console.error('댓글 좋아요 실패:', error);
+            alert('좋아요 처리에 실패했습니다.');
+        }
     };
 
     const handleEditComment = (commentId) => {
@@ -123,11 +162,32 @@ function PostDetailView({ post, onClose, onDeletePost, onEditPost }) {
             show: true,
             title: '댓글 수정',
             initialValue: comment.text,
-            onSubmit: (newText) => {
-                setComments(list => list.map(c => 
-                    c.id === commentId ? { ...c, text: newText } : c
-                ));
-                setAlertModal({ show: true, message: '댓글이 수정되었습니다.' });
+            onSubmit: async (newText) => {
+                try {
+                    const response = await fetch(`/api/comment/${commentId}`, {
+                        method: 'PATCH',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Username': username
+                        },
+                        body: JSON.stringify({ content: newText })
+                    });
+
+                    const payload = await response.json();
+                    if (!response.ok) {
+                        alert(payload.message || '댓글 수정에 실패했습니다.');
+                        return;
+                    }
+
+                    const updated = payload.data ? mapComment(payload.data) : { ...comment, text: newText };
+                    setComments(list => list.map(c => 
+                        c.id === commentId ? { ...c, ...updated } : c
+                    ));
+                    setAlertModal({ show: true, message: '댓글이 수정되었습니다.' });
+                } catch (error) {
+                    console.error('댓글 수정 실패:', error);
+                    alert('댓글 수정에 실패했습니다.');
+                }
             }
         });
     };
@@ -138,10 +198,29 @@ function PostDetailView({ post, onClose, onDeletePost, onEditPost }) {
             show: true,
             message: '댓글을 삭제하시겠습니까?',
             onConfirm: () => {
-                setComments(list => list.filter(c => c.id !== commentId));
-                setPostState(p => ({ ...p, comments: (p.comments || 1) - 1 }));
-                setConfirmModal({ show: false, message: '', onConfirm: null });
-                setAlertModal({ show: true, message: '댓글이 삭제되었습니다.' });
+                (async () => {
+                    try {
+                        const response = await fetch(`/api/comment/${commentId}`, {
+                            method: 'DELETE',
+                            headers: { 'X-Username': username }
+                        });
+                        const payload = await response.json();
+                        if (!response.ok) {
+                            alert(payload.message || '댓글 삭제에 실패했습니다.');
+                            return;
+                        }
+
+                        setComments(list => list.filter(c => c.id !== commentId));
+                        const updated = { ...postState, comments: (postState?.comments || 1) - 1 };
+                        setPostState(updated);
+                        if (onUpdatePostState) onUpdatePostState(updated);
+                        setConfirmModal({ show: false, message: '', onConfirm: null });
+                        setAlertModal({ show: true, message: '댓글이 삭제되었습니다.' });
+                    } catch (error) {
+                        console.error('댓글 삭제 실패:', error);
+                        alert('댓글 삭제에 실패했습니다.');
+                    }
+                })();
             }
         });
     };

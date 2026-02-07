@@ -214,37 +214,46 @@ function Community() {
             { id: 21, title: '효율적 공부법', content: '짧고 굵게 집중하는 방법들...', author: '팁글러', likes: 0, comments: 0, date: '2025.10.12', category: 'tips', liked: false },
             { id: 22, title: '시간관리 팁', content: '포모도로 기법 활용법', author: '시간관리러', likes: 0, comments: 0, date: '2025.11.01', category: 'tips', liked: false }
         ],
-        data: [
-            { id: 1, title: '미적분 문제 질문이요!', content: '치환적분 문제인데 도와주세요', author: '수학 고민러', likes: 0, comments: 0, date: '2025.12.29 12:15', category: 'data', liked: false },
-            { id: 2, title: '한국사 정리 노트 공유', content: '시대별 요점 정리본 업로드합니다.', author: '역사 덕후', likes: 0, comments: 0, date: '2025.11.10 09:00', category: 'data', liked: false }
-        ],
+        data: [],
         mypost: []
     };
     
-    // localStorage에서 게시글 불러오기
-    const loadPostsFromStorage = () => {
+    // 게시글 상태 관리
+    const [posts, setPosts] = useState(defaultPosts);
+
+    const mapPost = (row) => ({
+        id: row.post_id,
+        title: row.title,
+        content: row.content,
+        author: row.username || '익명',
+        likes: Number(row.like_count) || 0,
+        comments: Number(row.comment_count) || 0,
+        liked: Boolean(row.user_liked),
+        date: row.created_at ? new Date(row.created_at).toLocaleString('ko-KR') : ''
+    });
+
+    const fetchPosts = async () => {
         try {
-            const savedPosts = localStorage.getItem('communityPosts');
-            if (savedPosts) {
-                return JSON.parse(savedPosts);
-            }
+            const username = localStorage.getItem('username');
+            const headers = {};
+            if (username) headers['X-Username'] = username;
+            const response = await fetch('/api/posts', { headers });
+            if (!response.ok) return;
+            const payload = await response.json();
+            const list = (payload.data || []).map(mapPost);
+            setPosts((prev) => ({
+                ...prev,
+                data: list,
+                mypost: username ? list.filter((p) => p.author === username) : []
+            }));
         } catch (error) {
             console.error('게시글 불러오기 실패:', error);
         }
-        return defaultPosts;
     };
-    
-    // 게시글 상태 관리
-    const [posts, setPosts] = useState(loadPostsFromStorage);
-    
-    // posts가 변경될 때마다 localStorage에 저장
+
     useEffect(() => {
-        try {
-            localStorage.setItem('communityPosts', JSON.stringify(posts));
-        } catch (error) {
-            console.error('게시글 저장 실패:', error);
-        }
-    }, [posts]);
+        fetchPosts();
+    }, []);
     
     const newPost = (category) => {
         setCurrentCategory(category || activeTab);
@@ -252,25 +261,47 @@ function Community() {
     };
     
     // 새 게시글 추가 함수
-    const handleAddPost = (newPost) => {
-        const username = localStorage.getItem('username') || '익명';
-        const postWithDetails = {
-            ...newPost,
-            id: Date.now(),
-            author: username,
-            likes: 0,
-            comments: 0,
-            liked: false,
-            date: new Date().toLocaleString('ko-KR'),
-        };
-        
-        setPosts(prev => ({
-            ...prev,
-            [newPost.category]: [...prev[newPost.category], postWithDetails],
-            mypost: [...prev.mypost, postWithDetails]
-        }));
-        
-        setNewPostModalOpen(false);
+    const handleAddPost = async (newPost) => {
+        const username = localStorage.getItem('username');
+        if (!username) {
+            alert('로그인이 필요합니다.');
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/posts', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Username': username
+                },
+                body: JSON.stringify({
+                    title: newPost.title,
+                    content: newPost.content
+                })
+            });
+
+            const payload = await response.json();
+            if (!response.ok) {
+                alert(payload.message || '게시글 작성에 실패했습니다.');
+                return;
+            }
+
+            const created = payload.data ? mapPost(payload.data) : null;
+            if (created) {
+                setPosts((prev) => ({
+                    ...prev,
+                    data: [created, ...prev.data],
+                    mypost: [created, ...prev.mypost]
+                }));
+            } else {
+                fetchPosts();
+            }
+            setNewPostModalOpen(false);
+        } catch (error) {
+            console.error('게시글 작성 실패:', error);
+            alert('게시글 작성에 실패했습니다.');
+        }
     };
 
     // Post detail state & handlers
@@ -288,23 +319,111 @@ function Community() {
     };
 
     // 게시글 삭제 함수
-    const handleDeletePost = (postId) => {
-        setPosts(prev => ({
-            popular: prev.popular.filter(p => p.id !== postId),
-            tips: prev.tips.filter(p => p.id !== postId),
-            data: prev.data.filter(p => p.id !== postId),
-            mypost: prev.mypost.filter(p => p.id !== postId)
-        }));
+    const handleDeletePost = async (postId) => {
+        const username = localStorage.getItem('username');
+        if (!username) {
+            alert('로그인이 필요합니다.');
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/post/${postId}`, {
+                method: 'DELETE',
+                headers: { 'X-Username': username }
+            });
+
+            if (!response.ok) {
+                const payload = await response.json().catch(() => ({}));
+                alert(payload.message || '게시글 삭제에 실패했습니다.');
+                return;
+            }
+
+            setPosts(prev => ({
+                ...prev,
+                data: prev.data.filter(p => p.id !== postId),
+                mypost: prev.mypost.filter(p => p.id !== postId)
+            }));
+        } catch (error) {
+            console.error('게시글 삭제 실패:', error);
+            alert('게시글 삭제에 실패했습니다.');
+        }
     };
 
     // 게시글 수정 함수
-    const handleEditPost = (updatedPost) => {
+    const handleEditPost = async (updatedPost) => {
+        const username = localStorage.getItem('username');
+        if (!username) {
+            alert('로그인이 필요합니다.');
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/post/${updatedPost.id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Username': username
+                },
+                body: JSON.stringify({
+                    title: updatedPost.title,
+                    content: updatedPost.content
+                })
+            });
+
+            const payload = await response.json();
+            if (!response.ok) {
+                alert(payload.message || '게시글 수정에 실패했습니다.');
+                return;
+            }
+
+            const saved = payload.data ? mapPost(payload.data) : updatedPost;
+            setPosts(prev => ({
+                ...prev,
+                data: prev.data.map(p => p.id === saved.id ? { ...p, ...saved } : p),
+                mypost: prev.mypost.map(p => p.id === saved.id ? { ...p, ...saved } : p)
+            }));
+        } catch (error) {
+            console.error('게시글 수정 실패:', error);
+            alert('게시글 수정에 실패했습니다.');
+        }
+    };
+
+    const handleUpdatePostState = (updatedPost) => {
         setPosts(prev => ({
-            popular: prev.popular.map(p => p.id === updatedPost.id ? updatedPost : p),
-            tips: prev.tips.map(p => p.id === updatedPost.id ? updatedPost : p),
-            data: prev.data.map(p => p.id === updatedPost.id ? updatedPost : p),
-            mypost: prev.mypost.map(p => p.id === updatedPost.id ? updatedPost : p)
+            ...prev,
+            data: prev.data.map(p => p.id === updatedPost.id ? { ...p, ...updatedPost } : p),
+            mypost: prev.mypost.map(p => p.id === updatedPost.id ? { ...p, ...updatedPost } : p)
         }));
+    };
+
+    const handleToggleLike = async (postId) => {
+        const username = localStorage.getItem('username');
+        if (!username) {
+            alert('로그인이 필요합니다.');
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/post/${postId}/like`, {
+                method: 'POST',
+                headers: { 'X-Username': username }
+            });
+            const payload = await response.json();
+            if (!response.ok) {
+                alert(payload.message || '좋아요 처리에 실패했습니다.');
+                return;
+            }
+
+            const { liked, count } = payload.data || {};
+            setPosts(prev => ({
+                ...prev,
+                data: prev.data.map(p => p.id === postId ? { ...p, liked, likes: count } : p),
+                mypost: prev.mypost.map(p => p.id === postId ? { ...p, liked, likes: count } : p)
+            }));
+        } catch (error) {
+            console.error('좋아요 처리 실패:', error);
+            alert('좋아요 처리에 실패했습니다.');
+        }
     };
 
     // 2. 페이지 진입 시 실행 (오늘 하루 그만보기 로직)
@@ -363,17 +482,19 @@ function Community() {
                 <div className="community-main">
                     {/* 메인과 상세를 서로 교체해서 보여 줍니다 */}
                     {!showPostDetail ? (
-                        activeTab === 'popular' ? <Popular posts={posts.popular} onOpenPost={detailPostView} onNewPost={() => newPost('popular')} /> :
-                        activeTab === 'tips' ? <Tips posts={posts.tips} onOpenPost={detailPostView} onNewPost={() => newPost('tips')} /> :
-                        activeTab === 'data' ? <DataSharing posts={posts.data} onOpenPost={detailPostView} onNewPost={() => newPost('data')} /> :
-                        activeTab === 'mypost' ? <MyPost posts={posts.mypost} onOpenPost={detailPostView} onNewPost={() => newPost('mypost')} /> :
-                        <DataSharing posts={posts.data} onOpenPost={detailPostView} onNewPost={() => newPost('data')} />
+                        activeTab === 'popular' ? <Popular posts={posts.popular} onOpenPost={detailPostView} onNewPost={() => newPost('popular')} onToggleLike={handleToggleLike} /> :
+                        activeTab === 'tips' ? <Tips posts={posts.tips} onOpenPost={detailPostView} onNewPost={() => newPost('tips')} onToggleLike={handleToggleLike} /> :
+                        activeTab === 'data' ? <DataSharing posts={posts.data} onOpenPost={detailPostView} onNewPost={() => newPost('data')} onToggleLike={handleToggleLike} /> :
+                        activeTab === 'mypost' ? <MyPost posts={posts.mypost} onOpenPost={detailPostView} onNewPost={() => newPost('mypost')} onToggleLike={handleToggleLike} /> :
+                        <DataSharing posts={posts.data} onOpenPost={detailPostView} onNewPost={() => newPost('data')} onToggleLike={handleToggleLike} />
                     ) : (
                         <PostDetailView 
                             post={selectedPost} 
                             onClose={closeDetailView} 
                             onDeletePost={handleDeletePost}
                             onEditPost={handleEditPost}
+                            onToggleLike={handleToggleLike}
+                            onUpdatePostState={handleUpdatePostState}
                         />
                     )}
                 </div>
