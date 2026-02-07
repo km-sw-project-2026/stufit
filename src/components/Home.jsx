@@ -1,4 +1,4 @@
-import MainPage from './main/Mainpage';
+import MainHero from './main/MainHero';
 import ChallengeQuicklink from './main/ChallengeQuicklink';
 import RankingQuicklink from './main/RankingQuicklink';
 import ShopQuicklink from './main/ShopQuicklink';
@@ -8,7 +8,7 @@ import Footer from './main/Footer';
 const Home = () => {
     return (
         <>
-            <MainPage />
+            <MainHero />
             <ChallengeQuicklink />
             <RankingQuicklink />
             <ShopQuicklink />

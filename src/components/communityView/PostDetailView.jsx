@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import CustomAlertModal from '../modal/CustomAlertModal';
 import CustomConfirmModal from '../modal/CustomConfirmModal';
+import CustomPromptModal from '../modal/CustomPromptModal';
 import EditPostModal from '../modal/EditPostModal';
 
 function formatDate(d) {
@@ -23,6 +24,7 @@ function PostDetailView({ post, onClose, onDeletePost, onEditPost }) {
     const [showCommentMenu, setShowCommentMenu] = useState(null);
     const [alertModal, setAlertModal] = useState({ show: false, message: '' });
     const [confirmModal, setConfirmModal] = useState({ show: false, message: '', onConfirm: null });
+    const [promptModal, setPromptModal] = useState({ show: false, title: '', initialValue: '', onSubmit: null });
     const [showEditModal, setShowEditModal] = useState(false);
 
     const username = localStorage.getItem('username') || '익명';
@@ -116,14 +118,18 @@ function PostDetailView({ post, onClose, onDeletePost, onEditPost }) {
         const comment = comments.find(c => c.id === commentId);
         if (!comment) return;
         
-        const newText = prompt('댓글을 수정하세요', comment.text);
-        if (newText === null || newText.trim() === '') return;
-        
-        setComments(list => list.map(c => 
-            c.id === commentId ? { ...c, text: newText.trim() } : c
-        ));
         setShowCommentMenu(null);
-        setAlertModal({ show: true, message: '댓글이 수정되었습니다.' });
+        setPromptModal({
+            show: true,
+            title: '댓글 수정',
+            initialValue: comment.text,
+            onSubmit: (newText) => {
+                setComments(list => list.map(c => 
+                    c.id === commentId ? { ...c, text: newText } : c
+                ));
+                setAlertModal({ show: true, message: '댓글이 수정되었습니다.' });
+            }
+        });
     };
 
     const handleDeleteComment = (commentId) => {
@@ -328,6 +334,18 @@ function PostDetailView({ post, onClose, onDeletePost, onEditPost }) {
                     message={confirmModal.message}
                     onConfirm={confirmModal.onConfirm}
                     onCancel={() => setConfirmModal({ show: false, message: '', onConfirm: null })}
+                />
+            )}
+
+            {promptModal.show && (
+                <CustomPromptModal
+                    isOpen={promptModal.show}
+                    title={promptModal.title}
+                    initialValue={promptModal.initialValue}
+                    placeholder="댓글 내용을 입력하세요"
+                    onSubmit={promptModal.onSubmit}
+                    onClose={() => setPromptModal({ show: false, title: '', initialValue: '', onSubmit: null })}
+                    multiline={true}
                 />
             )}
 

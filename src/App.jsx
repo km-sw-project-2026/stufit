@@ -10,6 +10,7 @@ import Ranking from './components/rankingView/Ranking';
 import Community from './components/communityView/Community';
 import Shop from './components/shopView/Shop';
 import TierGuide from './components/main/TierGuide';
+import MyItems from './components/MyItems';
 
 
 
@@ -28,6 +29,7 @@ function App() {
         <Route path="/community" element={<Community />} />
         <Route path="/shop" element={<Shop />} />
         <Route path="/tier-guide" element={<TierGuide />} />
+        <Route path="/my-items" element={<MyItems />} />
 
       </Routes>
     </>

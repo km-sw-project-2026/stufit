@@ -85,14 +85,14 @@ function Challenge({ closeChallengeModal, onCreateSuccess }) {
                         <p style={{ margin: '10px 0' }}>기간 - {startDate} ~ {endDate}</p>
                         <p style={{ margin: '10px 0' }}>목표 - {challenge.goal}</p>
                     </div>
-                </div>
-                <div className="challenge-card-footer" style={{ marginTop: '30px', display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
-                    <button 
-                        className="challenge-detail-btn" 
-                        style={{ border: '1px solid #247b7b', borderRadius: '20px', padding: '8px 25px', backgroundColor: 'white', color: '#247b7b', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.95rem' }}
-                    >
-                        참여하기
-                    </button>
+                    <div className="challenge-card-footer" style={{ marginTop: '30px', display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
+                        <button 
+                            className="challenge-detail-btn" 
+                            style={{ border: '1px solid #247b7b', borderRadius: '20px', padding: '8px 25px', backgroundColor: 'white', color: '#247b7b', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.95rem' }}
+                        >
+                            참여하기
+                        </button>
+                    </div>
                 </div>
             </div>
         );

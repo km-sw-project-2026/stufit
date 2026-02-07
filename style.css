@@ -659,7 +659,7 @@ body.modal-open {
 }
 
 .stat-item {
-    /* display: flex; */
+    display: flex;
     align-items: center;
     gap: 4px;
     font-size: 12px;
@@ -3683,37 +3683,59 @@ body.modal-open {
 /* Custom Prompt Modal */
 .custom-prompt-popup {
     background: white;
-    width: 380px;
-    padding: 30px 24px;
+    width: 420px;
+    padding: 35px 30px;
     border-radius: 20px;
     text-align: center;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
     position: relative;
     z-index: 20011;
     animation: fadeInScale 0.2s ease-out;
 }
 
 .prompt-title {
-    font-size: 18px;
-    margin: 0 0 20px;
+    font-size: 20px;
+    margin: 0 0 25px;
     color: #222;
     font-weight: 700;
 }
 
 .prompt-input {
     width: 100%;
-    padding: 12px 15px;
-    border: 1px solid #ddd;
-    border-radius: 10px;
+    padding: 14px 16px;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
     font-size: 15px;
     margin-bottom: 25px;
     box-sizing: border-box;
-    transition: border 0.2s;
+    transition: all 0.2s;
+    font-family: inherit;
 }
 
-.prompt-input:focus {
+.prompt-textarea {
+    resize: vertical;
+    min-height: 120px;
+    line-height: 1.6;
+}
+
+.prompt-input:focus,
+.prompt-textarea:focus {
     border-color: #176B5F;
     outline: none;
+    box-shadow: 0 0 0 3px rgba(23, 107, 95, 0.1);
+}
+
+.prompt-input::placeholder,
+.prompt-textarea::placeholder {
+    color: #aaa;
+}
+
+.prompt-hint {
+    font-size: 13px;
+    color: #888;
+    margin: -18px 0 20px 0;
+    text-align: right;
+    font-style: italic;
 }
 
 /* ==========================================
@@ -3728,6 +3750,8 @@ body.modal-open {
     border-radius: 20px;
     padding: 40px;
     width: 550px;
+    max-height: 90vh;
+    overflow-y: auto;
     box-shadow: 0 10px 50px rgba(0,0,0,0.15);
     z-index: 1001;
 }
@@ -3872,9 +3896,10 @@ body.modal-open {
 }
 
 
-.stat-item {
+.mypage-stats .stat-item {
     text-align: center;
     flex: 1;
+    display: block;
 }
 
 .stat-divider {
@@ -3917,6 +3942,10 @@ body.modal-open {
     margin-bottom: 12px;
 }
 
+.activity-stats {
+    gap: 15px;
+}
+
 .activity-item {
     flex: 1;
     margin-bottom: 10px;
@@ -3926,6 +3955,227 @@ body.modal-open {
     display: block;
     font-size: 14px;
     color: #555;
+}
+
+/* 보유 아이템 그리드 */
+.owned-items-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.owned-item-card {
+    position: relative;
+    background: #fff;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.owned-item-card:hover {
+    border-color: #4CAF50;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+.item-using-badge-small {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: #4CAF50;
+    color: white;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 10px;
+    z-index: 1;
+}
+
+.owned-item-image {
+    width: 100%;
+    height: 100px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 8px;
+    overflow: hidden;
+}
+
+.owned-item-image img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.owned-item-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.owned-item-category {
+    font-size: 10px;
+    color: #888;
+    font-weight: 500;
+}
+
+.owned-item-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: #333;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.owned-item-price {
+    font-size: 11px;
+    color: #666;
+}
+
+/* 아이템 상세 모달 */
+.item-detail-modal {
+    background: white;
+    border-radius: 20px;
+    padding: 40px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 80vh;
+    overflow-y: auto;
+    position: relative;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    z-index: 1002;
+}
+
+.item-detail-content {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+.item-detail-image-section {
+    position: relative;
+    display: flex;
+    justify-content: center;
+}
+
+.item-detail-image {
+    width: 300px;
+    height: 300px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.item-detail-image img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.item-using-badge {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: #4CAF50;
+    color: white;
+    font-size: 14px;
+    font-weight: 700;
+    padding: 8px 16px;
+    border-radius: 20px;
+}
+
+.item-detail-info {
+    text-align: left;
+}
+
+.item-detail-category {
+    display: inline-block;
+    background: #f0f0f0;
+    color: #666;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 5px 12px;
+    border-radius: 12px;
+    margin-bottom: 10px;
+}
+
+.item-detail-name {
+    font-size: 24px;
+    font-weight: 700;
+    color: #222;
+    margin: 10px 0;
+}
+
+.item-detail-price {
+    font-size: 20px;
+    font-weight: 600;
+    color: #4CAF50;
+    margin-bottom: 20px;
+}
+
+.item-detail-description {
+    padding: 20px;
+    background: #f8f8f8;
+    border-radius: 12px;
+    margin-bottom: 20px;
+}
+
+.item-detail-description p {
+    font-size: 14px;
+    line-height: 1.6;
+    color: #555;
+    margin: 0;
+}
+
+.item-detail-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.item-detail-use-btn,
+.item-detail-buy-btn {
+    flex: 1;
+    padding: 15px;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.item-detail-use-btn {
+    background: #4CAF50;
+    color: white;
+}
+
+.item-detail-use-btn:hover {
+    background: #45a049;
+}
+
+.item-detail-use-btn.using {
+    background: #ff5252;
+}
+
+.item-detail-use-btn.using:hover {
+    background: #e64545;
+}
+
+.item-detail-buy-btn {
+    background: #2196F3;
+    color: white;
+}
+
+.item-detail-buy-btn:hover {
+    background: #1976D2;
 }
 
 .logout-btn {
@@ -4201,4 +4451,64 @@ body.modal-open {
 
 .tier-score-table tbody tr:hover {
     background: #fafafa;
+}
+
+/* 아이템 사용중 배지 */
+.shop-item-card {
+    position: relative;
+}
+
+.item-using-badge {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: #4CAF50;
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 5px 12px;
+    border-radius: 15px;
+    z-index: 1;
+}
+
+/* 페이지네이션 */
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    margin-top: 40px;
+    padding: 20px 0;
+}
+
+.pagination-btn {
+    min-width: 40px;
+    height: 40px;
+    border: 1px solid #ddd;
+    background: white;
+    color: #666;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.pagination-btn:hover {
+    background: #f5f5f5;
+    border-color: #999;
+}
+
+.pagination-btn.active {
+    background: #000;
+    color: white;
+    border-color: #000;
+}
+
+.pagination-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
 }
