@@ -19,7 +19,7 @@ function Challenge({ closeChallengeModal, onCreateSuccess }) {
 
             if (response.ok) {
                 const data = await response.json();
-                const publicChallenges = (data.challenges || []).filter(ch => !ch.challenge_code);
+                const publicChallenges = data.challenges || [];
                 if (publicChallenges.length > 0) {
                     setChallenges(publicChallenges);
                     return;
