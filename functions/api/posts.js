@@ -17,12 +17,20 @@ export async function onRequestGet({ env, userId }) {
                  FROM posts p
                  LEFT JOIN users u ON p.user_id = u.user_id
                  LEFT JOIN post_likes pl ON pl.post_id = p.post_id AND pl.user_id = ?
+                 WHERE p.deleted_at IS NULL
                  ORDER BY p.created_at DESC`
             )
             .bind(likerId)
             .all();
+
+        const posts = (result.results || []).map(post => ({
+            ...post,
+            id: post.post_id, // frontend expects 'id'
+            date: new Date(post.created_at).toLocaleString('ko-KR')
+        }));
+
         return new Response(
-            JSON.stringify({ success: true, data: result.results || [] }),
+            JSON.stringify({ success: true, data: posts }),
             { status: 200, headers: { "Content-Type": "application/json" } }
         );
     } catch (err) {
@@ -36,6 +44,7 @@ export async function onRequestGet({ env, userId }) {
 
 export async function onRequestPost({ request, env, userId }) {
     try {
+
         if (!env?.D1_DB) {
             return new Response(
                 JSON.stringify({ message: '서버 설정 오류입니다.' }),

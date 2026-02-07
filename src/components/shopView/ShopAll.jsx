@@ -1,13 +1,22 @@
+import seagullImg from '../../assets/shop-items/갈매기.png';
+import parrotImg from '../../assets/shop-items/앵무새.png';
+import duckImg from '../../assets/shop-items/오리.png';
+import slimeUmbrellaImg from '../../assets/shop-items/우산 슬라임.png';
+import jellyfishImg from '../../assets/shop-items/해파리(초록).png';
+import pumpkinImg from '../../assets/shop-items/펌킨.png';
+import ghostImg from '../../assets/shop-items/유령.png';
+import toxicSludgeImg from '../../assets/shop-items/유독성 슬러지.gif';
+
 function ShopAll({ wishlistScope, isWishlisted, isPurchased, toggleWishlist, onPurchase }) {
     const items = [
-        { id: 1, category: '프로필 테두리', name: '귀여운 루돌프 머리띠', price: '3,000 P', color: '#fff', type: 'frame', image: '' },
-        { id: 2, category: '프로필 테두리', name: '멋진 왕관', price: '5,000 P', color: '#ffd700', type: 'frame', image: '' },
-        { id: 3, category: '프로필 배경', name: '파스텔 여름', price: '2,500 P', color: '#fffacd', type: 'bg', image: '' },
-        { id: 4, category: '프로필 배경', name: '신비한 밤하늘', price: '4,000 P', color: '#191970', type: 'bg', image: '' },
-        { id: 5, category: '프로필 배경', name: '벚꽃 봄', price: '3,500 P', color: '#ffb6c1', type: 'bg', image: '' },
-        { id: 6, category: '프로필 이미지', name: '산타 복장', price: '4,500 P', color: '#ff6347', type: 'image', image: '' },
-        { id: 7, category: '프로필 이미지', name: '우주인 복장', price: '5,500 P', color: '#4169e1', type: 'image', image: '' },
-        { id: 8, category: '프로필 이미지', name: '왕부구니 기본', price: '1,000 P', color: '#ffcc99', type: 'image', image: '' },
+        { id: 1, category: '프로필 테두리', name: '귀여운 루돌프 머리띠', price: '3,000 P', color: '#fff', type: 'frame', image: parrotImg },
+        { id: 2, category: '프로필 테두리', name: '멋진 왕관', price: '5,000 P', color: '#ffd700', type: 'frame', image: duckImg },
+        { id: 3, category: '프로필 배경', name: '파스텔 여름', price: '2,500 P', color: '#fffacd', type: 'bg', image: slimeUmbrellaImg },
+        { id: 4, category: '프로필 배경', name: '신비한 밤하늘', price: '4,000 P', color: '#191970', type: 'bg', image: jellyfishImg },
+        { id: 5, category: '프로필 배경', name: '벚꽃 봄', price: '3,500 P', color: '#ffb6c1', type: 'bg', image: pumpkinImg },
+        { id: 6, category: '프로필 이미지', name: '갈매기', price: '4,500 P', color: '#ff6347', type: 'image', image: seagullImg },
+        { id: 7, category: '프로필 이미지', name: '유령', price: '5,500 P', color: '#4169e1', type: 'image', image: ghostImg },
+        { id: 8, category: '프로필 이미지', name: '유독성 슬러지', price: '1,000 P', color: '#ffcc99', type: 'image', image: toxicSludgeImg },
     ];
 
     return (

@@ -110,13 +110,14 @@ CREATE TABLE posts (
   user_id INTEGER NOT NULL,
   title TEXT NOT NULL,
   content TEXT NOT NULL,
+  category TEXT NOT NULL DEFAULT 'data',
   view_count INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TEXT,
   deleted_at TEXT,
   FOREIGN KEY (user_id) REFERENCES users(user_id)
 );
-INSERT INTO "posts" VALUES(1,1,'test','test',0,'2026-01-25 03:45:26',NULL,NULL);
+INSERT INTO "posts" VALUES(1,1,'test','test','data',0,'2026-01-25 03:45:26',NULL,NULL);
 CREATE TABLE post_likes (
   post_id INTEGER NOT NULL,
   user_id INTEGER NOT NULL,
