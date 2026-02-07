@@ -1,35 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 
-function MyPost({ posts = [], onOpenPost, onNewPost }) {
+function MyPost({ posts = [], onOpenPost, onNewPost, onToggleLike }) {
     const username = typeof window !== 'undefined' ? localStorage.getItem('username') : null;
-    
-    // 좋아요 상태 관리
-    const [postLikes, setPostLikes] = useState({});
 
-    // localStorage에서 좋아요 데이터 로드
-    useEffect(() => {
-        const savedLikes = localStorage.getItem('communityPostLikes');
-        if (savedLikes) {
-            setPostLikes(JSON.parse(savedLikes));
-        }
-    }, []);
-
-    // 좋아요 토글 핸들러
-    const handleLikeToggle = (e, postId, currentLikes) => {
+    const handleLikeToggle = (e, postId) => {
         e.stopPropagation();
-        
-        setPostLikes(prev => {
-            const isLiked = prev[postId]?.liked || false;
-            const newLikes = {
-                ...prev,
-                [postId]: {
-                    liked: !isLiked,
-                    count: isLiked ? currentLikes - 1 : currentLikes + 1
-                }
-            };
-            localStorage.setItem('communityPostLikes', JSON.stringify(newLikes));
-            return newLikes;
-        });
+        if (onToggleLike) onToggleLike(postId);
     };
 
     useEffect(() => {
@@ -87,7 +63,7 @@ function MyPost({ posts = [], onOpenPost, onNewPost }) {
                         </div>
                     ) : (
                         posts.map((p) => {
-                            const likeData = postLikes[p.id] || { liked: false, count: p.likes };
+                            const likeData = { liked: p.liked, count: p.likes };
                             return (
                                 <div key={p.id} className="feed-card" role="button" tabIndex={0} onClick={() => onOpenPost && onOpenPost(p)} onKeyDown={(e) => { if (e.key === 'Enter') onOpenPost && onOpenPost(p); }}>
                                     <div className="feed-header">
@@ -98,7 +74,7 @@ function MyPost({ posts = [], onOpenPost, onNewPost }) {
                                         <div className="feed-meta">
                                             <span 
                                                 className="like-count" 
-                                                onClick={(e) => handleLikeToggle(e, p.id, likeData.count)}
+                                                onClick={(e) => handleLikeToggle(e, p.id)}
                                                 style={{ 
                                                     cursor: 'pointer',
                                                     color: likeData.liked ? '#ff6b6b' : 'inherit',

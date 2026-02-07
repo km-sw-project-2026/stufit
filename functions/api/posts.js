@@ -1,4 +1,4 @@
-export async function onRequestGet({ env }) {
+export async function onRequestGet({ env, userId }) {
     try {
         if (!env?.D1_DB) {
             return new Response(
@@ -7,18 +7,21 @@ export async function onRequestGet({ env }) {
             );
         }
 
-        const result = await env.D1_DB.prepare(`
-            SELECT p.*, u.username as author, 
-            (SELECT COUNT(*) FROM post_likes WHERE post_id = p.post_id) as likes,
-            (SELECT COUNT(*) FROM comments WHERE post_id = p.post_id) as comments,
-            CASE WHEN (SELECT 1 FROM post_likes WHERE post_id = p.post_id AND user_id = 0) IS NOT NULL THEN 1 ELSE 0 END as liked
-            FROM posts p
-            JOIN users u ON p.user_id = u.user_id
-            WHERE p.deleted_at IS NULL
-            ORDER BY p.created_at DESC
-        `).all();
-        // user_id = 0 check for 'liked' is a placeholder. Real 'liked' needs userId context which we might not have in public GET. 
-        // Frontend handles 'liked' state often by checking if user liked it.
+        const likerId = userId || -1;
+        const result = await env.D1_DB
+            .prepare(
+                `SELECT p.*, u.username,
+                        (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.post_id) AS comment_count,
+                        (SELECT COUNT(*) FROM post_likes pl2 WHERE pl2.post_id = p.post_id) AS like_count,
+                        CASE WHEN pl.user_id IS NULL THEN 0 ELSE 1 END AS user_liked
+                 FROM posts p
+                 LEFT JOIN users u ON p.user_id = u.user_id
+                 LEFT JOIN post_likes pl ON pl.post_id = p.post_id AND pl.user_id = ?
+                 WHERE p.deleted_at IS NULL
+                 ORDER BY p.created_at DESC`
+            )
+            .bind(likerId)
+            .all();
 
         const posts = (result.results || []).map(post => ({
             ...post,
@@ -41,38 +44,57 @@ export async function onRequestGet({ env }) {
 
 export async function onRequestPost({ request, env, userId }) {
     try {
-        const body = await request.json();
-        const { title, content, category } = body;
+
+        if (!env?.D1_DB) {
+            return new Response(
+                JSON.stringify({ message: '서버 설정 오류입니다.' }),
+                { status: 500, headers: { "Content-Type": "application/json" } }
+            );
+        }
+
+        if (!userId) {
+            return new Response(
+                JSON.stringify({ success: false, message: '로그인이 필요합니다.' }),
+                { status: 401, headers: { "Content-Type": "application/json" } }
+            );
+        }
+
+        const body = await request.json().catch(() => null) || {};
+        const title = typeof body.title === 'string' ? body.title.trim() : '';
+        const content = typeof body.content === 'string' ? body.content.trim() : '';
 
         if (!title || !content) {
-             return new Response(JSON.stringify({ success: false, message: '제목과 내용을 입력해주세요.' }), { status: 400 });
+            return new Response(
+                JSON.stringify({ success: false, message: '제목과 내용을 입력해주세요.' }),
+                { status: 400, headers: { "Content-Type": "application/json" } }
+            );
         }
 
-        const validCategory = ['popular', 'tips', 'data'].includes(category) ? category : 'data';
+        const now = new Date().toISOString();
+        const insertResult = await env.D1_DB
+            .prepare('INSERT INTO posts (user_id, title, content, created_at) VALUES (?, ?, ?, ?)')
+            .bind(userId, title, content, now)
+            .run();
 
-        const result = await env.D1_DB.prepare(
-            'INSERT INTO posts (user_id, title, content, category) VALUES (?, ?, ?, ?)'
-        ).bind(userId, title, content, validCategory).run();
-
-        if (result.success) {
-             // Fetch the created post to return it
-             const newPost = await env.D1_DB.prepare(`
-                SELECT p.*, u.username as author, 0 as likes, 0 as comments
-                FROM posts p
-                JOIN users u ON p.user_id = u.user_id
-                WHERE p.post_id = last_insert_rowid()
-             `).first();
-             
-             return new Response(JSON.stringify({ success: true, data: {
-                 ...newPost,
-                 id: newPost.post_id,
-                 date: new Date(newPost.created_at).toLocaleString('ko-KR')
-             }}), { status: 201 });
-        } else {
-            throw new Error('DB Insert Failed');
+        const postId = insertResult.meta?.last_row_id || insertResult.lastInsertRowid;
+        if (!postId) {
+            throw new Error('게시글 ID를 가져올 수 없습니다.');
         }
+
+        const created = await env.D1_DB
+            .prepare('SELECT p.*, u.username FROM posts p LEFT JOIN users u ON p.user_id = u.user_id WHERE p.post_id = ?')
+            .bind(postId)
+            .first();
+
+        return new Response(
+            JSON.stringify({ success: true, data: created }),
+            { status: 201, headers: { "Content-Type": "application/json" } }
+        );
     } catch (err) {
-        console.error("❌ POST CREATE ERROR:", err);
-        return new Response(JSON.stringify({ success: false, message: '게시글 작성 실패' }), { status: 500 });
+        console.error('❌ POSTS CREATE ERROR:', err?.message);
+        return new Response(
+            JSON.stringify({ success: false, message: '게시글 생성에 실패했습니다.' }),
+            { status: 500, headers: { "Content-Type": "application/json" } }
+        );
     }
 }

@@ -24,7 +24,6 @@
 //                             <div className="community-board-container">
 //                                 <div className="community-feed">
 //                                     <div className="feed-card">
-//                                         <div className="feed-header">
 //                                             <div className="feed-user-info">
 //                                                 <div className="feed-user-avatar"></div>
 //                                                 <span className="feed-user-name">수학 고민러</span>
@@ -52,54 +51,12 @@
 //                                             </div>
 //                                         </div>
 //                                         <div className="feed-content">
-//                                             <h3>기말고사 계획 도와주세요</h3>
-//                                             <p>전교 1등이 기말고사 계획 도와주세요!</p>
-//                                         </div>
-//                                     </div>
-
-//                                     <div className="feed-card">
-//                                         <div className="feed-header">
-//                                             <div className="feed-user-info">
-//                                                 <div className="feed-user-avatar"></div>
-//                                                 <span className="feed-user-name">역사 덕후</span>
-//                                             </div>
-//                                             <div className="feed-meta">
-//                                                 <span className="like-count">♡ 24</span>
-//                                                 <span className="comment-count">💬 9</span>
-//                                             </div>
-//                                         </div>
-//                                         <div className="feed-content">
-//                                             <h3>한국사 정리 노트 공유</h3>
-//                                             <p>시대별로 정리한 한국사 노트 공유해요~</p>
-//                                         </div>
-//                                     </div>
-//                                 </div>
-//                                 <div className="community-board-sidebar">
-//                                     <button className="btn-new-post">New Post</button>
-//                                 </div>
-//                             </div>
-//                         </div>
-//                     </div>
-//                 </div>
-//             </div>
-//   );
-// }
-// export default Community;
-
-
-
-
 
 
 // --------------------------------------------
 
 
-
 // import React, { useState, useEffect } from 'react';
-// // 1. 모달 컴포넌트 연결
-// import CommunityRewardModal from '../modal/CommunityRewardModal';
-
-// function Community() {
 //     // 2. 모달 열림 상태 관리
 //     const [isRewardModalOpen, setIsRewardModalOpen] = useState(false);
 
@@ -107,7 +64,6 @@
 //     useEffect(() => {
 //         setIsRewardModalOpen(true);
 //     }, []);
-
 //     // 4. 모달 닫기 함수
 //     const closeModal = () => {
 //         setIsRewardModalOpen(false);
@@ -132,29 +88,6 @@
 //                     <div id="community-feed-view">
 //                         <div className="community-title-section">
 //                             <h2>Latest Community</h2>
-//                             <p>다양한 질문과 정보를 나누며 커뮤니티를 즐겨보세요</p>
-//                         </div>
-
-//                         <div className="community-board-container">
-//                             <div className="community-feed">
-//                                 {/* 게시글 카드 1 */}
-//                                 <div className="feed-card">
-//                                     <div className="feed-header">
-//                                         <div className="feed-user-info">
-//                                             <div className="feed-user-avatar"></div>
-//                                             <span className="feed-user-name">수학 고민러</span>
-//                                         </div>
-//                                         <div className="feed-meta">
-//                                             <span className="like-count">♡ 34</span>
-//                                             <span className="comment-count">💬 17</span>
-//                                         </div>
-//                                     </div>
-//                                     <div className="feed-content">
-//                                         <h3>미적분 문제 질문이요!</h3>
-//                                         <p>치환적분 문제인데 도와주세요</p>
-//                                     </div>
-//                                 </div>
-//                                 {/* ... 다른 카드들 (생략) ... */}
 //                             </div>
 //                             <div className="community-board-sidebar">
 //                                 <button className="btn-new-post">New Post</button>
@@ -204,87 +137,102 @@ function Community() {
     const [isNewPostModalOpen, setNewPostModalOpen] = useState(false);
     const [currentCategory, setCurrentCategory] = useState('popular');
     
-    // 게시글 상태 관리 (서버 연동)
-    const [posts, setPosts] = useState({
-        popular: [],
-        tips: [],
+    // 기본 게시글 데이터
+    const defaultPosts = {
+        popular: [
+            { id: 11, title: '인기: 미적분 베스트', content: '많은 좋아요를 받은 문제풀이 공유글', author: '인기유저', likes: 0, comments: 0, date: '2025.12.01', category: 'popular', liked: false },
+            { id: 12, title: '인기: 공부 팁 모음', content: '효율적 공부법 정리', author: '팁러', likes: 0, comments: 0, date: '2025.12.05', category: 'popular', liked: false }
+        ],
+        tips: [
+            { id: 21, title: '효율적 공부법', content: '짧고 굵게 집중하는 방법들...', author: '팁글러', likes: 0, comments: 0, date: '2025.10.12', category: 'tips', liked: false },
+            { id: 22, title: '시간관리 팁', content: '포모도로 기법 활용법', author: '시간관리러', likes: 0, comments: 0, date: '2025.11.01', category: 'tips', liked: false }
+        ],
         data: [],
         mypost: []
+    };
+    
+    // 게시글 상태 관리
+    const [posts, setPosts] = useState(defaultPosts);
+
+    const mapPost = (row) => ({
+        id: row.post_id,
+        title: row.title,
+        content: row.content,
+        author: row.username || '익명',
+        likes: Number(row.like_count) || 0,
+        comments: Number(row.comment_count) || 0,
+        liked: Boolean(row.user_liked),
+        date: row.created_at ? new Date(row.created_at).toLocaleString('ko-KR') : ''
     });
 
-    const username = localStorage.getItem('username');
+    const fetchPosts = async () => {
+        try {
+            const username = localStorage.getItem('username');
+            const headers = {};
+            if (username) headers['X-Username'] = username;
+            const response = await fetch('/api/posts', { headers });
+            if (!response.ok) return;
+            const payload = await response.json();
+            const list = (payload.data || []).map(mapPost);
+            setPosts((prev) => ({
+                ...prev,
+                data: list,
+                mypost: username ? list.filter((p) => p.author === username) : []
+            }));
+        } catch (error) {
+            console.error('게시글 불러오기 실패:', error);
+        }
+    };
 
-    // 서버에서 게시글 불러오기
     useEffect(() => {
-        const fetchPosts = async () => {
-            try {
-                const response = await fetch('/api/posts', {
-                    method: 'GET'
-                });
-                if (response.ok) {
-                    const result = await response.json();
-                    if (result.success) {
-                        const allPosts = result.data;
-                        
-                        // 카테고리별 분류
-                        const classifiedPosts = {
-                            popular: allPosts.filter(p => p.category === 'popular'),
-                            tips: allPosts.filter(p => p.category === 'tips'),
-                            data: allPosts.filter(p => p.category === 'data'),
-                            mypost: allPosts.filter(p => p.author === username)
-                        };
-                        setPosts(classifiedPosts);
-                    }
-                }
-            } catch (error) {
-                console.error('게시글 불러오기 실패:', error);
-            }
-        };
-
         fetchPosts();
-    }, [username]);
+    }, []);
     
     const newPost = (category) => {
         setCurrentCategory(category || activeTab);
         setNewPostModalOpen(true);
     };
     
-    // 새 게시글 추가 함수 (API 호출)
+    // 새 게시글 추가 함수
     const handleAddPost = async (newPost) => {
+        const username = localStorage.getItem('username');
+        if (!username) {
+            alert('로그인이 필요합니다.');
+            return;
+        }
         try {
             const response = await fetch('/api/posts', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-Username': username || '익명' // 인증 헤더
+                    'X-Username': username
                 },
-                body: JSON.stringify(newPost)
+                body: JSON.stringify({
+                    title: newPost.title,
+                    content: newPost.content
+                })
             });
 
-            if (response.ok) {
-                const result = await response.json();
-                if (result.success) {
-                    const createdPost = result.data;
-                    
-                    setPosts(prev => ({
-                        ...prev,
-                        [createdPost.category]: [createdPost, ...prev[createdPost.category]],
-                        mypost: username === createdPost.author ? [createdPost, ...prev.mypost] : prev.mypost
-                    }));
-                    setNewPostModalOpen(false);
-                } else {
-                    alert('게시글 작성 실패: ' + result.message);
-                }
-            } else {
-                 if (response.status === 401) {
-                     alert('로그인이 필요합니다.');
-                 } else {
-                     alert('서버 오류가 발생했습니다.');
-                 }
+            const payload = await response.json();
+            if (!response.ok) {
+                alert(payload.message || '게시글 작성에 실패했습니다.');
+                return;
             }
+
+            const created = payload.data ? mapPost(payload.data) : null;
+            if (created) {
+                setPosts((prev) => ({
+                    ...prev,
+                    data: [created, ...prev.data],
+                    mypost: [created, ...prev.mypost]
+                }));
+            } else {
+                fetchPosts();
+            }
+            setNewPostModalOpen(false);
         } catch (error) {
-            console.error('게시글 작성 중 오류:', error);
-            alert('네트워크 오류가 발생했습니다.');
+            console.error('게시글 작성 실패:', error);
+            alert('게시글 작성에 실패했습니다.');
         }
     };
 
@@ -302,52 +250,50 @@ function Community() {
         setSelectedPost(null);
     };
 
-    // 게시글 삭제 함수 (API 연동)
+    // 게시글 삭제 함수
     const handleDeletePost = async (postId) => {
-        if (!window.confirm('정말 삭제하시겠습니까?')) return;
+        const username = localStorage.getItem('username');
+        if (!username) {
+            alert('로그인이 필요합니다.');
+            return;
+        }
 
         try {
             const response = await fetch(`/api/post/${postId}`, {
                 method: 'DELETE',
-                headers: {
-                    'X-Username': username || '익명'
-                }
+                headers: { 'X-Username': username }
             });
 
-            if (response.ok) {
-                const result = await response.json();
-                if (result.success) {
-                    setPosts(prev => ({
-                        popular: prev.popular.filter(p => p.id !== postId),
-                        tips: prev.tips.filter(p => p.id !== postId),
-                        data: prev.data.filter(p => p.id !== postId),
-                        mypost: prev.mypost.filter(p => p.id !== postId)
-                    }));
-                    
-                    // 상세 뷰가 열려있으면 닫기
-                    if (showPostDetail && selectedPost && selectedPost.id === postId) {
-                        closeDetailView();
-                    }
-                } else {
-                    alert('삭제 실패: ' + result.message);
-                }
-            } else {
-                alert('삭제 권한이 없거나 서버 오류입니다.');
+            if (!response.ok) {
+                const payload = await response.json().catch(() => ({}));
+                alert(payload.message || '게시글 삭제에 실패했습니다.');
+                return;
             }
+
+            setPosts(prev => ({
+                ...prev,
+                data: prev.data.filter(p => p.id !== postId),
+                mypost: prev.mypost.filter(p => p.id !== postId)
+            }));
         } catch (error) {
-            console.error('삭제 중 오류:', error);
-            alert('네트워크 오류가 발생했습니다.');
+            console.error('게시글 삭제 실패:', error);
+            alert('게시글 삭제에 실패했습니다.');
         }
     };
 
-    // 게시글 수정 함수 (API 연동)
+    // 게시글 수정 함수
     const handleEditPost = async (updatedPost) => {
+        const username = localStorage.getItem('username');
+        if (!username) {
+            alert('로그인이 필요합니다.');
+            return;
+        }
         try {
             const response = await fetch(`/api/post/${updatedPost.id}`, {
                 method: 'PUT',
                 headers: {
-                     'Content-Type': 'application/json',
-                    'X-Username': username || '익명'
+                    'Content-Type': 'application/json',
+                    'X-Username': username
                 },
                 body: JSON.stringify({
                     title: updatedPost.title,
@@ -355,26 +301,59 @@ function Community() {
                 })
             });
 
-            if (response.ok) {
-                const result = await response.json();
-                if (result.success) {
-                    // 서버에서 받은 업데이트된 데이터로 상태 갱신
-                    // (날짜 등 서버 데이터 활용 가능하나 일단 클라이언트 상태 업데이트)
-                    setPosts(prev => ({
-                        popular: prev.popular.map(p => p.id === updatedPost.id ? { ...p, ...updatedPost } : p),
-                        tips: prev.tips.map(p => p.id === updatedPost.id ? { ...p, ...updatedPost } : p),
-                        data: prev.data.map(p => p.id === updatedPost.id ? { ...p, ...updatedPost } : p),
-                        mypost: prev.mypost.map(p => p.id === updatedPost.id ? { ...p, ...updatedPost } : p)
-                    }));
-                } else {
-                     alert('수정 실패: ' + result.message);
-                }
-            } else {
-                 alert('수정 권한이 없거나 서버 오류입니다.');
+            const payload = await response.json();
+            if (!response.ok) {
+                alert(payload.message || '게시글 수정에 실패했습니다.');
+                return;
             }
+
+            const saved = payload.data ? mapPost(payload.data) : updatedPost;
+            setPosts(prev => ({
+                ...prev,
+                data: prev.data.map(p => p.id === saved.id ? { ...p, ...saved } : p),
+                mypost: prev.mypost.map(p => p.id === saved.id ? { ...p, ...saved } : p)
+            }));
         } catch (error) {
-            console.error('수정 중 오류:', error);
-            alert('네트워크 오류가 발생했습니다.');
+            console.error('게시글 수정 실패:', error);
+            alert('게시글 수정에 실패했습니다.');
+        }
+    };
+
+    const handleUpdatePostState = (updatedPost) => {
+        setPosts(prev => ({
+            ...prev,
+            data: prev.data.map(p => p.id === updatedPost.id ? { ...p, ...updatedPost } : p),
+            mypost: prev.mypost.map(p => p.id === updatedPost.id ? { ...p, ...updatedPost } : p)
+        }));
+    };
+
+    const handleToggleLike = async (postId) => {
+        const username = localStorage.getItem('username');
+        if (!username) {
+            alert('로그인이 필요합니다.');
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/post/${postId}/like`, {
+                method: 'POST',
+                headers: { 'X-Username': username }
+            });
+            const payload = await response.json();
+            if (!response.ok) {
+                alert(payload.message || '좋아요 처리에 실패했습니다.');
+                return;
+            }
+
+            const { liked, count } = payload.data || {};
+            setPosts(prev => ({
+                ...prev,
+                data: prev.data.map(p => p.id === postId ? { ...p, liked, likes: count } : p),
+                mypost: prev.mypost.map(p => p.id === postId ? { ...p, liked, likes: count } : p)
+            }));
+        } catch (error) {
+            console.error('좋아요 처리 실패:', error);
+            alert('좋아요 처리에 실패했습니다.');
         }
     };
 
@@ -434,17 +413,19 @@ function Community() {
                 <div className="community-main">
                     {/* 메인과 상세를 서로 교체해서 보여 줍니다 */}
                     {!showPostDetail ? (
-                        activeTab === 'popular' ? <Popular posts={posts.popular} onOpenPost={detailPostView} onNewPost={() => newPost('popular')} /> :
-                        activeTab === 'tips' ? <Tips posts={posts.tips} onOpenPost={detailPostView} onNewPost={() => newPost('tips')} /> :
-                        activeTab === 'data' ? <DataSharing posts={posts.data} onOpenPost={detailPostView} onNewPost={() => newPost('data')} /> :
-                        activeTab === 'mypost' ? <MyPost posts={posts.mypost} onOpenPost={detailPostView} onNewPost={() => newPost('mypost')} /> :
-                        <DataSharing posts={posts.data} onOpenPost={detailPostView} onNewPost={() => newPost('data')} />
+                        activeTab === 'popular' ? <Popular posts={posts.popular} onOpenPost={detailPostView} onNewPost={() => newPost('popular')} onToggleLike={handleToggleLike} /> :
+                        activeTab === 'tips' ? <Tips posts={posts.tips} onOpenPost={detailPostView} onNewPost={() => newPost('tips')} onToggleLike={handleToggleLike} /> :
+                        activeTab === 'data' ? <DataSharing posts={posts.data} onOpenPost={detailPostView} onNewPost={() => newPost('data')} onToggleLike={handleToggleLike} /> :
+                        activeTab === 'mypost' ? <MyPost posts={posts.mypost} onOpenPost={detailPostView} onNewPost={() => newPost('mypost')} onToggleLike={handleToggleLike} /> :
+                        <DataSharing posts={posts.data} onOpenPost={detailPostView} onNewPost={() => newPost('data')} onToggleLike={handleToggleLike} />
                     ) : (
                         <PostDetailView 
                             post={selectedPost} 
                             onClose={closeDetailView} 
                             onDeletePost={handleDeletePost}
                             onEditPost={handleEditPost}
+                            onToggleLike={handleToggleLike}
+                            onUpdatePostState={handleUpdatePostState}
                         />
                     )}
                 </div>
