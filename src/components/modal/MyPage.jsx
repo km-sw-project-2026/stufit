@@ -27,56 +27,6 @@ function MyPage({ isOpen, onClose }) {
   useEffect(() => {
     if (!isOpen) {
       return;
-
-    if (isOpen) {
-      // 로그인 정보 가져오기 (localStorage에서)
-      const username = localStorage.getItem('username');
-      
-      if (username) {
-        // 작성한 게시글 수 계산
-        let postCount = 0;
-        try {
-          const savedPosts = localStorage.getItem('communityPosts');
-          if (savedPosts) {
-            const posts = JSON.parse(savedPosts);
-            // mypost 배열의 개수를 사용하거나, 모든 카테고리에서 사용자 게시글 찾기
-            if (posts.mypost && Array.isArray(posts.mypost)) {
-              postCount = posts.mypost.length;
-            }
-          }
-        } catch (error) {
-          console.error('게시글 개수 계산 실패:', error);
-        }
-
-        // 작성한 댓글 수 계산
-        let commentCount = 0;
-        try {
-          // localStorage의 모든 키를 확인하여 comments_로 시작하는 것 찾기
-          for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (key && key.startsWith('comments_')) {
-              const comments = JSON.parse(localStorage.getItem(key) || '[]');
-              // 현재 사용자가 작성한 댓글만 카운트
-              commentCount += comments.filter(c => c.author === username).length;
-            }
-          }
-        } catch (error) {
-          console.error('댓글 개수 계산 실패:', error);
-        }
-
-        setUserData({
-          username: username,
-          score: '9,800',
-          joinDate: localStorage.getItem('joinDate') || '2024년 7월 1일',
-          rank: '1위',
-          currentRank: '1위',
-          challenges: '10개',
-          points: '5,000',
-          posts: `${postCount}개`,
-          comments: `${commentCount}개`,
-          items: '7개'
-        });
-      }
     }
 
     const username = localStorage.getItem('username');
@@ -84,6 +34,32 @@ function MyPage({ isOpen, onClose }) {
     const cachedPoints = localStorage.getItem('points');
 
     if (username) {
+      let postCount = 0;
+      try {
+        const savedPosts = localStorage.getItem('communityPosts');
+        if (savedPosts) {
+          const posts = JSON.parse(savedPosts);
+          if (posts.mypost && Array.isArray(posts.mypost)) {
+            postCount = posts.mypost.length;
+          }
+        }
+      } catch (error) {
+        console.error('게시글 개수 계산 실패:', error);
+      }
+
+      let commentCount = 0;
+      try {
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && key.startsWith('comments_')) {
+            const comments = JSON.parse(localStorage.getItem(key) || '[]');
+            commentCount += comments.filter(c => c.author === username).length;
+          }
+        }
+      } catch (error) {
+        console.error('댓글 개수 계산 실패:', error);
+      }
+
       setUserData({
         username: username,
         score: '9,800',
@@ -92,9 +68,9 @@ function MyPage({ isOpen, onClose }) {
         currentRank: '1위',
         challenges: '10개',
         points: cachedPoints ? Number(cachedPoints) : 0,
-        posts: '0개',
-        comments: '0개',
-        items: '0개'
+        posts: `${postCount}개`,
+        comments: `${commentCount}개`,
+        items: '7개'
       });
     }
 
