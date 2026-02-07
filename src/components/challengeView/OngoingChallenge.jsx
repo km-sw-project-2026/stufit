@@ -705,35 +705,36 @@ function OngoingChallenge() {
             <div className="challenge-card" style={{ 
                 border: '1px solid #70c1b3', 
                 borderRadius: '20px', 
-                padding: '25px', 
+                padding: '35px', 
                 backgroundColor: 'white',
-                minHeight: '200px',
+                minHeight: '220px',
                 display: 'flex',
                 flexDirection: 'column',
-                justifyContent: 'space-between'
+                justifyContent: 'space-between',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
             }}>
                 <div>
-                    <div className="challenge-card-header" style={{ marginBottom: '20px' }}>
-                        <h3 style={{ display: 'inline', fontSize: '1.4rem', fontWeight: 'bold', margin: 0 }}>{challenge.title}</h3>
-                        <span style={{ color: '#888', marginLeft: '8px', fontSize: '0.9rem' }}>({getCategoryName(challenge.category)})</span>
+                    <div className="challenge-card-header" style={{ marginBottom: '25px' }}>
+                        <h3 style={{ display: 'inline', fontSize: '1.5rem', fontWeight: 'bold', margin: 0 }}>{challenge.title}</h3>
+                        <span style={{ color: '#888', marginLeft: '12px', fontSize: '0.95rem' }}>({getCategoryName(challenge.category)})</span>
                     </div>
-                    <div className="challenge-card-body" style={{ color: '#555', fontSize: '0.95rem', lineHeight: '1.8' }}>
-                        <p style={{ margin: '5px 0' }}>참여 인원 - 현재 한명 참여중</p>
-                        <p style={{ margin: '5px 0' }}>기간 - {startDate} ~ {endDate}</p>
-                        <p style={{ margin: '5px 0' }}>목표 - {challenge.goal}</p>
+                    <div className="challenge-card-body" style={{ color: '#555', fontSize: '1rem', lineHeight: '2' }}>
+                        <p style={{ margin: '10px 0' }}>참여 인원 - 현재 한명 참여중</p>
+                        <p style={{ margin: '10px 0' }}>기간 - {startDate} ~ {endDate}</p>
+                        <p style={{ margin: '10px 0' }}>목표 - {challenge.goal}</p>
                     </div>
                 </div>
-                <div className="challenge-card-footer" style={{ marginTop: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div className="challenge-card-footer" style={{ marginTop: '30px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <button 
                         className="edit-link" 
-                        style={{ background: 'none', border: 'none', color: '#aaa', cursor: 'pointer', textDecoration: 'underline', padding: 0 }}
+                        style={{ background: 'none', border: 'none', color: '#aaa', cursor: 'pointer', textDecoration: 'underline', padding: 0, fontSize: '0.95rem' }}
                         onClick={() => openEditModal(challenge)}
                     >
                         수정하기→
                     </button>
                     <button 
                         className="challenge-detail-btn" 
-                        style={{ border: '1px solid #247b7b', borderRadius: '20px', padding: '6px 20px', backgroundColor: 'white', color: '#247b7b', cursor: 'pointer', fontWeight: 'bold' }}
+                        style={{ border: '1px solid #247b7b', borderRadius: '20px', padding: '8px 25px', backgroundColor: 'white', color: '#247b7b', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.95rem' }}
                         onClick={() => openChallengeDetail(challenge)}
                     >
                         자세히 보기
@@ -744,17 +745,13 @@ function OngoingChallenge() {
     };
 
     return (
-        <div style={{ backgroundColor: '#eeeeee', minHeight: '100vh', padding: '60px 20px' }}>
+        <div style={{ backgroundColor: '#eeeeee', minHeight: '100vh', padding: '38px 40px' }}>
             {!isChallengeModalVisible && (
-                <div id="ongoing-challenge-modal" style={{ maxWidth: '1100px', margin: '0 auto' }}>
+                <div id="ongoing-challenge-modal" style={{ maxWidth: '1300px', margin: '0 auto' }}>
                     <div className="modal-content">
-                        <div style={{ textAlign: 'right', marginBottom: '15px' }}>
-                            <a href="#" onClick={allChallenge} style={{ color: '#666', fontSize: '0.85rem', textDecoration: 'none' }}>챌린지 전체보기 →</a>
-                        </div>
-                        
-                        <div className="modal-header-top" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '25px' }}>
-                                <h2 style={{ fontSize: '1.8rem', margin: 0, fontWeight: 'bold' }}>진행중인 챌린지</h2>
+                        <div className="modal-header-top" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '50px', gap: '30px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '30px' }}>
+                                <h2 style={{ fontSize: '2rem', margin: 0, fontWeight: 'bold', letterSpacing: '-0.5px' }}>진행중인 챌린지</h2>
                                 
                                 {/* ⭐️ 검색창 복구 (사진 디자인 반영) */}
                                 <div className="search-bar" style={{ 
@@ -770,20 +767,28 @@ function OngoingChallenge() {
                                         placeholder="Enter code" 
                                         style={{ border: 'none', outline: 'none', width: '180px' }} 
                                     />
-                                    <button style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.1rem' }}>🔍</button>
+                                    <button style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}>
+                                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <circle cx="11" cy="11" r="8"></circle>
+                                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                        </svg>
+                                    </button>
                                 </div>
                             </div>
                             
-                            <button 
-                                className="create-challenge-btn" 
-                                style={{ backgroundColor: 'white', border: '1px solid #70c1b3', borderRadius: '25px', padding: '10px 25px', cursor: 'pointer', color: '#247b7b', fontWeight: 'bold' }}
-                                onClick={CreateChallengeHandler}
-                            >
-                                챌린지 만들기
-                            </button>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '10px' }}>
+                                <a href="#" onClick={allChallenge} style={{ color: '#666', fontSize: '0.9rem', textDecoration: 'none' }}>챌린지 전체보기 →</a>
+                                <button 
+                                    className="create-challenge-btn" 
+                                    style={{ backgroundColor: 'white', border: '1px solid #70c1b3', borderRadius: '25px', padding: '10px 25px', cursor: 'pointer', color: '#247b7b', fontWeight: 'bold' }}
+                                    onClick={CreateChallengeHandler}
+                                >
+                                    챌린지 만들기
+                                </button>
+                            </div>
                         </div>
 
-                        <div className="challenge-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px' }}>
+                        <div className="challenge-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '40px', paddingTop: '10px' }}>
                             {loading ? (
                                 <p style={{ textAlign: 'center', gridColumn: 'span 2', color: '#888', padding: '50px' }}>
                                     챌린지를 불러오는 중...
@@ -810,7 +815,9 @@ function OngoingChallenge() {
                 />
             )}
 
-            {isChallengeModalVisible && <Challenge closeChallengeModal={closeChallengeModal} />}
+            {isChallengeModalVisible && (
+                <Challenge closeChallengeModal={closeChallengeModal} onCreateSuccess={fetchChallenges} />
+            )}
 
             {selectedChallenge && (
                 <ChallengeDetailView 

@@ -58,14 +58,15 @@ export default async function handler(request: Request, { env, userId }: Handler
   }
 
   const { challengeName, category, maxParticipants, endDate, goalDescription, inviteCode, timerHours, timerMinutes } = body;
+  const normalizedInviteCode = typeof inviteCode === 'string' ? inviteCode.trim() : '';
 
   console.log('Received data:', { challengeName, category, maxParticipants, endDate, goalDescription, inviteCode, timerHours, timerMinutes });
 
   // ========== 3️⃣ 입력 검증 (try 밖에서 - 400 에러) ==========
   
-  // 필수 값 검증
-  if (!challengeName || !category || !maxParticipants || !endDate || !goalDescription || !inviteCode) {
-    console.error('필수 값 누락:', { challengeName, category, maxParticipants, endDate, goalDescription, inviteCode });
+  // 필수 값 검증 (inviteCode는 선택사항)
+  if (!challengeName || !category || !maxParticipants || !endDate || !goalDescription) {
+    console.error('필수 값 누락:', { challengeName, category, maxParticipants, endDate, goalDescription });
     return Response.json(
       { success: false, message: '필수 항목을 모두 입력해주세요.' },
       { status: 400 }
@@ -110,19 +111,21 @@ export default async function handler(request: Request, { env, userId }: Handler
       );
     }
 
-    // 초대 코드 중복 확인
-    console.log('Checking duplicate inviteCode:', inviteCode);
-    const exists = await env.D1_DB
-      .prepare('SELECT 1 FROM challenges WHERE challenge_code = ?')
-      .bind(inviteCode)
-      .first();
+    // 초대 코드 중복 확인 (선택 입력)
+    if (normalizedInviteCode) {
+      console.log('Checking duplicate inviteCode:', normalizedInviteCode);
+      const exists = await env.D1_DB
+        .prepare('SELECT 1 FROM challenges WHERE challenge_code = ?')
+        .bind(normalizedInviteCode)
+        .first();
 
-    if (exists) {
-      console.error('inviteCode 중복:', inviteCode);
-      return Response.json(
-        { success: false, message: '이미 사용 중인 초대 코드입니다.' },
-        { status: 409 } // Conflict
-      );
+      if (exists) {
+        console.error('inviteCode 중복:', normalizedInviteCode);
+        return Response.json(
+          { success: false, message: '이미 사용 중인 초대 코드입니다.' },
+          { status: 409 } // Conflict
+        );
+      }
     }
 
     // 챌린지 생성
@@ -140,7 +143,7 @@ export default async function handler(request: Request, { env, userId }: Handler
         Number(maxParticipants),
         goalDescription,
         endDate,
-        inviteCode,
+        normalizedInviteCode || null,
         userId,
         timerHours || 0,
         timerMinutes || 0

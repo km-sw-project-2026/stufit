@@ -826,10 +826,6 @@ body.modal-open {
     width: 24px;
     height: 24px;
 }
-.search-icon svg {
-    width: 16px; 
-    height: 16px;
-}
 
 .create-challenge-btn {
     background-color: #fff;
