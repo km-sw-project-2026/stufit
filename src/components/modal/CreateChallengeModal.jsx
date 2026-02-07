@@ -62,7 +62,7 @@ function CreateChallengeModal({ setCreateChallengeOpen, closeCreateChallengeModa
       }
 
       alert('챌린지가 성공적으로 생성되었습니다!');
-      if (onCreateSuccess) onCreateSuccess();
+      if (onCreateSuccess) onCreateSuccess(result?.data?.challenge || null);
       closeCreateChallengeModal();
     } catch (error) {
       console.error('챌린지 생성 오류:', error);

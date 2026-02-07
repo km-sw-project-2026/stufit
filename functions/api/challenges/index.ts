@@ -167,11 +167,16 @@ export default async function handler(request: Request, { env, userId }: Handler
       .bind(challengeId, userId)
       .run();
 
+    const createdChallenge = await env.D1_DB
+      .prepare('SELECT * FROM challenges WHERE challenge_id = ?')
+      .bind(challengeId)
+      .first();
+
     console.log('✅ Challenge creation complete!');
     return Response.json(
       { 
         success: true, 
-        data: { challengeId }, 
+        data: { challengeId, challenge: createdChallenge || null }, 
         message: '챌린지가 성공적으로 생성되었습니다!' 
       },
       { status: 201 }
