@@ -1,6 +1,5 @@
-import { useState } from 'react';
-
-function ShopProfileImage() {
+function ShopProfileImage({ wishlistScope, isWishlisted, isPurchased, toggleWishlist, onPurchase }) {
+    const categoryLabel = '프로필 이미지';
     const items = [
         { id: 1, name: '산타 복장', price: '4,500 P', color: '#ff6347', image: '' },
         { id: 2, name: '우주인 복장', price: '5,500 P', color: '#4169e1', image: '' },
@@ -10,19 +9,15 @@ function ShopProfileImage() {
         { id: 6, name: '악마 복장', price: '5,200 P', color: '#8b0000', image: '' },
     ];
 
-    const [wishlisted, setWishlisted] = useState({});
-
-    const toggleWishlist = (id) => {
-        setWishlisted((prev) => ({
-            ...prev,
-            [id]: !prev[id],
-        }));
-    };
-
     return (
         <div className="shop-items-grid">
-            {items.map((item) => (
-                <div key={item.id} className="shop-item-card">
+            {items.map((item) => {
+                const itemWishlisted = isWishlisted(wishlistScope, item.id);
+                const itemPurchased = isPurchased(wishlistScope, item.id);
+                const wishlistItem = { ...item, category: categoryLabel };
+
+                return (
+                    <div key={item.id} className="shop-item-card">
                     <div
                         className={`item-image ${item.image ? 'has-image' : ''}`}
                         style={{ backgroundColor: item.color }}
@@ -32,22 +27,29 @@ function ShopProfileImage() {
                         ) : null}
                     </div>
                     <div className="item-details">
-                        <div className="item-category">프로필 이미지</div>
+                        <div className="item-category">{categoryLabel}</div>
                         <div className="item-name">{item.name}</div>
                         <div className="item-price">{item.price}</div>
                         <div className="item-actions">
                             <button 
-                                className={`item-wishlist-btn ${wishlisted[item.id] ? 'wishlisted' : ''}`}
-                                onClick={() => toggleWishlist(item.id)}
+                                className={`item-wishlist-btn ${itemWishlisted ? 'wishlisted' : ''}`}
+                                onClick={() => toggleWishlist(wishlistScope, wishlistItem)}
                                 title="찜하기"
                             >
-                                {wishlisted[item.id] ? '♥' : '♡'}
+                                {itemWishlisted ? '♥' : '♡'}
                             </button>
-                            <button className="item-buy-btn">구매하기</button>
+                            <button
+                                className={`item-buy-btn ${itemPurchased ? 'purchased' : ''}`}
+                                onClick={() => onPurchase(wishlistScope, wishlistItem)}
+                                disabled={itemPurchased}
+                            >
+                                {itemPurchased ? '구매완료' : '구매하기'}
+                            </button>
                         </div>
                     </div>
-                </div>
-            ))}
+                    </div>
+                );
+            })}
         </div>
     );
 }

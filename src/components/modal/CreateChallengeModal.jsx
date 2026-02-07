@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-function CreateChallengeModal({ setCreateChallengeOpen, closeCreateChallengeModal }) {
+function CreateChallengeModal({ setCreateChallengeOpen, closeCreateChallengeModal, onCreateSuccess }) {
   const [challengeName, setChallengeName] = useState('');
   const [category, setCategory] = useState('');
   const [duration, setDuration] = useState('');
@@ -10,7 +10,8 @@ function CreateChallengeModal({ setCreateChallengeOpen, closeCreateChallengeModa
   const [inviteCode, setInviteCode] = useState('');
 
   const createChallenge = async () => {
-    if (!challengeName || !category || !duration || !goalDescription || !inviteCode) {
+    // inviteCode는 선택사항으로 변경
+    if (!challengeName || !category || !duration || !goalDescription) {
       alert('필수 항목을 모두 입력해주세요.');
       return;
     }
@@ -33,6 +34,8 @@ function CreateChallengeModal({ setCreateChallengeOpen, closeCreateChallengeModa
     endDate.setDate(endDate.getDate() + Number(duration));
 
     try {
+      const normalizedInviteCode = inviteCode.trim();
+
       const response = await fetch('/api/challenges', {
         method: 'POST',
         headers: { 
@@ -45,7 +48,7 @@ function CreateChallengeModal({ setCreateChallengeOpen, closeCreateChallengeModa
           maxParticipants: 10, // 기본값
           endDate: endDate.toISOString().slice(0, 10),
           goalDescription,
-          inviteCode,
+          inviteCode: normalizedInviteCode || null,
           timerHours: category === 'STUDY' || category === 'EXERCISE' ? Number(timerHours) : null,
           timerMinutes: category === 'STUDY' || category === 'EXERCISE' ? Number(timerMinutes) : null
         }),
@@ -59,6 +62,7 @@ function CreateChallengeModal({ setCreateChallengeOpen, closeCreateChallengeModa
       }
 
       alert('챌린지가 성공적으로 생성되었습니다!');
+      if (onCreateSuccess) onCreateSuccess();
       closeCreateChallengeModal();
     } catch (error) {
       console.error('챌린지 생성 오류:', error);
