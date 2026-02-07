@@ -62,16 +62,42 @@
     background-color: #fff;
 }
 
-.shop-count {
-    font-size: 16px;
-    color: #555;
+.shop-count-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
     margin-bottom: 16px;
-    text-align: left;
     padding-bottom: 12px;
     border-bottom: 1px solid #e0e0e0;
 }
 
+.shop-count {
+    font-size: 16px;
+    color: #555;
+    text-align: left;
+}
+
 .shop-count-number {
+    color: #129990;
+    font-weight: 700;
+}
+
+.shop-points {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    font-size: 14px;
+    color: #555;
+    white-space: nowrap;
+}
+
+.shop-points-label {
+    color: #777;
+    font-weight: 500;
+}
+
+.shop-points-value {
     color: #129990;
     font-weight: 700;
 }
@@ -238,6 +264,18 @@
 .item-buy-btn:hover {
     background-color: #0f7a78;
     transform: scale(1.02);
+}
+
+.item-buy-btn.purchased {
+    background-color: #d9d9d9;
+    color: #666;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.item-buy-btn.purchased:hover {
+    background-color: #d9d9d9;
+    transform: none;
 }
 
 .item-buy-btn:active {
@@ -497,9 +535,16 @@
         padding: 20px 15px;
     }
 
-    .shop-count {
+    .shop-count-row {
         margin-bottom: 12px;
+    }
+
+    .shop-count {
         font-size: 14px;
+    }
+
+    .shop-points {
+        font-size: 12px;
     }
 
     .shop-header h2 {
@@ -567,6 +612,12 @@
     .shop-items-grid {
         grid-template-columns: repeat(2, 1fr);
         gap: 12px;
+    }
+
+    .shop-count-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
     }
 
     .shop-wishlist-grid {

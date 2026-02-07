@@ -22,8 +22,9 @@ function Login() {
         return;
       }
 
-      // 사용자 정보 저장 (username만 사용)
+      // 사용자 정보 저장
       localStorage.setItem("username", id);
+      localStorage.setItem("userId", String(data.userId));
       localStorage.setItem("joinDate", new Date().toLocaleDateString('ko-KR'));
       
       // 로그인 상태 변경 이벤트 발생
