@@ -54,7 +54,7 @@ export default {
       }
 
       // Posts API (인증 불필요)
-      if (pathname === '/api/posts') {
+      if (pathname === '/api/posts' && request.method === 'GET') {
         return posts.onRequestGet({ env });
       }
 
@@ -98,6 +98,16 @@ export default {
       if (pathname === '/api/shop/purchase' || pathname.startsWith('/api/shop/purchase/')) {
         return shopPurchase.onRequestPost({ request, env, userId });
       }
+
+      if (pathname === '/api/posts' && request.method === 'POST') {
+        return posts.onRequestPost({ request, env, userId });
+      }
+
+      const authPostMatch = pathname.match(/^\/api\/post\/(\d+)$/);
+      if (authPostMatch && (request.method === 'PUT' || request.method === 'PATCH' || request.method === 'DELETE')) {
+         return postById.default(request, { env, params: { id: authPostMatch[1] }, userId });
+      }
+
 
       if (pathname === '/api/user/resolve' || pathname.startsWith('/api/user/resolve/')) {
         return userResolve.onRequestGet({ request, env });
