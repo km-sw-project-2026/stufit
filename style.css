@@ -3687,37 +3687,59 @@ body.modal-open {
 /* Custom Prompt Modal */
 .custom-prompt-popup {
     background: white;
-    width: 380px;
-    padding: 30px 24px;
+    width: 420px;
+    padding: 35px 30px;
     border-radius: 20px;
     text-align: center;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
     position: relative;
     z-index: 20011;
     animation: fadeInScale 0.2s ease-out;
 }
 
 .prompt-title {
-    font-size: 18px;
-    margin: 0 0 20px;
+    font-size: 20px;
+    margin: 0 0 25px;
     color: #222;
     font-weight: 700;
 }
 
 .prompt-input {
     width: 100%;
-    padding: 12px 15px;
-    border: 1px solid #ddd;
-    border-radius: 10px;
+    padding: 14px 16px;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
     font-size: 15px;
     margin-bottom: 25px;
     box-sizing: border-box;
-    transition: border 0.2s;
+    transition: all 0.2s;
+    font-family: inherit;
 }
 
-.prompt-input:focus {
+.prompt-textarea {
+    resize: vertical;
+    min-height: 120px;
+    line-height: 1.6;
+}
+
+.prompt-input:focus,
+.prompt-textarea:focus {
     border-color: #176B5F;
     outline: none;
+    box-shadow: 0 0 0 3px rgba(23, 107, 95, 0.1);
+}
+
+.prompt-input::placeholder,
+.prompt-textarea::placeholder {
+    color: #aaa;
+}
+
+.prompt-hint {
+    font-size: 13px;
+    color: #888;
+    margin: -18px 0 20px 0;
+    text-align: right;
+    font-style: italic;
 }
 
 /* ==========================================

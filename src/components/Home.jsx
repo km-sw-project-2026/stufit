@@ -8,7 +8,7 @@ import Footer from './main/Footer';
 const Home = () => {
     return (
         <>
-            <MainPage />
+            <Mainpage />
             <ChallengeQuicklink />
             <RankingQuicklink />
             <ShopQuicklink />

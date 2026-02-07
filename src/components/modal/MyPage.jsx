@@ -21,6 +21,37 @@ function MyPage({ isOpen, onClose }) {
       const username = localStorage.getItem('username');
       
       if (username) {
+        // 작성한 게시글 수 계산
+        let postCount = 0;
+        try {
+          const savedPosts = localStorage.getItem('communityPosts');
+          if (savedPosts) {
+            const posts = JSON.parse(savedPosts);
+            // mypost 배열의 개수를 사용하거나, 모든 카테고리에서 사용자 게시글 찾기
+            if (posts.mypost && Array.isArray(posts.mypost)) {
+              postCount = posts.mypost.length;
+            }
+          }
+        } catch (error) {
+          console.error('게시글 개수 계산 실패:', error);
+        }
+
+        // 작성한 댓글 수 계산
+        let commentCount = 0;
+        try {
+          // localStorage의 모든 키를 확인하여 comments_로 시작하는 것 찾기
+          for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && key.startsWith('comments_')) {
+              const comments = JSON.parse(localStorage.getItem(key) || '[]');
+              // 현재 사용자가 작성한 댓글만 카운트
+              commentCount += comments.filter(c => c.author === username).length;
+            }
+          }
+        } catch (error) {
+          console.error('댓글 개수 계산 실패:', error);
+        }
+
         setUserData({
           username: username,
           score: '9,800',
@@ -29,8 +60,8 @@ function MyPage({ isOpen, onClose }) {
           currentRank: '1위',
           challenges: '10개',
           points: '5,000',
-          posts: '0개',
-          comments: '0개',
+          posts: `${postCount}개`,
+          comments: `${commentCount}개`,
           items: '7개'
         });
       }
@@ -119,10 +150,10 @@ function MyPage({ isOpen, onClose }) {
             <h4>커뮤니티에서의 활동</h4>
             <div className="activity-stats">
               <div className="activity-item">
-                <span className="activity-label">댓글 {userData.posts}</span>
+                <span className="activity-label">글쓰기 {userData.posts}</span>
               </div>
               <div className="activity-item">
-                <span className="activity-label">글쓰기 {userData.comments}</span>
+                <span className="activity-label">댓글 {userData.comments}</span>
               </div>
             </div>
           </div>
