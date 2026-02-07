@@ -7,7 +7,7 @@ import Header from './main/Header';
 import Login from './main/Login';
 import Signup from './main/Signup';
 import CommunityQuicklink from './main/CommunityQuicklink';
-import Mainpage from './main/Mainpage';
+import MainHero from './main/MainHero';
 import Attendance from './attendanceSection/Attendance';
 import Challenge from './challengeView/Challenge';
 import Community from './communityView/Community';
@@ -52,7 +52,7 @@ const Posts = () => {
             {/* 전체 페이지를 감싸는 컨테이너 */}
             <div className="wrap">
                 {/* 메인 히어로 섹션: 서비스 소개 및 슬로건 표시 */}
-                <Mainpage />
+                <MainHero />
                 {/* 출석체크 섹션: 7일 연속 출석 시 포인트 지급 */}
                 <Attendance />
                 <div className="main">
