@@ -10,6 +10,11 @@ function MyPage({ isOpen, onClose }) {
     navigate('/tier-guide');
   };
 
+  const handleMyItemsClick = () => {
+    onClose();
+    navigate('/my-items');
+  };
+
   useEffect(() => {
     if (isOpen) {
       // 로그인 정보 가져오기 (localStorage에서)
@@ -26,7 +31,7 @@ function MyPage({ isOpen, onClose }) {
           points: '5,000',
           posts: '0개',
           comments: '0개',
-          items: '0개'
+          items: '7개'
         });
       }
     }
@@ -122,7 +127,14 @@ function MyPage({ isOpen, onClose }) {
             </div>
           </div>
           <div className="activity-section">
-            <h4>보유 중인 아이템</h4>
+            <h4 
+              onClick={handleMyItemsClick}
+              style={{ cursor: 'pointer', color: '#4CAF50' }}
+              onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
+              onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
+            >
+              보유 중인 아이템 →
+            </h4>
             <div className="activity-stats">
               <div className="activity-item">
                 <span className="activity-label">총 {userData.items}</span>
