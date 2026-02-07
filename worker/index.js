@@ -1,6 +1,7 @@
 import * as challengesIndex from '../functions/api/challenges/index';
 import * as challengeById from '../functions/api/challenges/[id]';
 import * as verify from '../functions/api/challenges/[id]/verify';
+import publicChallenges from '../functions/api/challenges/public';
 import { verifyToken } from '../functions/api/utils/jwt';
 
 // auth
@@ -51,6 +52,11 @@ export default {
 
       if (pathname === '/api/auth/logout') {
         return logout.onRequestPost({ request, env });
+      }
+
+      // Public Challenges API (인증 불필요)
+      if (pathname === '/api/challenges/public') {
+        return publicChallenges(request, { env });
       }
 
       // Posts API (인증 불필요)
