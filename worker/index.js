@@ -12,6 +12,11 @@ import * as logout from '../functions/api/auth/logout';
 import * as posts from '../functions/api/posts';
 import * as postById from '../functions/api/post/[[id]]';
 
+// shop/user
+import * as shopPurchase from '../functions/api/shop/purchase';
+import * as userPoints from '../functions/api/user/points';
+import * as userResolve from '../functions/api/user/resolve';
+
 // challenges extra
 import * as progress from '../functions/api/challenges/[id]/progress';
 import * as complete from '../functions/api/challenges/[id]/complete';
@@ -85,6 +90,18 @@ export default {
       }
 
       const userId = userRow.user_id;
+
+      if (pathname === '/api/user/points' || pathname.startsWith('/api/user/points/')) {
+        return userPoints.onRequestGet({ request, env, userId });
+      }
+
+      if (pathname === '/api/shop/purchase' || pathname.startsWith('/api/shop/purchase/')) {
+        return shopPurchase.onRequestPost({ request, env, userId });
+      }
+
+      if (pathname === '/api/user/resolve' || pathname.startsWith('/api/user/resolve/')) {
+        return userResolve.onRequestGet({ request, env });
+      }
 
       /* =========================
          2️⃣ 챌린지 목록
