@@ -6,7 +6,7 @@
 //                 {/* {/* 2등 */}
 //                 <div className="rank-card rank-2">
 //                     <div className="rank-icon-wrapper">
-//                         <img src="img/2위.png" alt="2위" className="rank-img" />
+//                         <img src="/img/rank2.png" alt="2위" className="rank-img" />
 //                     </div>
 //                     <div className="rank-user-name">박현서</div>
 //                     <div className="rank-user-label">점수</div>
@@ -15,7 +15,7 @@
 //                 {/* {/* 1등 */}
 //                 <div className="rank-card rank-1">
 //                     <div className="rank-icon-wrapper">
-//                         <img src="img/1위.png" alt="1위" className="rank-img" />
+//                         <img src="/img/rank1.png" alt="1위" className="rank-img" />
 //                     </div>
 //                     <div className="rank-user-name">김예선</div>
 //                     <div className="rank-user-label">점수</div>
@@ -24,7 +24,7 @@
 //                 {/* {/* 3등 */}
 //                 <div className="rank-card rank-3">
 //                     <div className="rank-icon-wrapper">
-//                         <img src="img/3위.png" alt="3위" className="rank-img" />
+//                         <img src="/img/rank3.png" alt="3위" className="rank-img" />
 //                     </div>
 //                     <div className="rank-user-name">유태민</div>
 //                     <div className="rank-user-label">점수</div>

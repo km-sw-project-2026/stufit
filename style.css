@@ -1642,7 +1642,7 @@ body.modal-open {
 }
 
 .att-card.checked {
-    background-image: url('img/attendance check.png');
+    background-image: url('/img/attendance-check.png');
     background-size: 70%;
     background-repeat: no-repeat;
     background-position: center;

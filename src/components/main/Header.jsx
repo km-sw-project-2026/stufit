@@ -36,7 +36,7 @@ function Header() {
             <div className="header">
                 {/* 로고 이미지 영역 (클릭 시 메인 페이지로 이동) */}
                 <div className="logo">
-                    <Link to="/" id="logo-link"><img src="img/logo.png" alt="Stufit Logo" /></Link>
+                    <Link to="/" id="logo-link"><img src="/img/logo.png" alt="Stufit Logo" /></Link>
                 </div>
                 {/* 메인 네비게이션 메뉴: 출석체크, 챌린지, 랭킹 등 */}
                 <div className="nav">

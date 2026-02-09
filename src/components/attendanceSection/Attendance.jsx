@@ -474,7 +474,7 @@ function Attendance() {
                 <span className="label">일일 포인트</span>
                 <span className="point">{point}</span>
                 {checkedDays[index] && (
-                  <img src="/img/attendance check.png" alt="출석완료" className="stamp-img" />
+                  <img src="/img/attendance-check.png" alt="출석완료" className="stamp-img" />
                 )}
               </div>
             ))}
