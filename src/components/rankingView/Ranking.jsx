@@ -255,7 +255,7 @@ function Ranking() {
                 {/* 2등 */}
                 <div className="rank-card rank-2">
                     <div className="rank-icon-wrapper">
-                        <img src="img/2위.png" alt="2위" className="rank-img" />
+                        <img src="/img/rank2.png" alt="2위" className="rank-img" />
                     </div>
                     <div className="rank-user-name">{top2?.author || "데이터 없음"}</div>
                     <div className="rank-user-label">점수</div>
@@ -265,7 +265,7 @@ function Ranking() {
                 {/* 1등 */}
                 <div className="rank-card rank-1">
                     <div className="rank-icon-wrapper">
-                        <img src="img/1위.png" alt="1위" className="rank-img" />
+                        <img src="/img/rank1.png" alt="1위" className="rank-img" />
                     </div>
                     <div className="rank-user-name">{top1?.author || "데이터 없음"}</div>
                     <div className="rank-user-label">점수</div>
@@ -275,7 +275,7 @@ function Ranking() {
                 {/* 3등 */}
                 <div className="rank-card rank-3">
                     <div className="rank-icon-wrapper">
-                        <img src="img/3위.png" alt="3위" className="rank-img" />
+                        <img src="/img/rank3.png" alt="3위" className="rank-img" />
                     </div>
                     <div className="rank-user-name">{top3?.author || "데이터 없음"}</div>
                     <div className="rank-user-label">점수</div>

@@ -183,7 +183,7 @@ function ChallengeDetailView({ challenge, onClose }) {
                         <div className="member-list">
                             <div className="member-item">
                                 <div className="member-avatar">
-                                    <img src="img/Profile.png" alt="Profile" />
+                                    <img src="/img/Profile.png" alt="Profile" />
                                 </div>
                                 <span className="member-name">김예선</span>
                             </div>

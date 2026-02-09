@@ -2,9 +2,9 @@ import { useState } from 'react';
 
 function RankingModal({ onClose }) {
   const topRankers = [
-    { rank: 2, name: '박현서', score: 1998, img: 'img/2위.png' },
-    { rank: 1, name: '김예선', score: 3447, img: 'img/1위.png' },
-    { rank: 3, name: '유태민', score: 1358, img: 'img/3위.png' }
+    { rank: 2, name: '박현서', score: 1998, img: '/img/rank2.png' },
+    { rank: 1, name: '김예선', score: 3447, img: '/img/rank1.png' },
+    { rank: 3, name: '유태민', score: 1358, img: '/img/rank3.png' }
   ];
 
   const rankingList = Array.from({ length: 47 }, (_, i) => ({

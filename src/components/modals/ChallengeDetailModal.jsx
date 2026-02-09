@@ -49,7 +49,7 @@ function ChallengeDetailModal({ onClose, challenge }) {
             {members.map((member, idx) => (
               <div key={idx} className="member-item">
                 <div className="member-avatar">
-                  <img src="img/Profile.png" alt="Profile" />
+                  <img src="/img/Profile.png" alt="Profile" />
                 </div>
                 <span className="member-name">{member.name}</span>
               </div>
@@ -103,7 +103,7 @@ function ChallengeDetailModal({ onClose, challenge }) {
                 <div key={idx} className="status-item">
                   <div className="status-user">
                     <div className="status-avatar">
-                      <img src="img/Profile.png" alt="Profile" />
+                      <img src="/img/Profile.png" alt="Profile" />
                     </div>
                     <span>{item.name}</span>
                   </div>
