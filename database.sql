@@ -1,4 +1,20 @@
 PRAGMA defer_foreign_keys=TRUE;
+DROP TABLE IF EXISTS comment_likes;
+DROP TABLE IF EXISTS comments;
+DROP TABLE IF EXISTS post_likes;
+DROP TABLE IF EXISTS posts;
+DROP TABLE IF EXISTS challenge_results;
+DROP TABLE IF EXISTS challenge_daily_progress;
+DROP TABLE IF EXISTS challenge_members;
+DROP TABLE IF EXISTS challenges;
+DROP TABLE IF EXISTS megaphone_logs;
+DROP TABLE IF EXISTS item_wishlist;
+DROP TABLE IF EXISTS user_items;
+DROP TABLE IF EXISTS items;
+DROP TABLE IF EXISTS attendance_logs;
+DROP TABLE IF EXISTS point_logs;
+DROP TABLE IF EXISTS user_profiles;
+DROP TABLE IF EXISTS users;
 CREATE TABLE users (
   user_id INTEGER PRIMARY KEY AUTOINCREMENT,
   username TEXT NOT NULL UNIQUE,
@@ -73,6 +89,8 @@ CREATE TABLE challenges (
   is_private INTEGER NOT NULL DEFAULT 0,
   challenge_code TEXT,
   category TEXT NOT NULL,
+  timer_hours INTEGER DEFAULT 0,
+  timer_minutes INTEGER DEFAULT 0,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   deleted_at TEXT,
   FOREIGN KEY (created_by_user_id) REFERENCES users(user_id)
@@ -108,13 +126,14 @@ CREATE TABLE posts (
   user_id INTEGER NOT NULL,
   title TEXT NOT NULL,
   content TEXT NOT NULL,
+  category TEXT NOT NULL DEFAULT 'data',
   view_count INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TEXT,
   deleted_at TEXT,
   FOREIGN KEY (user_id) REFERENCES users(user_id)
 );
-INSERT INTO "posts" VALUES(1,1,'test','test',0,'2026-01-25 03:45:26',NULL,NULL);
+INSERT INTO "posts" VALUES(1,1,'test','test','data',0,'2026-01-25 03:45:26',NULL,NULL);
 CREATE TABLE post_likes (
   post_id INTEGER NOT NULL,
   user_id INTEGER NOT NULL,

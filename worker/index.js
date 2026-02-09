@@ -1,15 +1,22 @@
 import * as challengesIndex from '../functions/api/challenges/index';
 import * as challengeById from '../functions/api/challenges/[id]';
 import * as verify from '../functions/api/challenges/[id]/verify';
+import publicChallenges from '../functions/api/challenges/public';
 import { verifyToken } from '../functions/api/utils/jwt';
 
 // auth
 import * as login from '../functions/api/auth/login';
 import * as register from '../functions/api/auth/register';
+import * as logout from '../functions/api/auth/logout';
 
 // posts
 import * as posts from '../functions/api/posts';
 import * as postById from '../functions/api/post/[[id]]';
+
+// shop/user
+import * as shopPurchase from '../functions/api/shop/purchase';
+import * as userPoints from '../functions/api/user/points';
+import * as userResolve from '../functions/api/user/resolve';
 
 // challenges extra
 import * as progress from '../functions/api/challenges/[id]/progress';
@@ -30,7 +37,7 @@ export default {
     try {
       const url = new URL(request.url);
       const { pathname } = url;
-
+      
       /* =========================
          0️⃣ 인증 필요 없는 API
       ========================= */
@@ -43,8 +50,17 @@ export default {
         return login.onRequestPost({ request, env });
       }
 
+      if (pathname === '/api/auth/logout') {
+        return logout.onRequestPost({ request, env });
+      }
+
+      // Public Challenges API (인증 불필요)
+      if (pathname === '/api/challenges/public') {
+        return publicChallenges(request, { env });
+      }
+
       // Posts API (인증 불필요)
-      if (pathname === '/api/posts') {
+      if (pathname === '/api/posts' && request.method === 'GET') {
         return posts.onRequestGet({ env });
       }
 
@@ -54,18 +70,54 @@ export default {
       }
 
       /* =========================
-         1️⃣ 토큰 검증 (이 아래는 인증 필수)
+         1️⃣ 사용자 인증 (username 기반)
       ========================= */
 
-      const token = request.headers
-        .get('Authorization')
-        ?.replace('Bearer ', '');
-
-      const user = await verifyToken(token);
-      if (!user) {
-        return new Response('Unauthorized', { status: 401 });
+      // username으로 userId 조회 (간단한 인증)
+      const username = request.headers.get('X-Username');
+      
+      if (!username) {
+        return new Response(JSON.stringify({ message: '로그인이 필요합니다.' }), { 
+          status: 401,
+          headers: { 'Content-Type': 'application/json' }
+        });
       }
-      const userId = user.userId;
+
+      const userRow = await env.D1_DB
+        .prepare('SELECT user_id FROM users WHERE username = ?')
+        .bind(username)
+        .first();
+
+      if (!userRow) {
+        return new Response(JSON.stringify({ message: '사용자를 찾을 수 없습니다.' }), { 
+          status: 401,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+
+      const userId = userRow.user_id;
+
+      if (pathname === '/api/user/points' || pathname.startsWith('/api/user/points/')) {
+        return userPoints.onRequestGet({ request, env, userId });
+      }
+
+      if (pathname === '/api/shop/purchase' || pathname.startsWith('/api/shop/purchase/')) {
+        return shopPurchase.onRequestPost({ request, env, userId });
+      }
+
+      if (pathname === '/api/posts' && request.method === 'POST') {
+        return posts.onRequestPost({ request, env, userId });
+      }
+
+      const authPostMatch = pathname.match(/^\/api\/post\/(\d+)$/);
+      if (authPostMatch && (request.method === 'PUT' || request.method === 'PATCH' || request.method === 'DELETE')) {
+         return postById.default(request, { env, params: { id: authPostMatch[1] }, userId });
+      }
+
+
+      if (pathname === '/api/user/resolve' || pathname.startsWith('/api/user/resolve/')) {
+        return userResolve.onRequestGet({ request, env });
+      }
 
       /* =========================
          2️⃣ 챌린지 목록
@@ -158,10 +210,19 @@ export default {
         }
       }
 
+      // Posts authenticated actions (edit / delete)
+      const postMatchAuth = pathname.match(/^\/api\/post\/(\d+)$/);
+      if (postMatchAuth) {
+        return postById.default(request, { env, params: { id: postMatchAuth[1] }, userId });
+      }
+
       return new Response('Not Found', { status: 404 });
     } catch (err) {
-      console.error(err);
-      return new Response('Server Error', { status: 500 });
+      console.error("❌ WORKER ERROR:", err?.message || String(err));
+      return new Response(
+        JSON.stringify({ message: '서버 오류가 발생했습니다.' }),
+        { status: 500, headers: { "Content-Type": "application/json" } }
+      );
     }
   }
 };
