@@ -1,11 +1,11 @@
-import seagullImg from '../../assets/shop-items/갈매기.png';
-import parrotImg from '../../assets/shop-items/앵무새.png';
-import duckImg from '../../assets/shop-items/오리.png';
-import slimeUmbrellaImg from '../../assets/shop-items/우산 슬라임.png';
-import jellyfishImg from '../../assets/shop-items/해파리(초록).png';
-import pumpkinImg from '../../assets/shop-items/펌킨.png';
-import ghostImg from '../../assets/shop-items/유령.png';
-import toxicSludgeImg from '../../assets/shop-items/유독성 슬러지.gif';
+import seagullImg from '../../assets/shop-items/seagull.png';
+import parrotImg from '../../assets/shop-items/parrot.png';
+import duckImg from '../../assets/shop-items/duck.png';
+import slimeUmbrellaImg from '../../assets/shop-items/umbrella-slime.png';
+import jellyfishImg from '../../assets/shop-items/jellyfish-green.png';
+import pumpkinImg from '../../assets/shop-items/pumpkin.png';
+import ghostImg from '../../assets/shop-items/ghost.png';
+import toxicSludgeImg from '../../assets/shop-items/toxic-sludge.gif';
 
 function ShopAll({ wishlistScope, isWishlisted, isPurchased, toggleWishlist, onPurchase }) {
     const items = [
