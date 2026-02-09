@@ -1,4 +1,20 @@
 PRAGMA defer_foreign_keys=TRUE;
+DROP TABLE IF EXISTS comment_likes;
+DROP TABLE IF EXISTS comments;
+DROP TABLE IF EXISTS post_likes;
+DROP TABLE IF EXISTS posts;
+DROP TABLE IF EXISTS challenge_results;
+DROP TABLE IF EXISTS challenge_daily_progress;
+DROP TABLE IF EXISTS challenge_members;
+DROP TABLE IF EXISTS challenges;
+DROP TABLE IF EXISTS megaphone_logs;
+DROP TABLE IF EXISTS item_wishlist;
+DROP TABLE IF EXISTS user_items;
+DROP TABLE IF EXISTS items;
+DROP TABLE IF EXISTS attendance_logs;
+DROP TABLE IF EXISTS point_logs;
+DROP TABLE IF EXISTS user_profiles;
+DROP TABLE IF EXISTS users;
 CREATE TABLE users (
   user_id INTEGER PRIMARY KEY AUTOINCREMENT,
   username TEXT NOT NULL UNIQUE,
