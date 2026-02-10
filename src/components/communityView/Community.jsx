@@ -504,8 +504,7 @@ function Community() {
         try {
             const username = localStorage.getItem('username');
             const headers = {};
-            // 한글 이름 에러 방지를 위해 encodeURIComponent 사용
-            if (username) headers['X-Username'] = encodeURIComponent(username);
+            if (username) headers['X-Username'] = username;
             
             const response = await fetch('/api/posts', { headers });
             if (!response.ok) return;
@@ -543,7 +542,7 @@ function Community() {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-Username': encodeURIComponent(username) // 한글 에러 방지
+                    'X-Username': username
                 },
                 body: JSON.stringify({
                     title: newPostData.title,
@@ -584,7 +583,7 @@ function Community() {
         try {
             const response = await fetch(`/api/post/${postId}`, {
                 method: 'DELETE',
-                headers: { 'X-Username': encodeURIComponent(username) }
+                headers: { 'X-Username': username }
             });
 
             if (!response.ok) {
@@ -608,7 +607,7 @@ function Community() {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-Username': encodeURIComponent(username)
+                    'X-Username': username
                 },
                 body: JSON.stringify({
                     title: updatedPost.title,
@@ -633,7 +632,7 @@ function Community() {
         try {
             const response = await fetch(`/api/post/${postId}/like`, {
                 method: 'POST',
-                headers: { 'X-Username': encodeURIComponent(username) }
+                headers: { 'X-Username': username }
             });
 
             const payload = await response.json();

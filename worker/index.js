@@ -85,9 +85,14 @@ export default {
       const commentListMatch = pathname.match(/^\/api\/post\/(\d+)\/comments$/);
       if (commentListMatch && request.method === 'GET') {
         let optionalUserId;
-        const headerUsername = request.headers.get('X-Username');
+        let headerUsername = request.headers.get('X-Username');
 
         if (headerUsername) {
+          // URL 디코딩
+          try {
+            headerUsername = decodeURIComponent(headerUsername);
+          } catch (e) {}
+
           const userRow = await env.D1_DB
             .prepare('SELECT user_id FROM users WHERE username = ?')
             .bind(headerUsername)
@@ -106,13 +111,20 @@ export default {
       ========================= */
 
       // username으로 userId 조회 (간단한 인증)
-      const username = request.headers.get('X-Username');
+      let username = request.headers.get('X-Username');
       
       if (!username) {
         return new Response(JSON.stringify({ message: '로그인이 필요합니다.' }), { 
           status: 401,
           headers: { 'Content-Type': 'application/json' }
         });
+      }
+
+      // URL 디코딩 (한글 이름 지원)
+      try {
+        username = decodeURIComponent(username);
+      } catch (e) {
+        // 디코딩 실패 시 원본 사용
       }
 
       const userRow = await env.D1_DB
