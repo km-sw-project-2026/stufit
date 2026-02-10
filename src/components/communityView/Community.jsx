@@ -459,6 +459,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import CommunityRewardModal from '../modal/CommunityRewardModal';
 import NewPostModal from '../modal/NewPostModal';
+import CustomAlertModal from '../modal/CustomAlertModal';
 import PostDetailView from './PostDetailView';
 import SidebarMenu from './SidebarMenu';
 import Popular from './Popular';
@@ -470,6 +471,15 @@ function Community() {
     const [isModalOpen, setModalOpen] = useState(false);
     const [isNewPostModalOpen, setNewPostModalOpen] = useState(false);
     const [currentCategory, setCurrentCategory] = useState('popular');
+
+    // 커스텀 알림 모달 상태
+    const [isAlertOpen, setIsAlertOpen] = useState(false);
+    const [alertMessage, setAlertMessage] = useState('');
+
+    const showAlert = (msg) => {
+        setAlertMessage(msg);
+        setIsAlertOpen(true);
+    };
     
     // 게시글 상태 (DB에서만 가져옴)
     const [posts, setPosts] = useState({
@@ -645,7 +655,7 @@ function Community() {
                 await fetchPosts();
                 if (activeTab !== 'popular') {
                     // 선택적: 알림을 띄우거나 자동으로 탭 이동
-                    alert('이 게시글이 Popular 게시판으로 이동되었습니다!');
+                    showAlert('이 게시글이 Popular 게시판으로 이동되었습니다!');
                 }
                 return;
             }
@@ -714,6 +724,12 @@ function Community() {
                     category={currentCategory} 
                     onClose={() => setNewPostModalOpen(false)} 
                     onSubmit={handleAddPost}
+                />
+            )}
+            {isAlertOpen && (
+                <CustomAlertModal 
+                    message={alertMessage} 
+                    onClose={() => setIsAlertOpen(false)} 
                 />
             )}
         </div>
