@@ -57,13 +57,13 @@ export default {
       if (pathname === '/api/auth/login') {
         return login.onRequestPost({ request, env });
       }
+
       if (pathname === '/api/auth/logout') {
         return logout.onRequestPost({ request, env });
       }
 
       if (pathname === '/api/attendance') {
-        return attendance= '/api/auth/logout') {
-        return logout.onRequestPost({ request, env });
+        return attendance.onRequestPost({ request, env });
       }
 
       // Public Challenges API (인증 불필요)
