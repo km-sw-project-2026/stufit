@@ -459,6 +459,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import CommunityRewardModal from '../modal/CommunityRewardModal';
 import NewPostModal from '../modal/NewPostModal';
+import CustomAlertModal from '../modal/CustomAlertModal';
 import PostDetailView from './PostDetailView';
 import SidebarMenu from './SidebarMenu';
 import Popular from './Popular';
@@ -470,6 +471,15 @@ function Community() {
     const [isModalOpen, setModalOpen] = useState(false);
     const [isNewPostModalOpen, setNewPostModalOpen] = useState(false);
     const [currentCategory, setCurrentCategory] = useState('popular');
+
+    // 커스텀 알림 모달 상태
+    const [isAlertOpen, setIsAlertOpen] = useState(false);
+    const [alertMessage, setAlertMessage] = useState('');
+
+    const showAlert = (msg) => {
+        setAlertMessage(msg);
+        setIsAlertOpen(true);
+    };
     
     // 게시글 상태 (DB에서만 가져옴)
     const [posts, setPosts] = useState({
@@ -638,7 +648,18 @@ function Community() {
             if (!response.ok) return alert(payload.message || '좋아요 처리에 실패했습니다.');
 
             // 좋아요 토글 성공 후 상태 즉시 업데이트
-            const { liked, count } = payload.data || {};
+            const { liked, count, promoted } = payload.data || {};
+
+            // Popular 등급으로 승격된 경우 목록 새로고침
+            if (promoted) {
+                await fetchPosts();
+                if (activeTab !== 'popular') {
+                    // 선택적: 알림을 띄우거나 자동으로 탭 이동
+                    showAlert('이 게시글이 Popular 게시판으로 이동되었습니다!');
+                }
+                return;
+            }
+
             setPosts(prev => ({
                 ...prev,
                 popular: prev.popular.map(p => p.id === postId ? { ...p, liked, likes: count } : p),
@@ -703,6 +724,12 @@ function Community() {
                     category={currentCategory} 
                     onClose={() => setNewPostModalOpen(false)} 
                     onSubmit={handleAddPost}
+                />
+            )}
+            {isAlertOpen && (
+                <CustomAlertModal 
+                    message={alertMessage} 
+                    onClose={() => setIsAlertOpen(false)} 
                 />
             )}
         </div>
