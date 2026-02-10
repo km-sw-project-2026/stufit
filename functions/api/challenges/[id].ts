@@ -17,7 +17,13 @@ export default async function handler(request: Request, { env, userId }: Handler
     ).bind(id, userId).first();
 
     if (request.method === 'GET') {
-      return Response.json({ success: true, data: { ...challenge, isJoined: !!member }, message: '챌린지 상세 조회' });
+      // fetch members who joined this challenge
+      const members = await env.D1_DB
+        .prepare('SELECT u.user_id, u.username, cm.status FROM challenge_members cm JOIN users u ON cm.user_id = u.user_id WHERE cm.challenge_id = ?')
+        .bind(id)
+        .all();
+
+      return Response.json({ success: true, data: { ...challenge, isJoined: !!member, members: members.results || [] }, message: '챌린지 상세 조회' });
     }
 
     if (request.method === 'DELETE') {

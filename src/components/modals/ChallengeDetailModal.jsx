@@ -24,12 +24,35 @@ function ChallengeDetailModal({ onClose, challenge }) {
     return `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')}`;
   };
 
-  const members = [
-    { name: '김예선' },
-    { name: '유태민' },
-    { name: '이정민' },
-    { name: '박현서' }
-  ];
+  const [members, setMembers] = React.useState([]);
+
+  React.useEffect(() => {
+    const load = async () => {
+      if (!challenge?.challenge_id) return;
+      try {
+        const username = localStorage.getItem('username');
+        const headers = {};
+        if (username) headers['X-Username'] = username;
+        const res = await fetch(`/api/challenges/${challenge.challenge_id}`, { headers });
+        if (!res.ok) return;
+        const payload = await res.json();
+        const data = payload?.data || {};
+        setMembers(Array.isArray(data.members) ? data.members : []);
+      } catch (e) {
+        console.error('멤버 목록 로드 실패:', e);
+      }
+    };
+    load();
+    const handler = (e) => {
+      try {
+        if (e?.detail?.challengeId === challenge?.challenge_id) {
+          setMembers(Array.isArray(e.detail.members) ? e.detail.members : members);
+        }
+      } catch (err) { }
+    };
+    window.addEventListener('challenge-joined', handler);
+    return () => window.removeEventListener('challenge-joined', handler);
+  }, [challenge]);
 
   const statusItems = [
     { name: '김예선', status: 'success', label: '인증 완료' },
@@ -46,14 +69,21 @@ function ChallengeDetailModal({ onClose, challenge }) {
         <div className="detail-sidebar">
           <h2>MEMBER</h2>
           <div className="member-list">
-            {members.map((member, idx) => (
-              <div key={idx} className="member-item">
-                <div className="member-avatar">
-                  <img src="/img/Profile.png" alt="Profile" />
+            {members.length === 0 ? (
+              <div className="member-item empty">참여자가 없습니다.</div>
+            ) : (
+              members.map((m) => (
+                <div key={m.user_id} className="member-item">
+                  <div className="member-avatar">
+                    <img src="/img/Profile.png" alt="Profile" />
+                  </div>
+                  <span className="member-name">{m.username}</span>
+                  <span className={`member-status ${m.status || 'not_submitted'}`} style={{ marginLeft: '8px', fontSize: '0.85rem', color: '#666' }}>
+                    {m.status === 'submitted' ? '제출' : m.status === 'checked' ? '인증' : '미제출'}
+                  </span>
                 </div>
-                <span className="member-name">{member.name}</span>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
 

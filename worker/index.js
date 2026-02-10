@@ -16,7 +16,7 @@ import * as postLike from '../functions/api/post/[id]/like';
 import * as postComments from '../functions/api/post/[id]/comments';
 
 // comments
-import * as commentById from '../functions/api/comment/[id]';
+import * as commentById from '../functions/api/comment/[id]/index';
 import * as commentLike from '../functions/api/comment/[id]/like';
 
 // shop/user
@@ -33,6 +33,7 @@ import challengeEdit from '../functions/api/challenges/[id]/edit';
 import challengeResult from '../functions/api/challenges/[id]/result';
 import challengeGiveupQuote from '../functions/api/challenges/[id]/giveup-quote';
 import challengeLeave from '../functions/api/challenges/[id]/leave';
+import challengeJoin from '../functions/api/challenges/[id]/join';
 
 export default {
   /**
@@ -68,6 +69,12 @@ export default {
       // Posts API (인증 불필요)
       if (pathname === '/api/posts' && request.method === 'GET') {
         return posts.onRequestGet({ env });
+      }
+
+      // Comments for a post (public GET)
+      const publicPostCommentsMatch = pathname.match(/^\/api\/post\/(\d+)\/comments$/);
+      if (publicPostCommentsMatch && request.method === 'GET') {
+        return postComments.onRequestGet({ env, params: { id: publicPostCommentsMatch[1] } });
       }
 
       const postMatch = pathname.match(/^\/api\/post\/(\d+)$/);
@@ -134,35 +141,40 @@ export default {
         return posts.onRequestPost({ request, env, userId });
       }
 
+      // Post comments (authenticated POST)
+      const postCommentsMatch = pathname.match(/^\/api\/post\/(\d+)\/comments$/);
+      if (postCommentsMatch && request.method === 'POST') {
+        return postComments.onRequestPost({ request, env, params: { id: postCommentsMatch[1] }, userId });
+      }
+
+      // Comment operations (like / edit / delete)
+      const commentMatch = pathname.match(/^\/api\/comment\/(\d+)(?:\/(.+))?$/);
+      if (commentMatch) {
+        const cid = commentMatch[1];
+        const action = commentMatch[2];
+
+        if (action === 'like' && request.method === 'POST') {
+          return commentLike.onRequestPost({ env, params: { id: cid }, userId });
+        }
+
+        if (!action && request.method === 'PATCH') {
+          return commentById.onRequestPatch({ request, env, params: { id: cid }, userId });
+        }
+
+        if (!action && request.method === 'DELETE') {
+          return commentById.onRequestDelete({ env, params: { id: cid }, userId });
+        }
+      }
+
       const authPostMatch = pathname.match(/^\/api\/post\/(\d+)$/);
       if (authPostMatch && (request.method === 'PUT' || request.method === 'PATCH' || request.method === 'DELETE')) {
          return postById.default(request, { env, params: { id: authPostMatch[1] }, userId });
-      }
-
-      const commentCreateMatch = pathname.match(/^\/api\/post\/(\d+)\/comments$/);
-      if (commentCreateMatch && request.method === 'POST') {
-        return postComments.onRequestPost({ request, env, params: { id: commentCreateMatch[1] }, userId });
       }
 
       const postLikeMatch = pathname.match(/^\/api\/post\/(\d+)\/like$/);
       if (postLikeMatch && request.method === 'POST') {
         return postLike.onRequestPost({ env, params: { id: postLikeMatch[1] }, userId });
       }
-
-      const commentLikeMatch = pathname.match(/^\/api\/comment\/(\d+)\/like$/);
-      if (commentLikeMatch && request.method === 'POST') {
-        return commentLike.onRequestPost({ env, params: { id: commentLikeMatch[1] }, userId });
-      }
-
-      const commentMatch = pathname.match(/^\/api\/comment\/(\d+)$/);
-      if (commentMatch && request.method === 'PATCH') {
-        return commentById.onRequestPatch({ request, env, params: { id: commentMatch[1] }, userId });
-      }
-
-      if (commentMatch && request.method === 'DELETE') {
-        return commentById.onRequestDelete({ env, params: { id: commentMatch[1] }, userId });
-      }
-
 
       if (pathname === '/api/user/resolve' || pathname.startsWith('/api/user/resolve/')) {
         return userResolve.onRequestGet({ request, env });
@@ -253,6 +265,9 @@ export default {
               params: { id },
               userId
             });
+
+          case 'join':
+            return challengeJoin(request, { env, params: { id }, userId });
 
           default:
             return new Response('Not Found', { status: 404 });

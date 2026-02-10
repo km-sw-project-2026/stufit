@@ -25,9 +25,15 @@ export default async function handler(request: Request, { env, userId }: Handler
 
       console.log('Found challenges:', userChallenges.results?.length || 0);
 
+      // attach member count and maybe other info from challenge_members
+      const challengesWithCounts = (userChallenges.results || []).map((ch: any) => ({
+        ...ch,
+        memberCount: 0 // frontend can fetch members if needed
+      }));
+
       return Response.json({
         success: true,
-        challenges: userChallenges.results || []
+        challenges: challengesWithCounts
       });
 
     } catch (err: unknown) {
