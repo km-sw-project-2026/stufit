@@ -12,11 +12,14 @@ import * as logout from '../functions/api/auth/logout';
 // posts
 import * as posts from '../functions/api/posts';
 import * as postById from '../functions/api/post/[[id]]';
+import * as postComments from '../functions/api/post/[id]/comments';
 
 // shop/user
 import * as shopPurchase from '../functions/api/shop/purchase';
 import * as userPoints from '../functions/api/user/points';
 import * as userResolve from '../functions/api/user/resolve';
+import * as commentById from '../functions/api/comment/[id]/index';
+import * as commentLike from '../functions/api/comment/[id]/like';
 
 // challenges extra
 import * as progress from '../functions/api/challenges/[id]/progress';
@@ -27,6 +30,7 @@ import challengeEdit from '../functions/api/challenges/[id]/edit';
 import challengeResult from '../functions/api/challenges/[id]/result';
 import challengeGiveupQuote from '../functions/api/challenges/[id]/giveup-quote';
 import challengeLeave from '../functions/api/challenges/[id]/leave';
+import challengeJoin from '../functions/api/challenges/[id]/join';
 
 export default {
   /**
@@ -62,6 +66,12 @@ export default {
       // Posts API (인증 불필요)
       if (pathname === '/api/posts' && request.method === 'GET') {
         return posts.onRequestGet({ env });
+      }
+
+      // Comments for a post (public GET)
+      const publicPostCommentsMatch = pathname.match(/^\/api\/post\/(\d+)\/comments$/);
+      if (publicPostCommentsMatch && request.method === 'GET') {
+        return postComments.onRequestGet({ env, params: { id: publicPostCommentsMatch[1] } });
       }
 
       const postMatch = pathname.match(/^\/api\/post\/(\d+)$/);
@@ -107,6 +117,31 @@ export default {
 
       if (pathname === '/api/posts' && request.method === 'POST') {
         return posts.onRequestPost({ request, env, userId });
+      }
+
+      // Post comments (authenticated POST)
+      const postCommentsMatch = pathname.match(/^\/api\/post\/(\d+)\/comments$/);
+      if (postCommentsMatch && request.method === 'POST') {
+        return postComments.onRequestPost({ request, env, params: { id: postCommentsMatch[1] }, userId });
+      }
+
+      // Comment operations (like / edit / delete)
+      const commentMatch = pathname.match(/^\/api\/comment\/(\d+)(?:\/(.+))?$/);
+      if (commentMatch) {
+        const cid = commentMatch[1];
+        const action = commentMatch[2];
+
+        if (action === 'like' && request.method === 'POST') {
+          return commentLike.onRequestPost({ env, params: { id: cid }, userId });
+        }
+
+        if (!action && request.method === 'PATCH') {
+          return commentById.onRequestPatch({ request, env, params: { id: cid }, userId });
+        }
+
+        if (!action && request.method === 'DELETE') {
+          return commentById.onRequestDelete({ env, params: { id: cid }, userId });
+        }
       }
 
       const authPostMatch = pathname.match(/^\/api\/post\/(\d+)$/);
@@ -204,6 +239,9 @@ export default {
               params: { id },
               userId
             });
+
+          case 'join':
+            return challengeJoin(request, { env, params: { id }, userId });
 
           default:
             return new Response('Not Found', { status: 404 });

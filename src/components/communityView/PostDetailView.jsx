@@ -48,7 +48,7 @@ function PostDetailView({ post, onClose, onDeletePost, onEditPost, onUpdatePostS
         const fetchComments = async () => {
             try {
                 const headers = {};
-                if (username) headers['X-Username'] = username;
+                if (username) headers['X-Username'] = encodeURIComponent(username);
                 const response = await fetch(`/api/post/${post.id}/comments`, { headers });
                 if (!response.ok) return;
                 const payload = await response.json();
@@ -72,7 +72,7 @@ function PostDetailView({ post, onClose, onDeletePost, onEditPost, onUpdatePostS
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-Username': username
+                    'X-Username': encodeURIComponent(username)
                 },
                 body: JSON.stringify({ content: text })
             });
@@ -104,7 +104,7 @@ function PostDetailView({ post, onClose, onDeletePost, onEditPost, onUpdatePostS
         try {
             const response = await fetch(`/api/post/${post.id}/like`, {
                 method: 'POST',
-                headers: { 'X-Username': username }
+                headers: { 'X-Username': encodeURIComponent(username) }
             });
             const payload = await response.json();
             if (!response.ok) {
@@ -129,7 +129,7 @@ function PostDetailView({ post, onClose, onDeletePost, onEditPost, onUpdatePostS
         try {
             const response = await fetch(`/api/comment/${id}/like`, {
                 method: 'POST',
-                headers: { 'X-Username': username }
+                headers: { 'X-Username': encodeURIComponent(username) }
             });
             const payload = await response.json();
             if (!response.ok) {
@@ -168,7 +168,7 @@ function PostDetailView({ post, onClose, onDeletePost, onEditPost, onUpdatePostS
                         method: 'PATCH',
                         headers: {
                             'Content-Type': 'application/json',
-                            'X-Username': username
+                            'X-Username': encodeURIComponent(username)
                         },
                         body: JSON.stringify({ content: newText })
                     });
@@ -202,7 +202,7 @@ function PostDetailView({ post, onClose, onDeletePost, onEditPost, onUpdatePostS
                     try {
                         const response = await fetch(`/api/comment/${commentId}`, {
                             method: 'DELETE',
-                            headers: { 'X-Username': username }
+                            headers: { 'X-Username': encodeURIComponent(username) }
                         });
                         const payload = await response.json();
                         if (!response.ok) {
