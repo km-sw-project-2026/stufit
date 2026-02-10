@@ -114,6 +114,7 @@ export default {
       let username = request.headers.get('X-Username');
       
       if (!username) {
+        console.log('❌ No X-Username header');
         return new Response(JSON.stringify({ message: '로그인이 필요합니다.' }), { 
           status: 401,
           headers: { 'Content-Type': 'application/json' }
@@ -121,18 +122,23 @@ export default {
       }
 
       // URL 디코딩 (한글 이름 지원)
+      const originalUsername = username;
       try {
         username = decodeURIComponent(username);
+        console.log('✅ Decoded username:', originalUsername, '->', username);
       } catch (e) {
+        console.log('⚠️ Failed to decode username:', originalUsername, e);
         // 디코딩 실패 시 원본 사용
       }
 
+      console.log('🔍 Looking up user:', username);
       const userRow = await env.D1_DB
         .prepare('SELECT user_id FROM users WHERE username = ?')
         .bind(username)
         .first();
 
       if (!userRow) {
+        console.log('❌ User not found:', username);
         return new Response(JSON.stringify({ message: '사용자를 찾을 수 없습니다.' }), { 
           status: 401,
           headers: { 'Content-Type': 'application/json' }
@@ -140,6 +146,7 @@ export default {
       }
 
       const userId = userRow.user_id;
+      console.log('✅ User authenticated:', username, 'userId:', userId);
 
       if (pathname === '/api/user/points' || pathname.startsWith('/api/user/points/')) {
         return userPoints.onRequestGet({ request, env, userId });
