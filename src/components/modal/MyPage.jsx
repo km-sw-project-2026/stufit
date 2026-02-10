@@ -62,7 +62,7 @@ function MyPage({ isOpen, onClose }) {
 
       setUserData({
         username: username,
-        score: '9,800',
+        score: '0',
         joinDate: localStorage.getItem('joinDate') || '2024년 7월 1일',
         rank: '1위',
         currentRank: '1위',
@@ -155,7 +155,7 @@ function MyPage({ isOpen, onClose }) {
             <div className="profile-name-score">
               <h3>{userData.username}</h3>
               <div className="score-container">
-                <img src="/img/Challenger.png" alt="챌린저" className="score-icon" />
+                <img src="/img/Bronze.png" alt="브론즈" className="score-icon" />
                 <div className="score-right-section">
                   <div className="score-bottom">
                     <span className="score-value">{userData.score}</span>
