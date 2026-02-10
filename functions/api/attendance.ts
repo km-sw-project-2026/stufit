@@ -1,4 +1,4 @@
-// Cloudflare Pages¿ë Å¸ÀÔ Á¤ÀÇ
+ï»¿// Cloudflare Pagesìš© íƒ€ì… ì •ì˜
 // type PagesFunction<T = any> = (context: { request: Request, env: T }) => Promise<Response>;
 
 interface Env {
@@ -7,51 +7,51 @@ interface Env {
 
 export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   try {
-    // 1. µ¥ÀÌÅÍ ¼ö½Å ¹× ´©¶ô Ã¼Å©
+    // 1. ë°ì´í„° ìˆ˜ì‹  ë° ëˆ„ë½ ì²´í¬
     const { userId, date } = await request.json() as { userId: string, date: string };
 
     if (!userId || !date) {
-      return new Response(JSON.stringify({ message: "µ¥ÀÌÅÍ°¡ ºÎÁ·ÇÕ´Ï´Ù." }), { 
+      return new Response(JSON.stringify({ message: "ë°ì´í„°ê°€ ë¶€ì¡±í•©ë‹ˆë‹¤." }), { 
         status: 400, 
         headers: { "Content-Type": "application/json" } 
       });
     }
 
-    // 2. ÀÌ¹Ì ¿À´Ã Ãâ¼®Çß´ÂÁö È®ÀÎ (Áßº¹ Ãâ¼® ¹æÁö) (Å×ÀÌºí¸í: attendance_logs)
+    // 2. ì´ë¯¸ ì˜¤ëŠ˜ ì¶œì„í–ˆëŠ”ì§€ í™•ì¸ (ì¤‘ë³µ ì¶œì„ ë°©ì§€) (í…Œì´ë¸”ëª…: attendance_logs)
     const existing = await env.D1_DB.prepare(
       "SELECT * FROM attendance_logs WHERE user_id = ? AND date = ?"
     ).bind(userId, date).first();
 
     if (existing) {
-      return new Response(JSON.stringify({ message: "ÀÌ¹Ì ¿À´Ã Ãâ¼®ÇÏ¼Ì½À´Ï´Ù." }), { 
+      return new Response(JSON.stringify({ message: "ì´ë¯¸ ì˜¤ëŠ˜ ì¶œì„í•˜ì…¨ìŠµë‹ˆë‹¤." }), { 
         status: 409,
         headers: { "Content-Type": "application/json" }
       });
     }
 
-    // 3. ¿äÀÏº° Æ÷ÀÎÆ® °è»ê (0: ÀÏ¿äÀÏ ~ 6: Åä¿äÀÏ)
-    // Cloudflare Workers ½Ã°£Àº UTC.
+    // 3. ìš”ì¼ë³„ í¬ì¸íŠ¸ ê³„ì‚° (0: ì¼ìš”ì¼ ~ 6: í† ìš”ì¼)
+    // Cloudflare Workers ì‹œê°„ì€ UTC.
     const now = new Date();
-    // KST º¯È¯ (UTC+9)
+    // KST ë³€í™˜ (UTC+9)
     const kstOffset = 9 * 60 * 60 * 1000;
     const kstDate = new Date(now.getTime() + kstOffset);
     const dayOfWeek = kstDate.getUTCDay(); // 0(Sun) ~ 6(Sat)
 
     const rewardPoints = 100 + (dayOfWeek * 20);
 
-    // 4. DB Æ®·£Àè¼Ç Ã³¸® (Ãâ¼® ±â·Ï + Æ÷ÀÎÆ® ·Î±× + À¯Àú Æ÷ÀÎÆ® ¾÷µ¥ÀÌÆ®)
+    // 4. DB íŠ¸ëœì­ì…˜ ì²˜ë¦¬ (ì¶œì„ ê¸°ë¡ + í¬ì¸íŠ¸ ë¡œê·¸ + ìœ ì € í¬ì¸íŠ¸ ì—…ë°ì´íŠ¸)
     const stmts = [
-      // 4-1. Ãâ¼® ±â·Ï Ãß°¡
+      // 4-1. ì¶œì„ ê¸°ë¡ ì¶”ê°€
       env.D1_DB.prepare(
         "INSERT INTO attendance_logs (user_id, date) VALUES (?, ?)"
       ).bind(userId, date),
 
-      // 4-2. Æ÷ÀÎÆ® ·Î±× Ãß°¡ (Å×ÀÌºí¸í: point_logs, ÄÃ·³: point)
+      // 4-2. í¬ì¸íŠ¸ ë¡œê·¸ ì¶”ê°€ (í…Œì´ë¸”ëª…: point_logs, ì»¬ëŸ¼: point)
       env.D1_DB.prepare(
         "INSERT INTO point_logs (user_id, reason, point, created_at) VALUES (?, ?, ?, ?)"
-      ).bind(userId, 'Ãâ¼®Ã¼Å© (' + date + ')', rewardPoints, kstDate.toISOString()),
+      ).bind(userId, 'ì¶œì„ì²´í¬ ( ' + date + ' )', rewardPoints, kstDate.toISOString()),
 
-      // 4-3. À¯Àú ÇÁ·ÎÇÊ Æ÷ÀÎÆ® ¾÷µ¥ÀÌÆ® (Å×ÀÌºí¸í: user_profiles, ÄÃ·³: points)
+      // 4-3. ìœ ì € í”„ë¡œí•„ í¬ì¸íŠ¸ ì—…ë°ì´íŠ¸ (í…Œì´ë¸”ëª…: user_profiles, ì»¬ëŸ¼: points)
       env.D1_DB.prepare(
         "UPDATE user_profiles SET points = points + ? WHERE user_id = ?"
       ).bind(rewardPoints, userId)
@@ -61,7 +61,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
 
     return new Response(JSON.stringify({ 
       success: true, 
-      message: 'Ãâ¼® ¿Ï·á! ' + rewardPoints + 'P°¡ Áö±ŞµÇ¾ú½À´Ï´Ù.',
+      message: 'ì¶œì„ ì™„ë£Œ! ' + rewardPoints + 'Pê°€ ì§€ê¸‰ë˜ì—ˆìŠµë‹ˆë‹¤.',
       rewardPoints 
     }), {
       status: 200,

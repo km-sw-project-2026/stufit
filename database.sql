@@ -169,38 +169,38 @@ INSERT INTO "sqlite_sequence" VALUES('posts',1);
 -----------------------------------------------------
 
 
--- 출석체크 테이블
-CREATE TABLE IF NOT EXISTS attendance (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id TEXT NOT NULL,
-    date TEXT NOT NULL,
-    FOREIGN KEY (user_id) REFERENCES users(user_id)
-);
+-- -- 출석체크 테이블
+-- CREATE TABLE IF NOT EXISTS attendance (
+--     id INTEGER PRIMARY KEY AUTOINCREMENT,
+--     user_id TEXT NOT NULL,
+--     date TEXT NOT NULL,
+--     FOREIGN KEY (user_id) REFERENCES users(user_id)
+-- );
 
--- 챌린지 결과 테이블
-CREATE TABLE IF NOT EXISTS challenge_results (
-    user_id TEXT NOT NULL,
-    challenge_id TEXT NOT NULL,
-    score INTEGER DEFAULT 0,
-    PRIMARY KEY (user_id, challenge_id),
-    FOREIGN KEY (user_id) REFERENCES users(user_id)
-);
+-- -- 챌린지 결과 테이블
+-- CREATE TABLE IF NOT EXISTS challenge_results (
+--     user_id TEXT NOT NULL,
+--     challenge_id TEXT NOT NULL,
+--     score INTEGER DEFAULT 0,
+--     PRIMARY KEY (user_id, challenge_id),
+--     FOREIGN KEY (user_id) REFERENCES users(user_id)
+-- );
 
 
 
--- 출석체크 테이블: 유저의 일일 출석 기록을 저장
-CREATE TABLE IF NOT EXISTS attendance (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id TEXT NOT NULL,
-    date TEXT NOT NULL,
-    FOREIGN KEY (user_id) REFERENCES users(user_id)
-);
+-- -- 출석체크 테이블: 유저의 일일 출석 기록을 저장
+-- CREATE TABLE IF NOT EXISTS attendance (
+--     id INTEGER PRIMARY KEY AUTOINCREMENT,
+--     user_id TEXT NOT NULL,
+--     date TEXT NOT NULL,
+--     FOREIGN KEY (user_id) REFERENCES users(user_id)
+-- );
 
--- 챌린지 결과 테이블: 유저별 챌린지 점수를 저장 (중복 방지를 위해 PK 설정)
-CREATE TABLE IF NOT EXISTS challenge_results (
-    user_id TEXT NOT NULL,
-    challenge_id TEXT NOT NULL,
-    score INTEGER DEFAULT 0,
-    PRIMARY KEY (user_id, challenge_id),
-    FOREIGN KEY (user_id) REFERENCES users(user_id)
-);
+-- -- 챌린지 결과 테이블: 유저별 챌린지 점수를 저장 (중복 방지를 위해 PK 설정)
+-- CREATE TABLE IF NOT EXISTS challenge_results (
+--     user_id TEXT NOT NULL,
+--     challenge_id TEXT NOT NULL,
+--     score INTEGER DEFAULT 0,
+--     PRIMARY KEY (user_id, challenge_id),
+--     FOREIGN KEY (user_id) REFERENCES users(user_id)
+-- );

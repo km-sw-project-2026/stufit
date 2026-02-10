@@ -59,7 +59,11 @@ export default {
       }
 
       if (pathname === '/api/auth/logout') {
-        return logout.onRequestPost({ request, env });
+       
+
+      if (pathname === '/api/attendance') {
+        return attendance.onRequestPost({ request, env });
+      } return logout.onRequestPost({ request, env });
       }
 
       if (pathname === '/api/attendance') {

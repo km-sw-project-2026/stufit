@@ -4512,3 +4512,102 @@ body.modal-open {
     opacity: 0.3;
     cursor: not-allowed;
 }
+
+/* ========== Join modal styles ========== */
+.join-modal-overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.35);
+    z-index: 9999;
+}
+.join-modal {
+    width: 420px;
+    max-width: calc(100% - 40px);
+    background: #fff;
+    border-radius: 12px;
+    padding: 22px 24px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+}
+.join-modal-title {
+    font-size: 1.25rem;
+    margin-bottom: 8px;
+    color: #163f3d;
+    font-weight: 700;
+}
+.join-modal-desc {
+    font-size: 0.95rem;
+    color: #555;
+    margin-bottom: 18px;
+    line-height: 1.4;
+}
+.join-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+.btn {
+    padding: 8px 18px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+}
+.btn:disabled { opacity: 0.6; cursor: default; }
+.btn-primary {
+    background: #176B5F;
+    color: #fff;
+    box-shadow: 0 4px 10px rgba(23,107,95,0.18);
+}
+.btn-primary:hover { filter: brightness(0.95); }
+.btn-secondary {
+    background: transparent;
+    color: #444;
+    border: 1px solid #ddd;
+}
+.btn-secondary:hover { background: #f5f5f5; }
+
+/* success icon */
+.join-modal-success { text-align: center; padding: 8px 0; }
+.join-success-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: #e6f6f1;
+    color: #176B5F;
+    font-size: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin: 8px auto 12px auto;
+}
+
+/* Subtle animations for modal open and success pop */
+.join-modal-overlay {
+    animation: overlayFade 180ms ease-out;
+}
+.join-modal {
+    animation: modalPop 220ms cubic-bezier(.2,.9,.3,1);
+}
+.join-success-icon {
+    animation: successPop 420ms cubic-bezier(.2,.9,.3,1);
+}
+
+@keyframes overlayFade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes modalPop {
+    0% { transform: translateY(-6px) scale(0.98); opacity: 0; }
+    60% { transform: translateY(2px) scale(1.02); opacity: 1; }
+    100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+@keyframes successPop {
+    0% { transform: scale(0.6); opacity: 0; }
+    70% { transform: scale(1.08); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+}

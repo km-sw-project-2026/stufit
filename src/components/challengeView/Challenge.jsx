@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import CreateChallengeModal from '../modal/CreateChallengeModal';
+import CustomAlertModal from '../modals/CustomAlertModal';
 
 function Challenge({ closeChallengeModal, onCreateSuccess }) {
     const [createChallengeModalOpen, setCreateChallengeModalOpen] = useState(false);
@@ -101,9 +102,9 @@ function Challenge({ closeChallengeModal, onCreateSuccess }) {
     const ChallengeCard = ({ challenge }) => {
         const startDate = formatDate(challenge.created_at);
         const endDate = formatDate(challenge.end_date);
-        const [showJoinModal, setShowJoinModal] = React.useState(false);
         const [joinLoading, setJoinLoading] = React.useState(false);
-        const JoinModal = React.lazy(() => import('../modal/JoinModal'));
+        const [alertOpen, setAlertOpen] = React.useState(false);
+        const [alertMessage, setAlertMessage] = React.useState('');
 
         return (
             <div className="challenge-card" style={{ 
@@ -111,11 +112,12 @@ function Challenge({ closeChallengeModal, onCreateSuccess }) {
                 borderRadius: '20px', 
                 padding: '35px', 
                 backgroundColor: 'white',
-                minHeight: '220px',
+                minHeight: '240px',
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'space-between',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
+                boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                position: 'relative',
             }}>
                 <div>
                     <div className="challenge-card-header" style={{ marginBottom: '25px' }}>
@@ -127,39 +129,20 @@ function Challenge({ closeChallengeModal, onCreateSuccess }) {
                         <p style={{ margin: '10px 0' }}>기간 - {startDate} ~ {endDate}</p>
                         <p style={{ margin: '10px 0' }}>목표 - {challenge.goal}</p>
                     </div>
-                    <div className="challenge-card-footer" style={{ marginTop: '30px', display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
+                    <div className="challenge-card-footer" style={{ /* absolute footer to avoid shifting content */ position: 'absolute', right: '24px', bottom: '24px', display: 'flex', alignItems: 'center' }}>
                         <button 
                             className="challenge-detail-btn" 
-                            style={{ border: '1px solid #247b7b', borderRadius: '20px', padding: '8px 25px', backgroundColor: 'white', color: '#247b7b', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.95rem' }}
-                            onClick={() => setShowJoinModal(true)}
+                            style={{ border: '1px solid #247b7b', borderRadius: '20px', padding: '8px 25px', backgroundColor: 'white', color: '#247b7b', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.95rem', whiteSpace: 'nowrap' }}
+                            onClick={() => {
+                                // 클릭 시 바로 모달만 띄움
+                                setAlertMessage('참가 완료!');
+                                setAlertOpen(true);
+                            }}
                         >
                             참여하기
                         </button>
-                        {showJoinModal && (
-                            <React.Suspense fallback={<div />}>
-                                <JoinModal
-                                    open={showJoinModal}
-                                    loading={joinLoading}
-                                    onClose={() => setShowJoinModal(false)}
-                                    onConfirm={async () => {
-                                        if (joinLoading) return;
-                                        setJoinLoading(true);
-                                        try {
-                                            const username = localStorage.getItem('username');
-                                            const res = await fetch(`/api/challenges/${challenge.challenge_id}/join`, { method: 'POST', headers: username ? { 'X-Username': encodeURIComponent(username) } : {} });
-                                            const payload = await res.json();
-                                            if (!res.ok) throw new Error(payload?.message || '참가 실패');
-                                            window.dispatchEvent(new CustomEvent('challenge-joined', { detail: { challengeId: challenge.challenge_id, members: payload.members || [] } }));
-                                            setShowJoinModal(false);
-                                            fetchChallenges();
-                                        } catch (e) {
-                                            alert(e.message || '참가 중 오류');
-                                        } finally {
-                                            setJoinLoading(false);
-                                        }
-                                    }}
-                                />
-                            </React.Suspense>
+                        {alertOpen && (
+                            <CustomAlertModal onClose={() => setAlertOpen(false)} message={alertMessage} />
                         )}
                     </div>
                 </div>
