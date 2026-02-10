@@ -4,6 +4,7 @@ import ShopProfileFrame from './ShopProfileFrame';
 import ShopProfileBG from './ShopProfileBG';
 import ShopProfileImage from './ShopProfileImage';
 import ShopWishlist from './ShopWishlist';
+import { bgItems, frameItems, imageItems, shopItems } from './shopItems';
 import ShopSidebar from './ShopSidebar';
 import CustomAlertModal from '../modal/CustomAlertModal';
 import '../shopView/Shop.css';
@@ -193,10 +194,10 @@ function Shop() {
     };
 
     const itemCounts = {
-        all: 8,
-        frame: 4,
-        bg: 6,
-        image: 6,
+        all: shopItems.length,
+        frame: frameItems.length,
+        bg: bgItems.length,
+        image: imageItems.length,
         cart: wishlistItems.length,
     };
 

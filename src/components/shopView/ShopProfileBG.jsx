@@ -1,13 +1,8 @@
+import { bgItems } from './shopItems';
+
 function ShopProfileBG({ wishlistScope, isWishlisted, isPurchased, toggleWishlist, onPurchase }) {
     const categoryLabel = '프로필 배경';
-    const items = [
-        { id: 1, name: '파스텔 여름', price: '2,500 P', color: '#fffacd', image: '' },
-        { id: 2, name: '신비한 밤하늘', price: '4,000 P', color: '#191970', image: '' },
-        { id: 3, name: '벚꽃 봄', price: '3,500 P', color: '#ffb6c1', image: '' },
-        { id: 4, name: '단풍 가을', price: '3,000 P', color: '#ff8c00', image: '' },
-        { id: 5, name: '소복한 겨울', price: '2,800 P', color: '#e0ffff', image: '' },
-        { id: 6, name: '신록 숲', price: '3,200 P', color: '#228b22', image: '' },
-    ];
+    const items = bgItems;
 
     return (
         <div className="shop-items-grid">
@@ -19,7 +14,7 @@ function ShopProfileBG({ wishlistScope, isWishlisted, isPurchased, toggleWishlis
                 return (
                     <div key={item.id} className="shop-item-card">
                     <div
-                        className={`item-image ${item.image ? 'has-image' : ''}`}
+                        className={`item-image ${item.image ? 'has-image' : ''} is-bg`}
                         style={{ backgroundColor: item.color }}
                     >
                         {item.image ? (
