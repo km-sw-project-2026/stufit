@@ -23,9 +23,9 @@ export async function onRequestPost({ env, params, userId }) {
     
     let promoted = false;
 
-    // 좋아요 1개 이상이면 Popular 등록 및 포인트 지급 (테스트용)
+    // 좋아요 200개 이상이면 Popular 등록 및 포인트 지급
     try {
-      if (count >= 1) {
+      if (count >= 200) {
         const post = await env.D1_DB
           .prepare('SELECT user_id, popular_reward_paid FROM posts WHERE post_id = ?')
           .bind(postId)

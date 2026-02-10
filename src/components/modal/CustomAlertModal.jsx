@@ -2,7 +2,7 @@ import React from 'react';
 
 function CustomAlertModal({ message, onClose }) {
   return (
-    <div id="custom-alert-modal" className="popup-modal" style={{position: 'fixed', inset: 0, zIndex: 1000}}>
+    <div id="custom-alert-modal" className="popup-modal" style={{position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
       <div 
         className="popup-overlay" 
         onClick={onClose} 
@@ -17,10 +17,8 @@ function CustomAlertModal({ message, onClose }) {
             padding: '40px',
             backgroundColor: 'white',
             borderRadius: '12px',
-            margin: 'auto',
-            top: '50%',
-            transform: 'translateY(-50%)',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+            zIndex: 1001
         }}
       >
         <p id="custom-alert-text" style={{ marginBottom: '25px', fontSize: '1.1rem', color: '#333' }}>
