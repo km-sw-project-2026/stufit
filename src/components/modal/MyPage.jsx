@@ -5,6 +5,16 @@ function MyPage({ isOpen, onClose }) {
   const [userData, setUserData] = useState(null);
   const navigate = useNavigate();
 
+  const getPurchasedItemCount = () => {
+    try {
+      const stored = localStorage.getItem('purchasedItems');
+      const parsed = stored ? JSON.parse(stored) : {};
+      return parsed && typeof parsed === 'object' ? Object.keys(parsed).length : 0;
+    } catch {
+      return 0;
+    }
+  };
+
   const formatPoints = (value) => {
     const numeric = Number(value);
     if (Number.isNaN(numeric)) {
@@ -70,7 +80,7 @@ function MyPage({ isOpen, onClose }) {
         points: cachedPoints ? Number(cachedPoints) : 0,
         posts: `${postCount}개`,
         comments: `${commentCount}개`,
-        items: '7개'
+        items: `${getPurchasedItemCount()}개`
       });
     }
 
