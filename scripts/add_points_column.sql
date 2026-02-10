@@ -1,0 +1,1 @@
+ALTER TABLE point_logs ADD COLUMN points INTEGER DEFAULT 0;
