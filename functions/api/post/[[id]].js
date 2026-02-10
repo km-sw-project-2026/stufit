@@ -27,7 +27,23 @@ export default async function onRequest(request, { env, params, userId }) {
         }
 
         if (request.method === 'DELETE') {
+            // 게시글 삭제 시 연관 데이터(댓글, 좋아요 등) 먼저 삭제 (Cascade)
+            
+            // 1. 댓글의 좋아요 삭제
+            await env.D1_DB.prepare(`
+                DELETE FROM comment_likes 
+                WHERE comment_id IN (SELECT comment_id FROM comments WHERE post_id = ?)
+            `).bind(id).run();
+
+            // 2. 댓글 삭제
+            await env.D1_DB.prepare('DELETE FROM comments WHERE post_id = ?').bind(id).run();
+
+            // 3. 게시글 좋아요 삭제
+            await env.D1_DB.prepare('DELETE FROM post_likes WHERE post_id = ?').bind(id).run();
+
+            // 4. 게시글 삭제
             await env.D1_DB.prepare('DELETE FROM posts WHERE post_id = ?').bind(id).run();
+            
             return Response.json({ success: true, data: { postId: id }, message: '게시글 삭제 완료' });
         }
 
