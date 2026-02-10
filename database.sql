@@ -128,6 +128,7 @@ CREATE TABLE posts (
   content TEXT NOT NULL,
   category TEXT NOT NULL DEFAULT 'data',
   view_count INTEGER NOT NULL DEFAULT 0,
+  popular_reward_paid INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TEXT,
   deleted_at TEXT,
