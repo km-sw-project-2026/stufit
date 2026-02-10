@@ -156,6 +156,7 @@
     border: 1px solid #e0e0e0;
     box-sizing: border-box;
     overflow: hidden;
+    padding: 8px;
 }
 
 .item-image.has-image {
@@ -165,8 +166,17 @@
 .item-image-img {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
+    object-position: center;
     display: block;
+}
+
+.item-image.is-bg {
+    padding: 0;
+}
+
+.item-image.is-bg .item-image-img {
+    object-fit: cover;
 }
 
 .profile-frame {
