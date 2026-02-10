@@ -46,9 +46,6 @@ function Popular({ posts = [], onOpenPost, onNewPost, onToggleLike }) {
                         );
                     })}
                 </div>
-                <div className="community-board-sidebar">
-                    <button className="btn-new-post" onClick={onNewPost}>New Post</button>
-                </div>
             </div>
         </div>
     );
