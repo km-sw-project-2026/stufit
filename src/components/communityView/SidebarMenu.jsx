@@ -1,6 +1,11 @@
 import React from 'react';
 
-function SidebarMenu({ activeTab, goToTab }) {
+function SidebarMenu({ activeTab, goToTab, onNewPost }) {
+    const handleNewPostClick = (e, category) => {
+        e.stopPropagation();
+        if (onNewPost) onNewPost(category);
+    };
+
     return (
         <div className="community-sidebar">
             <div className="sidebar-menu">

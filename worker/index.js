@@ -12,14 +12,17 @@ import * as logout from '../functions/api/auth/logout';
 // posts
 import * as posts from '../functions/api/posts';
 import * as postById from '../functions/api/post/[[id]]';
+import * as postLike from '../functions/api/post/[id]/like';
 import * as postComments from '../functions/api/post/[id]/comments';
+
+// comments
+import * as commentById from '../functions/api/comment/[id]/index';
+import * as commentLike from '../functions/api/comment/[id]/like';
 
 // shop/user
 import * as shopPurchase from '../functions/api/shop/purchase';
 import * as userPoints from '../functions/api/user/points';
 import * as userResolve from '../functions/api/user/resolve';
-import * as commentById from '../functions/api/comment/[id]/index';
-import * as commentLike from '../functions/api/comment/[id]/like';
 
 // challenges extra
 import * as progress from '../functions/api/challenges/[id]/progress';
@@ -79,27 +82,64 @@ export default {
         return postById.onRequestGet({ env, params: { id: postMatch[1] } });
       }
 
+      const commentListMatch = pathname.match(/^\/api\/post\/(\d+)\/comments$/);
+      if (commentListMatch && request.method === 'GET') {
+        let optionalUserId;
+        let headerUsername = request.headers.get('X-Username');
+
+        if (headerUsername) {
+          // URL 디코딩
+          try {
+            headerUsername = decodeURIComponent(headerUsername);
+          } catch (e) {}
+
+          const userRow = await env.D1_DB
+            .prepare('SELECT user_id FROM users WHERE username = ?')
+            .bind(headerUsername)
+            .first();
+
+          if (userRow?.user_id) {
+            optionalUserId = userRow.user_id;
+          }
+        }
+
+        return postComments.onRequestGet({ env, params: { id: commentListMatch[1] }, userId: optionalUserId });
+      }
+
       /* =========================
          1️⃣ 사용자 인증 (username 기반)
       ========================= */
 
       // username으로 userId 조회 (간단한 인증)
       const rawUsername = request.headers.get('X-Username');
-      const username = rawUsername ? decodeURIComponent(rawUsername) : null;
-
+      let username = rawUsername ? decodeURIComponent(rawUsername) : null;
+      
       if (!username) {
+        console.log('❌ No XUsername header - index.js:118');
         return new Response(JSON.stringify({ message: '로그인이 필요합니다.' }), { 
           status: 401,
           headers: { 'Content-Type': 'application/json' }
         });
       }
 
+      // URL 디코딩 (한글 이름 지원)
+      const originalUsername = username;
+      try {
+        username = decodeURIComponent(username);
+        console.log('✅ Decoded username: - index.js:129', originalUsername, '->', username);
+      } catch (e) {
+        console.log('⚠️ Failed to decode username: - index.js:131', originalUsername, e);
+        // 디코딩 실패 시 원본 사용
+      }
+
+      console.log('🔍 Looking up user: - index.js:135', username);
       const userRow = await env.D1_DB
         .prepare('SELECT user_id FROM users WHERE username = ?')
         .bind(username)
         .first();
 
       if (!userRow) {
+        console.log('❌ User not found: - index.js:142', username);
         return new Response(JSON.stringify({ message: '사용자를 찾을 수 없습니다.' }), { 
           status: 401,
           headers: { 'Content-Type': 'application/json' }
@@ -107,6 +147,7 @@ export default {
       }
 
       const userId = userRow.user_id;
+      console.log('✅ User authenticated: - index.js:150', username, 'userId:', userId);
 
       if (pathname === '/api/user/points' || pathname.startsWith('/api/user/points/')) {
         return userPoints.onRequestGet({ request, env, userId });
@@ -150,6 +191,10 @@ export default {
          return postById.default(request, { env, params: { id: authPostMatch[1] }, userId });
       }
 
+      const postLikeMatch = pathname.match(/^\/api\/post\/(\d+)\/like$/);
+      if (postLikeMatch && request.method === 'POST') {
+        return postLike.onRequestPost({ env, params: { id: postLikeMatch[1] }, userId });
+      }
 
       if (pathname === '/api/user/resolve' || pathname.startsWith('/api/user/resolve/')) {
         return userResolve.onRequestGet({ request, env });
@@ -259,7 +304,7 @@ export default {
 
       return new Response('Not Found', { status: 404 });
     } catch (err) {
-      console.error("❌ WORKER ERROR:", err?.message || String(err));
+      console.error("❌ WORKER ERROR: - index.js:307", err?.message || String(err));
       return new Response(
         JSON.stringify({ message: '서버 오류가 발생했습니다.' }),
         { status: 500, headers: { "Content-Type": "application/json" } }

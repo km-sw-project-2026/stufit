@@ -137,16 +137,6 @@ function MyPost({ posts = [], onOpenPost, onNewPost, onToggleLike }) {
             <div className="community-title-section">
                 <h2>My Posts</h2>
                 <p>내가 작성한 글을 확인하세요.</p>
-                {/* 글쓰기 버튼이 있으면 더 편하겠죠? */}
-                <button onClick={onNewPost} className="new-post-btn" style={{
-                    marginTop: '10px',
-                    padding: '8px 16px',
-                    backgroundColor: '#006d5d',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '5px',
-                    cursor: 'pointer'
-                }}>New Post</button>
             </div>
 
             <div className="community-board-container">
