@@ -19,10 +19,22 @@ export default async function onRequestPost(request: Request, { env, params, use
 
     if (exists) {
       // 반환시 현재 멤버 목록도 함께 반환
-        const members = await env.D1_DB
+      // check if status column exists to avoid SQL errors on older DBs
+      const pragma = await env.D1_DB.prepare("PRAGMA table_info('challenge_members')").all();
+      const hasStatus = (pragma.results || []).some((c: any) => c.name === 'status');
+      let members;
+      if (hasStatus) {
+        members = await env.D1_DB
           .prepare('SELECT u.user_id, u.username, cm.status FROM challenge_members cm JOIN users u ON cm.user_id = u.user_id WHERE cm.challenge_id = ?')
-        .bind(id)
-        .all();
+          .bind(id)
+          .all();
+      } else {
+        members = await env.D1_DB
+          .prepare('SELECT u.user_id, u.username FROM challenge_members cm JOIN users u ON cm.user_id = u.user_id WHERE cm.challenge_id = ?')
+          .bind(id)
+          .all();
+        members.results = (members.results || []).map((r: any) => ({ ...r, status: 'not_submitted' }));
+      }
       return Response.json({ success: true, message: '이미 참가중입니다.', members: members.results || [] });
     }
 
@@ -32,10 +44,22 @@ export default async function onRequestPost(request: Request, { env, params, use
       .bind(id, userId)
       .run();
 
-      const members = await env.D1_DB
+    // check status column exists
+    const pragma2 = await env.D1_DB.prepare("PRAGMA table_info('challenge_members')").all();
+    const hasStatus2 = (pragma2.results || []).some((c: any) => c.name === 'status');
+    let members;
+    if (hasStatus2) {
+      members = await env.D1_DB
         .prepare('SELECT u.user_id, u.username, cm.status FROM challenge_members cm JOIN users u ON cm.user_id = u.user_id WHERE cm.challenge_id = ?')
-      .bind(id)
-      .all();
+        .bind(id)
+        .all();
+    } else {
+      members = await env.D1_DB
+        .prepare('SELECT u.user_id, u.username FROM challenge_members cm JOIN users u ON cm.user_id = u.user_id WHERE cm.challenge_id = ?')
+        .bind(id)
+        .all();
+      members.results = (members.results || []).map((r: any) => ({ ...r, status: 'not_submitted' }));
+    }
 
     return Response.json({ success: true, message: '참가 완료', members: members.results || [] }, { status: 201 });
   } catch (err: any) {

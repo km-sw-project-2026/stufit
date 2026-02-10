@@ -166,23 +166,43 @@ export default async function handler(request: Request, { env, userId }: Handler
 
     // 챌린지 멤버 추가
     console.log('Adding user to challenge_members...');
-    await env.D1_DB
-      .prepare(
-        'INSERT INTO challenge_members (challenge_id, user_id, joined_at) VALUES (?, ?, datetime(\'now\'))'
-      )
-      .bind(challengeId, userId)
-      .run();
+    try {
+      // use INSERT OR IGNORE so duplicate PK doesn't error out on retries
+      await env.D1_DB
+        .prepare("INSERT OR IGNORE INTO challenge_members (challenge_id, user_id, joined_at) VALUES (?, ?, datetime('now'))")
+        .bind(challengeId, userId)
+        .run();
+    } catch (e) {
+      console.error('참가자 추가 중 오류(무시):', e instanceof Error ? e.message : String(e));
+    }
 
     const createdChallenge = await env.D1_DB
       .prepare('SELECT * FROM challenges WHERE challenge_id = ?')
       .bind(challengeId)
       .first();
 
+    // fetch members robustly (handle DBs without status)
+    const pragma = await env.D1_DB.prepare("PRAGMA table_info('challenge_members')").all();
+    const hasStatus = (pragma.results || []).some((c: any) => c.name === 'status');
+    let members;
+    if (hasStatus) {
+      members = await env.D1_DB
+        .prepare('SELECT u.user_id, u.username, cm.status FROM challenge_members cm JOIN users u ON cm.user_id = u.user_id WHERE cm.challenge_id = ?')
+        .bind(challengeId)
+        .all();
+    } else {
+      members = await env.D1_DB
+        .prepare('SELECT u.user_id, u.username FROM challenge_members cm JOIN users u ON cm.user_id = u.user_id WHERE cm.challenge_id = ?')
+        .bind(challengeId)
+        .all();
+      members.results = (members.results || []).map((r: any) => ({ ...r, status: 'not_submitted' }));
+    }
+
     console.log('✅ Challenge creation complete!');
     return Response.json(
       { 
         success: true, 
-        data: { challengeId, challenge: createdChallenge || null }, 
+        data: { challengeId, challenge: createdChallenge || null, members: members.results || [], isJoined: true }, 
         message: '챌린지가 성공적으로 생성되었습니다!' 
       },
       { status: 201 }

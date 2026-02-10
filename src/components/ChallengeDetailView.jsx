@@ -153,33 +153,55 @@ function ChallengeDetailView({ challenge, onClose }) {
 
     // 챌린지 멤버 목록 로드
     useEffect(() => {
-        const loadMembers = async () => {
-            if (!challenge?.challenge_id) return;
+        if (!challenge?.challenge_id) return;
+
+        let mounted = true;
+        let intervalId = 0;
+
+        const fetchMembers = async () => {
             try {
                 const username = localStorage.getItem('username');
                 const headers = {};
                 if (username) headers['X-Username'] = username;
 
+                // Prefer fetching challenge detail which includes members + isJoined
                 const res = await fetch(`/api/challenges/${challenge.challenge_id}`, { headers });
                 if (!res.ok) return;
                 const payload = await res.json();
-                const data = payload?.data || {};
-                setMembers(Array.isArray(data.members) ? data.members : []);
+                const list = (payload?.data && payload.data.members) ? payload.data.members : (payload?.members || []);
+
+                // If members list empty but server marks user as joined, show current user as member
+                if ((list.length === 0) && payload?.data?.isJoined && username) {
+                  list.push({ user_id: null, username, status: 'not_submitted' });
+                }
+
+                if (mounted) setMembers(list || []);
             } catch (e) {
                 console.error('멤버 목록 로드 실패:', e);
             }
         };
 
-        loadMembers();
+        // initial fetch
+        fetchMembers();
+
+        // poll every 3s
+        intervalId = window.setInterval(fetchMembers, 3000);
+
         const handler = (e) => {
             try {
                 if (e?.detail?.challengeId === challenge?.challenge_id) {
-                    setMembers(Array.isArray(e.detail.members) ? e.detail.members : members);
+                    const list = Array.isArray(e.detail.members) ? e.detail.members : [];
+                    setMembers(list);
                 }
             } catch (err) { /* ignore */ }
         };
         window.addEventListener('challenge-joined', handler);
-        return () => window.removeEventListener('challenge-joined', handler);
+
+        return () => {
+            mounted = false;
+            window.removeEventListener('challenge-joined', handler);
+            clearInterval(intervalId);
+        };
     }, [challenge]);
 
     // 카테고리 한글 변환

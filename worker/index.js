@@ -84,8 +84,9 @@ export default {
       ========================= */
 
       // username으로 userId 조회 (간단한 인증)
-      const username = request.headers.get('X-Username');
-      
+      const rawUsername = request.headers.get('X-Username');
+      const username = rawUsername ? decodeURIComponent(rawUsername) : null;
+
       if (!username) {
         return new Response(JSON.stringify({ message: '로그인이 필요합니다.' }), { 
           status: 401,
@@ -242,6 +243,8 @@ export default {
 
           case 'join':
             return challengeJoin(request, { env, params: { id }, userId });
+          case 'members':
+            if (request.method === 'GET') return (await import('../functions/api/challenges/[id]/members')).default(request, { env, params: { id } });
 
           default:
             return new Response('Not Found', { status: 404 });

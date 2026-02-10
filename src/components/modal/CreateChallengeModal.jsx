@@ -40,7 +40,7 @@ function CreateChallengeModal({ setCreateChallengeOpen, closeCreateChallengeModa
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'X-Username': username
+          'X-Username': encodeURIComponent(username)
         },
         body: JSON.stringify({
           challengeName,
@@ -62,6 +62,27 @@ function CreateChallengeModal({ setCreateChallengeOpen, closeCreateChallengeModa
       }
 
       alert('챌린지가 성공적으로 생성되었습니다!');
+      // 자동 참가 반영: 생성 성공 시 최신 멤버 목록을 받아와 이벤트로 알림
+      try {
+        const createdId = result?.data?.challengeId || (result?.data?.challenge && result.data.challenge.challenge_id);
+        if (createdId) {
+          // fetch members to include in event so detail view doesn't get cleared
+          try {
+            const membersRes = await fetch(`/api/challenges/${createdId}/members`, { headers: { 'X-Username': username } });
+            if (membersRes.ok) {
+              const payload = await membersRes.json();
+              window.dispatchEvent(new CustomEvent('challenge-joined', { detail: { challengeId: createdId, members: payload.members || [] } }));
+            } else {
+              window.dispatchEvent(new CustomEvent('challenge-joined', { detail: { challengeId: createdId } }));
+            }
+          } catch (e) {
+            window.dispatchEvent(new CustomEvent('challenge-joined', { detail: { challengeId: createdId } }));
+          }
+        }
+      } catch (e) {
+        // ignore
+      }
+
       if (onCreateSuccess) onCreateSuccess(result?.data?.challenge || null);
       closeCreateChallengeModal();
     } catch (error) {

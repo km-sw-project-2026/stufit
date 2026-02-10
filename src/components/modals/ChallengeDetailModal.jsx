@@ -43,15 +43,43 @@ function ChallengeDetailModal({ onClose, challenge }) {
       }
     };
     load();
+    // polling
+    let mounted = true;
+    let intervalId = 0;
+
+    const fetchMembers = async () => {
+      try {
+        const username = localStorage.getItem('username');
+        const headers = {};
+        if (username) headers['X-Username'] = username;
+        const res = await fetch(`/api/challenges/${challenge.challenge_id}/members`, { headers });
+        if (!res.ok) return;
+        const payload = await res.json();
+        const list = payload?.members || [];
+        if (mounted) setMembers(list);
+      } catch (e) {
+        console.error('멤버 목록 로드 실패:', e);
+      }
+    };
+
+    fetchMembers();
+    intervalId = window.setInterval(fetchMembers, 3000);
+
     const handler = (e) => {
       try {
         if (e?.detail?.challengeId === challenge?.challenge_id) {
-          setMembers(Array.isArray(e.detail.members) ? e.detail.members : members);
+          const list = Array.isArray(e.detail.members) ? e.detail.members : [];
+          setMembers(list);
         }
       } catch (err) { }
     };
     window.addEventListener('challenge-joined', handler);
-    return () => window.removeEventListener('challenge-joined', handler);
+
+    return () => {
+      mounted = false;
+      window.removeEventListener('challenge-joined', handler);
+      clearInterval(intervalId);
+    };
   }, [challenge]);
 
   const statusItems = [
