@@ -3103,7 +3103,7 @@ body.modal-open {
 .comment-top-row {
     flex: 1;
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     gap: 12px;
 }
 
@@ -3134,7 +3134,7 @@ body.modal-open {
 }
 
 .comment-text {
-    font-size: 30px;
+    font-size: 20px;
     color: #333;
     line-height: 1.5;
     flex: 1;
