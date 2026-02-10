@@ -488,7 +488,8 @@ function Community() {
         likes: Number(row.like_count) || 0,
         comments: Number(row.comment_count) || 0,
         liked: Boolean(row.user_liked),
-        date: row.created_at ? new Date(row.created_at).toLocaleString('ko-KR') : ''
+        date: row.created_at ? new Date(row.created_at).toLocaleString('ko-KR') : '',
+        category: row.category || 'data'
     });
 
     // 게시글 목록 가져오기
@@ -587,6 +588,7 @@ function Community() {
                 return alert(payload.message || '게시글 삭제에 실패했습니다.');
             }
 
+            closeDetailView();
             await fetchPosts();
         } catch (error) {
             console.error('게시글 삭제 실패:', error);
@@ -614,6 +616,7 @@ function Community() {
             const payload = await response.json();
             if (!response.ok) return alert(payload.message || '게시글 수정에 실패했습니다.');
 
+            closeDetailView();
             await fetchPosts();
         } catch (error) {
             console.error('게시글 수정 실패:', error);
