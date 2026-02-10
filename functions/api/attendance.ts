@@ -1,49 +1,78 @@
-// // Cloudflare Pagesìš© íƒ€ì… ì •ì˜
+// Cloudflare Pages¿ë Å¸ÀÔ Á¤ÀÇ
 // type PagesFunction<T = any> = (context: { request: Request, env: T }) => Promise<Response>;
 
-// interface Env {
-//   D1_DB: D1Database;
-// }
+interface Env {
+  D1_DB: D1Database;
+}
 
-// export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
-//   try {
-//     const { userId, date } = await request.json() as { userId: string, date: string };
+export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
+  try {
+    // 1. µ¥ÀÌÅÍ ¼ö½Å ¹× ´©¶ô Ã¼Å©
+    const { userId, date } = await request.json() as { userId: string, date: string };
 
-//     // 1. ë°ì´í„° ëˆ„ë½ ì²´í¬
-//     if (!userId || !date) {
-//       return new Response(JSON.stringify({ message: "ë°ì´í„°ê°€ ë¶€ì¡±í•©ë‹ˆë‹¤." }), { 
-//         status: 400, 
-//         headers: { "Content-Type": "application/json" } 
-//       });
-//     }
+    if (!userId || !date) {
+      return new Response(JSON.stringify({ message: "µ¥ÀÌÅÍ°¡ ºÎÁ·ÇÕ´Ï´Ù." }), { 
+        status: 400, 
+        headers: { "Content-Type": "application/json" } 
+      });
+    }
 
-//     // 2. ì´ë¯¸ ì˜¤ëŠ˜ ì¶œì„í–ˆëŠ”ì§€ í™•ì¸ (ì¤‘ë³µ ì¶œì„ ë°©ì§€)
-//     const existing = await env.D1_DB.prepare(
-//       "SELECT * FROM attendance WHERE user_id = ? AND date = ?"
-//     ).bind(userId, date).first();
+    // 2. ÀÌ¹Ì ¿À´Ã Ãâ¼®Çß´ÂÁö È®ÀÎ (Áßº¹ Ãâ¼® ¹æÁö) (Å×ÀÌºí¸í: attendance_logs)
+    const existing = await env.D1_DB.prepare(
+      "SELECT * FROM attendance_logs WHERE user_id = ? AND date = ?"
+    ).bind(userId, date).first();
 
-//     if (existing) {
-//       return new Response(JSON.stringify({ message: "ì´ë¯¸ ì˜¤ëŠ˜ ì¶œì„í•˜ì…¨ìŠµë‹ˆë‹¤." }), { 
-//         status: 409,
-//         headers: { "Content-Type": "application/json" }
-//       });
-//     }
+    if (existing) {
+      return new Response(JSON.stringify({ message: "ÀÌ¹Ì ¿À´Ã Ãâ¼®ÇÏ¼Ì½À´Ï´Ù." }), { 
+        status: 409,
+        headers: { "Content-Type": "application/json" }
+      });
+    }
 
-//     // 3. ì¶œì„ ë°ì´í„° ì‚½ì…
-//     await env.D1_DB.prepare(
-//       "INSERT INTO attendance (user_id, date) VALUES (?, ?)"
-//     ).bind(userId, date).run();
+    // 3. ¿äÀÏº° Æ÷ÀÎÆ® °è»ê (0: ÀÏ¿äÀÏ ~ 6: Åä¿äÀÏ)
+    // Cloudflare Workers ½Ã°£Àº UTC.
+    const now = new Date();
+    // KST º¯È¯ (UTC+9)
+    const kstOffset = 9 * 60 * 60 * 1000;
+    const kstDate = new Date(now.getTime() + kstOffset);
+    const dayOfWeek = kstDate.getUTCDay(); // 0(Sun) ~ 6(Sat)
 
-//     return new Response(JSON.stringify({ success: true, message: "ì¶œì„ ë°ì´í„°ê°€ DBì— ì €ì¥ë˜ì—ˆìŠµë‹ˆë‹¤." }), {
-//       status: 200,
-//       headers: { "Content-Type": "application/json" }
-//     });
+    const rewardPoints = 100 + (dayOfWeek * 20);
 
-//   } catch (e: any) {
-//     console.error("Attendance Server Error:", e);
-//     return new Response(JSON.stringify({ error: e.message }), { 
-//       status: 500,
-//       headers: { "Content-Type": "application/json" }
-//     });
-//   }
-// };
+    // 4. DB Æ®·£Àè¼Ç Ã³¸® (Ãâ¼® ±â·Ï + Æ÷ÀÎÆ® ·Î±× + À¯Àú Æ÷ÀÎÆ® ¾÷µ¥ÀÌÆ®)
+    const stmts = [
+      // 4-1. Ãâ¼® ±â·Ï Ãß°¡
+      env.D1_DB.prepare(
+        "INSERT INTO attendance_logs (user_id, date) VALUES (?, ?)"
+      ).bind(userId, date),
+
+      // 4-2. Æ÷ÀÎÆ® ·Î±× Ãß°¡ (Å×ÀÌºí¸í: point_logs, ÄÃ·³: point)
+      env.D1_DB.prepare(
+        "INSERT INTO point_logs (user_id, reason, point, created_at) VALUES (?, ?, ?, ?)"
+      ).bind(userId, 'Ãâ¼®Ã¼Å© (' + date + ')', rewardPoints, kstDate.toISOString()),
+
+      // 4-3. À¯Àú ÇÁ·ÎÇÊ Æ÷ÀÎÆ® ¾÷µ¥ÀÌÆ® (Å×ÀÌºí¸í: user_profiles, ÄÃ·³: points)
+      env.D1_DB.prepare(
+        "UPDATE user_profiles SET points = points + ? WHERE user_id = ?"
+      ).bind(rewardPoints, userId)
+    ];
+
+    await env.D1_DB.batch(stmts);
+
+    return new Response(JSON.stringify({ 
+      success: true, 
+      message: 'Ãâ¼® ¿Ï·á! ' + rewardPoints + 'P°¡ Áö±ŞµÇ¾ú½À´Ï´Ù.',
+      rewardPoints 
+    }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" }
+    });
+
+  } catch (e) {
+    console.error("Attendance Server Error:", e);
+    return new Response(JSON.stringify({ error: e.message, stack: e.stack }), { 
+      status: 500,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+};

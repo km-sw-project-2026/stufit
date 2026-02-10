@@ -8,6 +8,7 @@ import { verifyToken } from '../functions/api/utils/jwt';
 import * as login from '../functions/api/auth/login';
 import * as register from '../functions/api/auth/register';
 import * as logout from '../functions/api/auth/logout';
+import * as attendance from '../functions/api/attendance';
 
 // posts
 import * as posts from '../functions/api/posts';
@@ -56,8 +57,12 @@ export default {
       if (pathname === '/api/auth/login') {
         return login.onRequestPost({ request, env });
       }
-
       if (pathname === '/api/auth/logout') {
+        return logout.onRequestPost({ request, env });
+      }
+
+      if (pathname === '/api/attendance') {
+        return attendance= '/api/auth/logout') {
         return logout.onRequestPost({ request, env });
       }
 
