@@ -21,8 +21,8 @@ export async function onRequestPost({ env, params, userId }) {
     const countRow = await env.D1_DB.prepare('SELECT COUNT(*) as cnt FROM post_likes WHERE post_id = ?').bind(postId).first();
     const count = countRow?.cnt || 0;
 
-    // 좋아요 2개 이상이면 Popular 등록 및 포인트 지급 (테스트용)
-    if (count >= 2) {
+    // 좋아요 1개 이상이면 Popular 등록 및 포인트 지급 (테스트용)
+    if (count >= 1) {
       const post = await env.D1_DB
         .prepare('SELECT user_id, popular_reward_paid FROM posts WHERE post_id = ?')
         .bind(postId)
