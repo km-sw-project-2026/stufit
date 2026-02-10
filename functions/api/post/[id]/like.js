@@ -22,35 +22,40 @@ export async function onRequestPost({ env, params, userId }) {
     const count = countRow?.cnt || 0;
 
     // 좋아요 1개 이상이면 Popular 등록 및 포인트 지급 (테스트용)
-    if (count >= 1) {
-      const post = await env.D1_DB
-        .prepare('SELECT user_id, popular_reward_paid FROM posts WHERE post_id = ?')
-        .bind(postId)
-        .first();
+    try {
+      if (count >= 1) {
+        const post = await env.D1_DB
+          .prepare('SELECT user_id, popular_reward_paid FROM posts WHERE post_id = ?')
+          .bind(postId)
+          .first();
 
-      if (post && post.popular_reward_paid === 0) {
-        // 카테고리를 'popular'로 변경
-        await env.D1_DB
-          .prepare('UPDATE posts SET category = ?, popular_reward_paid = 1 WHERE post_id = ?')
-          .bind('popular', postId)
-          .run();
+        if (post && post.popular_reward_paid === 0) {
+          // 카테고리를 'popular'로 변경
+          await env.D1_DB
+            .prepare('UPDATE posts SET category = ?, popular_reward_paid = 1 WHERE post_id = ?')
+            .bind('popular', postId)
+            .run();
 
-        // 작성자에게 포인트 200 지급
-        const authorId = post.user_id;
-        
-        // user_profiles 테이블에 포인트 추가
-        await env.D1_DB
-          .prepare('UPDATE user_profiles SET points = points + 200 WHERE user_id = ?')
-          .bind(authorId)
-          .run();
+          // 작성자에게 포인트 200 지급
+          const authorId = post.user_id;
+          
+          // user_profiles 테이블에 포인트 추가
+          await env.D1_DB
+            .prepare('UPDATE user_profiles SET points = points + 200 WHERE user_id = ?')
+            .bind(authorId)
+            .run();
 
-        // point_logs에 기록
-        const now = new Date().toISOString();
-        await env.D1_DB
-          .prepare('INSERT INTO point_logs (user_id, point, reason, created_at) VALUES (?, ?, ?, ?)')
-          .bind(authorId, 200, 'Popular 게시글 등록 (좋아요 200개 달성)', now)
-          .run();
+          // point_logs에 기록
+          const now = new Date().toISOString();
+          await env.D1_DB
+            .prepare('INSERT INTO point_logs (user_id, point, reason, created_at) VALUES (?, ?, ?, ?)')
+            .bind(authorId, 200, 'Popular 게시글 등록 (좋아요 200개 달성)', now)
+            .run();
+        }
       }
+    } catch (popularErr) {
+      // popular_reward_paid 컬럼이 없어도 좋아요 기능은 작동하도록 에러 무시
+      console.log('Popular reward error (ignored):', popularErr.message);
     }
 
     return Response.json({ success: true, data: { liked: !exists, count } });
