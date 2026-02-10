@@ -1,0 +1,1 @@
+SELECT cm.challenge_id, cm.user_id, u.username, cm.status, cm.joined_at FROM challenge_members cm JOIN users u ON cm.user_id = u.user_id WHERE cm.challenge_id = 10;

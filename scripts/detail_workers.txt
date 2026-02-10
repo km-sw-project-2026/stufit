@@ -1,0 +1,12 @@
+HTTP/1.1 401 Unauthorized
+Date: Tue, 10 Feb 2026 07:35:59 GMT
+Content-Type: application/json
+Content-Length: 43
+Connection: keep-alive
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=ijkQpmq6sZLvnAtWnrMrKa%2BdHH1seRQFKP%2BqqOkrSdERxXw3rO6rlDiDNn7sJfCzXysWQAgrkM8k62IUtOTIrC7VSvR7saCjBp%2FZHhcwS%2FCYn%2F0KlM3AC97BwlI%3D"}]}
+Nel: {"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}
+Server: cloudflare
+CF-RAY: 9cb9eed1ba71c8d2-LAX
+alt-svc: h3=":443"; ma=86400
+
+{"message":"로그인이 필요합니다."}

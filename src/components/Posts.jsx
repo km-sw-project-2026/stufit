@@ -111,7 +111,6 @@ const Posts = () => {
 
             {/* 챌린지 완료 모달: 최종 점수 입력 및 순위 표시 */}
             <ChallengeOverModal />
-            <Challenge />
             {/* New Post Modal (Notice Board) */}
             <NewPostModal />
 

@@ -160,9 +160,15 @@ function ChallengeDetailView({ challenge, onClose }) {
                 const headers = {};
                 if (username) headers['X-Username'] = username;
 
+                console.debug('loadMembers: fetching members for', challenge.challenge_id, 'with headers', headers);
                 const res = await fetch(`/api/challenges/${challenge.challenge_id}`, { headers });
-                if (!res.ok) return;
+                console.debug('loadMembers: response status', res.status);
+                if (!res.ok) {
+                    console.warn('loadMembers: non-ok response', res.status);
+                    return;
+                }
                 const payload = await res.json();
+                console.debug('loadMembers: payload', payload);
                 const data = payload?.data || {};
                 setMembers(Array.isArray(data.members) ? data.members : []);
             } catch (e) {
@@ -173,10 +179,18 @@ function ChallengeDetailView({ challenge, onClose }) {
         loadMembers();
         const handler = (e) => {
             try {
+                console.debug('challenge-joined event received:', e?.detail);
                 if (e?.detail?.challengeId === challenge?.challenge_id) {
-                    setMembers(Array.isArray(e.detail.members) ? e.detail.members : members);
+                    if (Array.isArray(e.detail.members)) {
+                        console.debug('challenge-joined: updating members from event', e.detail.members);
+                        setMembers(e.detail.members);
+                    } else {
+                        console.debug('challenge-joined: members not in event, reloading from server');
+                        // if members not provided, reload from server
+                        loadMembers();
+                    }
                 }
-            } catch (err) { /* ignore */ }
+            } catch (err) { console.error('challenge-joined handler error', err); }
         };
         window.addEventListener('challenge-joined', handler);
         return () => window.removeEventListener('challenge-joined', handler);

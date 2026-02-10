@@ -8,12 +8,20 @@ function Challenge({ closeChallengeModal, onCreateSuccess }) {
     const [loading, setLoading] = useState(false);
     const fetchControllerRef = React.useRef(null);
     const inFlightRef = React.useRef(false);
+    const lastFetchRef = React.useRef(0);
     const [globalAlertOpen, setGlobalAlertOpen] = useState(false);
     const [globalAlertMessage, setGlobalAlertMessage] = useState('');
 
     // 전체 챌린지 목록 불러오기 (코드가 없는 공개 챌린지만)
     const fetchChallenges = async () => {
         // Prevent overlapping fetches
+        const now = Date.now();
+        //防: short-circuit frequent calls (less than 1s)
+        if (now - lastFetchRef.current < 1000) {
+            console.debug('fetchChallenges skipped: too frequent');
+            return;
+        }
+        lastFetchRef.current = now;
         if (inFlightRef.current) return;
         inFlightRef.current = true;
         // only show loader when we have no challenges yet
@@ -32,6 +40,7 @@ function Challenge({ closeChallengeModal, onCreateSuccess }) {
         const timeout = setTimeout(() => controller.abort(), 8000);
 
         try {
+            console.debug('fetchChallenges: requesting /api/challenges/public');
             const response = await fetch('/api/challenges/public', {
                 method: 'GET',
                 headers: {
@@ -39,6 +48,8 @@ function Challenge({ closeChallengeModal, onCreateSuccess }) {
                 },
                 signal: controller.signal
             });
+
+            console.debug('fetchChallenges: response status', response.status);
 
             if (response.ok) {
                 const data = await response.json();
@@ -103,11 +114,11 @@ function Challenge({ closeChallengeModal, onCreateSuccess }) {
 
         const handleFocus = () => fetchChallenges();
         window.addEventListener('focus', handleFocus);
-        const intervalId = setInterval(fetchChallenges, 30000);
 
+        // No periodic polling to avoid repeated fetches and flicker.
+        // Only refresh on window focus or manual actions.
         return () => {
             window.removeEventListener('focus', handleFocus);
-            clearInterval(intervalId);
         };
     }, []);
 

@@ -12,16 +12,38 @@ export default async function handler(request: Request, { env, userId }: Handler
       .bind(id).first();
     if (!challenge) return Response.json({ success: false, message: '챌린지 없음' }, { status: 404 });
 
-    const member = await env.D1_DB.prepare(
-      'SELECT * FROM challenge_members WHERE challenge_id = ? AND user_id = ?'
-    ).bind(id, userId).first();
+    let member = null;
+    if (typeof userId === 'number') {
+      member = await env.D1_DB.prepare(
+        'SELECT * FROM challenge_members WHERE challenge_id = ? AND user_id = ?'
+      ).bind(id, userId).first();
+    }
 
     if (request.method === 'GET') {
       // fetch members who joined this challenge
-      const members = await env.D1_DB
-        .prepare('SELECT u.user_id, u.username, cm.status FROM challenge_members cm JOIN users u ON cm.user_id = u.user_id WHERE cm.challenge_id = ?')
-        .bind(id)
-        .all();
+      // Some D1 instances may not have the `status` column; detect via PRAGMA and choose columns accordingly.
+      let members;
+      try {
+        const cols = await env.D1_DB.prepare("PRAGMA table_info('challenge_members')").all();
+        const hasStatus = Array.isArray(cols.results) && cols.results.some(c => c.name === 'status');
+        if (hasStatus) {
+          members = await env.D1_DB
+            .prepare('SELECT u.user_id, u.username, cm.status FROM challenge_members cm JOIN users u ON cm.user_id = u.user_id WHERE cm.challenge_id = ?')
+            .bind(id)
+            .all();
+        } else {
+          members = await env.D1_DB
+            .prepare('SELECT u.user_id, u.username FROM challenge_members cm JOIN users u ON cm.user_id = u.user_id WHERE cm.challenge_id = ?')
+            .bind(id)
+            .all();
+        }
+      } catch (e) {
+        // fallback: try simple select without status
+        members = await env.D1_DB
+          .prepare('SELECT u.user_id, u.username FROM challenge_members cm JOIN users u ON cm.user_id = u.user_id WHERE cm.challenge_id = ?')
+          .bind(id)
+          .all();
+      }
 
       return Response.json({ success: true, data: { ...challenge, isJoined: !!member, members: members.results || [] }, message: '챌린지 상세 조회' });
     }
