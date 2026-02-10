@@ -471,21 +471,13 @@ function Community() {
     const [isNewPostModalOpen, setNewPostModalOpen] = useState(false);
     const [currentCategory, setCurrentCategory] = useState('popular');
     
-    // 기본 게시글 데이터 구조
-    const defaultPosts = {
-        popular: [
-            { id: 11, title: '인기: 미적분 베스트', content: '많은 좋아요를 받은 문제풀이 공유글', author: '인기유저', likes: 0, comments: 0, date: '2025.12.01', category: 'popular', liked: false },
-            { id: 12, title: '인기: 공부 팁 모음', content: '효율적 공부법 정리', author: '팁러', likes: 0, comments: 0, date: '2025.12.05', category: 'popular', liked: false }
-        ],
-        tips: [
-            { id: 21, title: '효율적 공부법', content: '짧고 굵게 집중하는 방법들...', author: '팁글러', likes: 0, comments: 0, date: '2025.10.12', category: 'tips', liked: false },
-            { id: 22, title: '시간관리 팁', content: '포모도로 기법 활용법', author: '시간관리러', likes: 0, comments: 0, date: '2025.11.01', category: 'tips', liked: false }
-        ],
+    // 게시글 상태 (DB에서만 가져옴)
+    const [posts, setPosts] = useState({
+        popular: [],
+        tips: [],
         data: [],
         mypost: []
-    };
-    
-    const [posts, setPosts] = useState(defaultPosts);
+    });
 
     // DB 데이터를 리액트 형식으로 변환
     const mapPost = (row) => ({
@@ -512,12 +504,15 @@ function Community() {
             const payload = await response.json();
             const list = (payload.data || []).map(mapPost);
 
-            setPosts((prev) => ({
-                ...prev,
-                data: list,
-                // 내 아이디와 작성자 이름이 일치하는 것만 My Post로 분류
-                mypost: username ? list.filter((p) => String(p.author) === String(username)) : []
-            }));
+            // 카테고리별로 분류
+            const categorized = {
+                popular: list.filter(p => p.category === 'popular'),
+                tips: list.filter(p => p.category === 'tips'),
+                data: list.filter(p => p.category === 'data'),
+                mypost: username ? list.filter(p => String(p.author) === String(username)) : []
+            };
+
+            setPosts(categorized);
         } catch (error) {
             console.error('게시글 불러오기 실패:', error);
         }
@@ -546,7 +541,8 @@ function Community() {
                 },
                 body: JSON.stringify({
                     title: newPostData.title,
-                    content: newPostData.content
+                    content: newPostData.content,
+                    category: newPostData.category || 'data'
                 })
             });
 

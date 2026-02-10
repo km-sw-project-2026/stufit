@@ -62,6 +62,7 @@ export async function onRequestPost({ request, env, userId }) {
         const body = await request.json().catch(() => null) || {};
         const title = typeof body.title === 'string' ? body.title.trim() : '';
         const content = typeof body.content === 'string' ? body.content.trim() : '';
+        const category = typeof body.category === 'string' ? body.category.trim() : 'data';
 
         if (!title || !content) {
             return new Response(
@@ -72,8 +73,8 @@ export async function onRequestPost({ request, env, userId }) {
 
         const now = new Date().toISOString();
         const insertResult = await env.D1_DB
-            .prepare('INSERT INTO posts (user_id, title, content, created_at) VALUES (?, ?, ?, ?)')
-            .bind(userId, title, content, now)
+            .prepare('INSERT INTO posts (user_id, title, content, category, created_at) VALUES (?, ?, ?, ?, ?)')
+            .bind(userId, title, content, category, now)
             .run();
 
         const postId = insertResult.meta?.last_row_id || insertResult.lastInsertRowid;
