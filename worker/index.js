@@ -12,6 +12,12 @@ import * as logout from '../functions/api/auth/logout';
 // posts
 import * as posts from '../functions/api/posts';
 import * as postById from '../functions/api/post/[[id]]';
+import * as postLike from '../functions/api/post/[id]/like';
+import * as postComments from '../functions/api/post/[id]/comments';
+
+// comments
+import * as commentById from '../functions/api/comment/[id]';
+import * as commentLike from '../functions/api/comment/[id]/like';
 
 // shop/user
 import * as shopPurchase from '../functions/api/shop/purchase';
@@ -69,6 +75,25 @@ export default {
         return postById.onRequestGet({ env, params: { id: postMatch[1] } });
       }
 
+      const commentListMatch = pathname.match(/^\/api\/post\/(\d+)\/comments$/);
+      if (commentListMatch && request.method === 'GET') {
+        let optionalUserId;
+        const headerUsername = request.headers.get('X-Username');
+
+        if (headerUsername) {
+          const userRow = await env.D1_DB
+            .prepare('SELECT user_id FROM users WHERE username = ?')
+            .bind(headerUsername)
+            .first();
+
+          if (userRow?.user_id) {
+            optionalUserId = userRow.user_id;
+          }
+        }
+
+        return postComments.onRequestGet({ env, params: { id: commentListMatch[1] }, userId: optionalUserId });
+      }
+
       /* =========================
          1️⃣ 사용자 인증 (username 기반)
       ========================= */
@@ -112,6 +137,30 @@ export default {
       const authPostMatch = pathname.match(/^\/api\/post\/(\d+)$/);
       if (authPostMatch && (request.method === 'PUT' || request.method === 'PATCH' || request.method === 'DELETE')) {
          return postById.default(request, { env, params: { id: authPostMatch[1] }, userId });
+      }
+
+      const commentCreateMatch = pathname.match(/^\/api\/post\/(\d+)\/comments$/);
+      if (commentCreateMatch && request.method === 'POST') {
+        return postComments.onRequestPost({ request, env, params: { id: commentCreateMatch[1] }, userId });
+      }
+
+      const postLikeMatch = pathname.match(/^\/api\/post\/(\d+)\/like$/);
+      if (postLikeMatch && request.method === 'POST') {
+        return postLike.onRequestPost({ env, params: { id: postLikeMatch[1] }, userId });
+      }
+
+      const commentLikeMatch = pathname.match(/^\/api\/comment\/(\d+)\/like$/);
+      if (commentLikeMatch && request.method === 'POST') {
+        return commentLike.onRequestPost({ env, params: { id: commentLikeMatch[1] }, userId });
+      }
+
+      const commentMatch = pathname.match(/^\/api\/comment\/(\d+)$/);
+      if (commentMatch && request.method === 'PATCH') {
+        return commentById.onRequestPatch({ request, env, params: { id: commentMatch[1] }, userId });
+      }
+
+      if (commentMatch && request.method === 'DELETE') {
+        return commentById.onRequestDelete({ env, params: { id: commentMatch[1] }, userId });
       }
 
 
