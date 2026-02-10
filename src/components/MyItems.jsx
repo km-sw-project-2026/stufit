@@ -1,22 +1,59 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import ItemDetailModal from './modal/ItemDetailModal';
 import './shopView/Shop.css';
+import { shopItems } from './shopView/shopItems';
 
 function MyItems() {
   const [selectedItem, setSelectedItem] = useState(null);
   const [isItemDetailOpen, setIsItemDetailOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState('all');
+  const [purchasedKeys, setPurchasedKeys] = useState(() => {
+    try {
+      const stored = localStorage.getItem('purchasedItems');
+      const parsed = stored ? JSON.parse(stored) : {};
+      return parsed && typeof parsed === 'object' ? Object.keys(parsed) : [];
+    } catch {
+      return [];
+    }
+  });
 
-  // 보유한 아이템 샘플 데이터
-  const ownedItems = [
-    { id: 1, category: '프로필 테두리', name: '행복한 버거 테두리', price: '3,000 P', color: '#fff4e6', type: 'frame', image: '', isUsing: true, isPurchased: true },
-    { id: 2, category: '프로필 이미지', name: '반짝 하얀 이빨', price: '2,000 P', color: '#f0f8ff', type: 'image', image: '', isUsing: false, isPurchased: true },
-    { id: 3, category: '프로필 배경', name: '밤하늘', price: '2,500 P', color: '#1a1a2e', type: 'bg', image: '', isUsing: false, isPurchased: true },
-    { id: 4, category: '프로필 테두리', name: '달달한 아이스콘 테두리', price: '4,000 P', color: '#ffeaa7', type: 'frame', image: '', isUsing: false, isPurchased: true },
-    { id: 5, category: '프로필 테두리', name: '딸기사탕 달콤테두리', price: '3,500 P', color: '#ffe0e6', type: 'frame', image: '', isUsing: false, isPurchased: true },
-    { id: 6, category: '프로필 테두리', name: '멋진 캡짱', price: '4,500 P', color: '#2c3e50', type: 'frame', image: '', isUsing: false, isPurchased: true },
-    { id: 7, category: '프로필 배경', name: '민트색 멋', price: '3,000 P', color: '#b8e6d5', type: 'bg', image: '', isUsing: false, isPurchased: true },
-  ];
+  useEffect(() => {
+    const syncPurchasedItems = () => {
+      try {
+        const stored = localStorage.getItem('purchasedItems');
+        const parsed = stored ? JSON.parse(stored) : {};
+        const keys = parsed && typeof parsed === 'object' ? Object.keys(parsed) : [];
+        setPurchasedKeys(keys);
+      } catch {
+        setPurchasedKeys([]);
+      }
+    };
+
+    syncPurchasedItems();
+    window.addEventListener('storage', syncPurchasedItems);
+    return () => window.removeEventListener('storage', syncPurchasedItems);
+  }, []);
+
+  const ownedItems = useMemo(() => {
+    const purchasedIds = new Set(
+      purchasedKeys
+        .map((key) => {
+          const parts = String(key).split(':');
+          const idPart = parts[parts.length - 1];
+          const parsedId = Number(idPart);
+          return Number.isNaN(parsedId) ? null : parsedId;
+        })
+        .filter((value) => value !== null)
+    );
+
+    return shopItems
+      .filter((item) => purchasedIds.has(item.id))
+      .map((item) => ({
+        ...item,
+        isUsing: false,
+        isPurchased: true,
+      }));
+  }, [purchasedKeys]);
 
   const handleItemClick = (item) => {
     setSelectedItem(item);
@@ -75,7 +112,7 @@ function MyItems() {
                 <div className="item-using-badge">사용중</div>
               )}
               <div 
-                className="item-image"
+                className={`item-image ${item.type === 'bg' ? 'is-bg' : ''}`}
                 style={{ backgroundColor: item.color }}
               >
                 {item.image && (
