@@ -1,36 +1,3 @@
-declare interface D1Database {
-  prepare(query: string): any;
-}
-
-interface Env {
-  D1_DB: D1Database;
-}
-
-type PagesFunction<T = any> = (context: { request: Request, params: { id: string }, env: T }) => Promise<Response>;
-
-export const onRequest: PagesFunction<Env> = async ({ request, params, env }) => {
-  const challengeId = params.id;
-  const { userId, score } = await request.json() as { userId: string, score: number };
-
-  try {
-    await env.D1_DB.prepare(`
-      INSERT INTO challenge_results (user_id, challenge_id, score) 
-      VALUES (?, ?, ?)
-      ON CONFLICT(user_id, challenge_id) DO UPDATE SET score = excluded.score
-    `).bind(userId, challengeId, score).run();
-
-    return Response.json({ success: true, message: "점수가 성공적으로 입력되었습니다." });
-  } catch (e) {
-    return new Response("점수 입력 실패", { status: 500 });
-  }
-};
-
-
-// -----------------------------------------------------------
-
-
-// functions/api/challenges/scores.ts
-
 // declare interface D1Database {
 //   prepare(query: string): any;
 // }
@@ -42,27 +9,10 @@ export const onRequest: PagesFunction<Env> = async ({ request, params, env }) =>
 // type PagesFunction<T = any> = (context: { request: Request, params: { id: string }, env: T }) => Promise<Response>;
 
 // export const onRequest: PagesFunction<Env> = async ({ request, params, env }) => {
-//   // 1. GET 요청: 전체 랭킹 리스트를 가져옴
-//   if (request.method === "GET") {
-//     try {
-//       const { results } = await env.D1_DB.prepare(`
-//         SELECT u.name as author, SUM(cr.score) as likes 
-//         FROM users u
-//         JOIN challenge_results cr ON u.id = cr.user_id
-//         GROUP BY u.id
-//         ORDER BY likes DESC
-//       `).all();
-
-//       return Response.json(results);
-//     } catch (e) {
-//       return new Response("랭킹 로딩 실패", { status: 500 });
-//     }
-//   }
-
-//   // 2. POST 요청: 새로운 점수 입력 (기존 로직 유지)
 //   const challengeId = params.id;
+//   const { userId, score } = await request.json() as { userId: string, score: number };
+
 //   try {
-//     const { userId, score } = await request.json() as { userId: string, score: number };
 //     await env.D1_DB.prepare(`
 //       INSERT INTO challenge_results (user_id, challenge_id, score) 
 //       VALUES (?, ?, ?)
@@ -74,6 +24,56 @@ export const onRequest: PagesFunction<Env> = async ({ request, params, env }) =>
 //     return new Response("점수 입력 실패", { status: 500 });
 //   }
 // };
+
+
+// -----------------------------------------------------------
+
+
+// functions/api/challenges/scores.ts
+
+declare interface D1Database {
+  prepare(query: string): any;
+}
+
+interface Env {
+  D1_DB: D1Database;
+}
+
+type PagesFunction<T = any> = (context: { request: Request, params: { id: string }, env: T }) => Promise<Response>;
+
+export const onRequest: PagesFunction<Env> = async ({ request, params, env }) => {
+  // 1. GET 요청: 전체 랭킹 리스트를 가져옴
+  if (request.method === "GET") {
+    try {
+      const { results } = await env.D1_DB.prepare(`
+        SELECT u.name as author, SUM(cr.score) as likes 
+        FROM users u
+        JOIN challenge_results cr ON u.id = cr.user_id
+        GROUP BY u.id
+        ORDER BY likes DESC
+      `).all();
+
+      return Response.json(results);
+    } catch (e) {
+      return new Response("랭킹 로딩 실패", { status: 500 });
+    }
+  }
+
+  // 2. POST 요청: 새로운 점수 입력 (기존 로직 유지)
+  const challengeId = params.id;
+  try {
+    const { userId, score } = await request.json() as { userId: string, score: number };
+    await env.D1_DB.prepare(`
+      INSERT INTO challenge_results (user_id, challenge_id, score) 
+      VALUES (?, ?, ?)
+      ON CONFLICT(user_id, challenge_id) DO UPDATE SET score = excluded.score
+    `).bind(userId, challengeId, score).run();
+
+    return Response.json({ success: true, message: "점수가 성공적으로 입력되었습니다." });
+  } catch (e) {
+    return new Response("점수 입력 실패", { status: 500 });
+  }
+};
 
 
 // -=--------------------------------------------------
