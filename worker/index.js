@@ -66,6 +66,10 @@ export default {
       } return logout.onRequestPost({ request, env });
       }
 
+      if (pathname === '/api/attendance') {
+        return attendance.onRequestPost({ request, env });
+      }
+
       // Public Challenges API (인증 불필요)
       if (pathname === '/api/challenges/public') {
         return publicChallenges(request, { env });
@@ -116,10 +120,11 @@ export default {
       ========================= */
 
       // username으로 userId 조회 (간단한 인증)
-      let username = request.headers.get('X-Username');
+      const rawUsername = request.headers.get('X-Username');
+      let username = rawUsername ? decodeURIComponent(rawUsername) : null;
       
       if (!username) {
-        console.log('❌ No X-Username header');
+        console.log('❌ No XUsername header - index.js:118');
         return new Response(JSON.stringify({ message: '로그인이 필요합니다.' }), { 
           status: 401,
           headers: { 'Content-Type': 'application/json' }
@@ -130,20 +135,20 @@ export default {
       const originalUsername = username;
       try {
         username = decodeURIComponent(username);
-        console.log('✅ Decoded username:', originalUsername, '->', username);
+        console.log('✅ Decoded username: - index.js:129', originalUsername, '->', username);
       } catch (e) {
-        console.log('⚠️ Failed to decode username:', originalUsername, e);
+        console.log('⚠️ Failed to decode username: - index.js:131', originalUsername, e);
         // 디코딩 실패 시 원본 사용
       }
 
-      console.log('🔍 Looking up user:', username);
+      console.log('🔍 Looking up user: - index.js:135', username);
       const userRow = await env.D1_DB
         .prepare('SELECT user_id FROM users WHERE username = ?')
         .bind(username)
         .first();
 
       if (!userRow) {
-        console.log('❌ User not found:', username);
+        console.log('❌ User not found: - index.js:142', username);
         return new Response(JSON.stringify({ message: '사용자를 찾을 수 없습니다.' }), { 
           status: 401,
           headers: { 'Content-Type': 'application/json' }
@@ -151,7 +156,7 @@ export default {
       }
 
       const userId = userRow.user_id;
-      console.log('✅ User authenticated:', username, 'userId:', userId);
+      console.log('✅ User authenticated: - index.js:150', username, 'userId:', userId);
 
       if (pathname === '/api/user/points' || pathname.startsWith('/api/user/points/')) {
         return userPoints.onRequestGet({ request, env, userId });
@@ -292,6 +297,8 @@ export default {
 
           case 'join':
             return challengeJoin(request, { env, params: { id }, userId });
+          case 'members':
+            if (request.method === 'GET') return (await import('../functions/api/challenges/[id]/members')).default(request, { env, params: { id } });
 
           default:
             return new Response('Not Found', { status: 404 });
@@ -306,7 +313,7 @@ export default {
 
       return new Response('Not Found', { status: 404 });
     } catch (err) {
-      console.error("❌ WORKER ERROR:", err?.message || String(err));
+      console.error("❌ WORKER ERROR: - index.js:307", err?.message || String(err));
       return new Response(
         JSON.stringify({ message: '서버 오류가 발생했습니다.' }),
         { status: 500, headers: { "Content-Type": "application/json" } }

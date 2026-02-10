@@ -153,14 +153,22 @@ function ChallengeDetailView({ challenge, onClose }) {
 
     // 챌린지 멤버 목록 로드
     useEffect(() => {
-        const loadMembers = async () => {
-            if (!challenge?.challenge_id) return;
+        if (!challenge?.challenge_id) return;
+
+        let mounted = true;
+        let intervalId = 0;
+
+        const fetchMembers = async () => {
             try {
                 const username = localStorage.getItem('username');
                 const headers = {};
                 if (username) headers['X-Username'] = username;
 
+<<<<<<< HEAD
                 console.debug('loadMembers: fetching members for', challenge.challenge_id, 'with headers', headers);
+=======
+                // Prefer fetching challenge detail which includes members + isJoined
+>>>>>>> 70d0714b05c9e7a9e5a4529a6b6cf145e774f14a
                 const res = await fetch(`/api/challenges/${challenge.challenge_id}`, { headers });
                 console.debug('loadMembers: response status', res.status);
                 if (!res.ok) {
@@ -168,19 +176,36 @@ function ChallengeDetailView({ challenge, onClose }) {
                     return;
                 }
                 const payload = await res.json();
+<<<<<<< HEAD
                 console.debug('loadMembers: payload', payload);
                 const data = payload?.data || {};
                 setMembers(Array.isArray(data.members) ? data.members : []);
+=======
+                const list = (payload?.data && payload.data.members) ? payload.data.members : (payload?.members || []);
+
+                // If members list empty but server marks user as joined, show current user as member
+                if ((list.length === 0) && payload?.data?.isJoined && username) {
+                  list.push({ user_id: null, username, status: 'not_submitted' });
+                }
+
+                if (mounted) setMembers(list || []);
+>>>>>>> 70d0714b05c9e7a9e5a4529a6b6cf145e774f14a
             } catch (e) {
                 console.error('멤버 목록 로드 실패:', e);
             }
         };
 
-        loadMembers();
+        // initial fetch
+        fetchMembers();
+
+        // poll every 3s
+        intervalId = window.setInterval(fetchMembers, 3000);
+
         const handler = (e) => {
             try {
                 console.debug('challenge-joined event received:', e?.detail);
                 if (e?.detail?.challengeId === challenge?.challenge_id) {
+<<<<<<< HEAD
                     if (Array.isArray(e.detail.members)) {
                         console.debug('challenge-joined: updating members from event', e.detail.members);
                         setMembers(e.detail.members);
@@ -189,11 +214,20 @@ function ChallengeDetailView({ challenge, onClose }) {
                         // if members not provided, reload from server
                         loadMembers();
                     }
+=======
+                    const list = Array.isArray(e.detail.members) ? e.detail.members : [];
+                    setMembers(list);
+>>>>>>> 70d0714b05c9e7a9e5a4529a6b6cf145e774f14a
                 }
             } catch (err) { console.error('challenge-joined handler error', err); }
         };
         window.addEventListener('challenge-joined', handler);
-        return () => window.removeEventListener('challenge-joined', handler);
+
+        return () => {
+            mounted = false;
+            window.removeEventListener('challenge-joined', handler);
+            clearInterval(intervalId);
+        };
     }, [challenge]);
 
     // 카테고리 한글 변환

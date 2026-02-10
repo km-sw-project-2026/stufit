@@ -78,9 +78,26 @@ export default async function handler(
     }
 
     console.log("✅ Success");
+    // return updated members list as well (handle DBs without status column)
+    const pragma = await env.D1_DB.prepare("PRAGMA table_info('challenge_members')").all();
+    const hasStatus = (pragma.results || []).some((c: any) => c.name === 'status');
+    let members;
+    if (hasStatus) {
+      members = await env.D1_DB
+        .prepare('SELECT u.user_id, u.username, cm.status FROM challenge_members cm JOIN users u ON cm.user_id = u.user_id WHERE cm.challenge_id = ?')
+        .bind(challengeId)
+        .all();
+    } else {
+      members = await env.D1_DB
+        .prepare('SELECT u.user_id, u.username FROM challenge_members cm JOIN users u ON cm.user_id = u.user_id WHERE cm.challenge_id = ?')
+        .bind(challengeId)
+        .all();
+      members.results = (members.results || []).map((r: any) => ({ ...r, status: 'not_submitted' }));
+    }
+
     return new Response(
-      JSON.stringify({ success: true, message: "Successfully left challenge" }),
-      { status: 200, headers: { "Content-Type": "application/json" } }
+      JSON.stringify({ success: true, message: 'Successfully left challenge', members: members.results || [] }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } }
     );
   } catch (err) {
     console.error("❌ ERROR:", err instanceof Error ? err.message : String(err));
