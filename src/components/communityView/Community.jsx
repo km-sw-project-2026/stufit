@@ -673,7 +673,7 @@ function Community() {
     return (
         <div id="community-view" className="community-view">
             <div className="community-layout">
-                <SidebarMenu activeTab={activeTab} goToTab={goToTab} />
+                <SidebarMenu activeTab={activeTab} goToTab={goToTab} onNewPost={newPost} />
                 <div className="community-main">
                     {!showPostDetail ? (
                         <>
