@@ -62,7 +62,7 @@ function MyPage({ isOpen, onClose }) {
 
       setUserData({
         username: username,
-        score: '9,800',
+        score: '0',
         joinDate: localStorage.getItem('joinDate') || '2024년 7월 1일',
         rank: '1위',
         currentRank: '1위',
