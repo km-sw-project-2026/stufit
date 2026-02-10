@@ -6,16 +6,38 @@ function Challenge({ closeChallengeModal, onCreateSuccess }) {
     const [createChallengeModalOpen, setCreateChallengeModalOpen] = useState(false);
     const [challenges, setChallenges] = useState([]);
     const [loading, setLoading] = useState(false);
+    const fetchControllerRef = React.useRef(null);
+    const inFlightRef = React.useRef(false);
+    const [globalAlertOpen, setGlobalAlertOpen] = useState(false);
+    const [globalAlertMessage, setGlobalAlertMessage] = useState('');
 
     // 전체 챌린지 목록 불러오기 (코드가 없는 공개 챌린지만)
     const fetchChallenges = async () => {
-        setLoading(true);
+        // Prevent overlapping fetches
+        if (inFlightRef.current) return;
+        inFlightRef.current = true;
+        // only show loader when we have no challenges yet
+        if (challenges.length === 0) setLoading(true);
+
+        // Abort previous controller if any
+        if (fetchControllerRef.current) {
+            try { fetchControllerRef.current.abort(); } catch (e) {}
+            fetchControllerRef.current = null;
+        }
+
+        const controller = new AbortController();
+        fetchControllerRef.current = controller;
+
+        // timeout
+        const timeout = setTimeout(() => controller.abort(), 8000);
+
         try {
             const response = await fetch('/api/challenges/public', {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json'
-                }
+                },
+                signal: controller.signal
             });
 
             if (response.ok) {
@@ -34,22 +56,44 @@ function Challenge({ closeChallengeModal, onCreateSuccess }) {
                 return;
             }
 
-            const fallbackResponse = await fetch('/api/challenges', {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Username': username
-                }
-            });
+            // fallback with timeout as well
+            const fbController = new AbortController();
+            const fbTimeout = setTimeout(() => fbController.abort(), 8000);
+            try {
+                const fallbackResponse = await fetch('/api/challenges', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Username': username
+                    },
+                    signal: fbController.signal
+                });
 
-            if (fallbackResponse.ok) {
-                const fallbackData = await fallbackResponse.json();
-                const fallbackChallenges = (fallbackData.challenges || []).filter(ch => !ch.challenge_code);
-                setChallenges(fallbackChallenges);
+                if (fallbackResponse.ok) {
+                    const fallbackData = await fallbackResponse.json();
+                    const fallbackChallenges = (fallbackData.challenges || []).filter(ch => !ch.challenge_code);
+                    setChallenges(fallbackChallenges);
+                } else {
+                    setChallenges([]);
+                }
+            } catch (e) {
+                console.warn('Fallback challenges fetch failed:', e);
+                setChallenges([]);
+            } finally {
+                clearTimeout(fbTimeout);
             }
+
         } catch (error) {
-            console.error('챌린지 목록 불러오기 실패:', error);
+            if (error.name === 'AbortError') {
+                console.warn('fetchChallenges aborted/timed out');
+            } else {
+                console.error('챌린지 목록 불러오기 실패:', error);
+            }
+            setChallenges([]);
         } finally {
+            clearTimeout(timeout);
+            fetchControllerRef.current = null;
+            inFlightRef.current = false;
             setLoading(false);
         }
     };
@@ -59,7 +103,7 @@ function Challenge({ closeChallengeModal, onCreateSuccess }) {
 
         const handleFocus = () => fetchChallenges();
         window.addEventListener('focus', handleFocus);
-        const intervalId = setInterval(fetchChallenges, 10000);
+        const intervalId = setInterval(fetchChallenges, 30000);
 
         return () => {
             window.removeEventListener('focus', handleFocus);
@@ -99,12 +143,16 @@ function Challenge({ closeChallengeModal, onCreateSuccess }) {
         return categoryMap[category] || category;
     };
 
-    const ChallengeCard = ({ challenge }) => {
+    const showAlert = (msg) => {
+        setGlobalAlertMessage(msg);
+        setGlobalAlertOpen(true);
+    };
+
+    const ChallengeCard = ({ challenge, onShowAlert }) => {
         const startDate = formatDate(challenge.created_at);
         const endDate = formatDate(challenge.end_date);
         const [joinLoading, setJoinLoading] = React.useState(false);
-        const [alertOpen, setAlertOpen] = React.useState(false);
-        const [alertMessage, setAlertMessage] = React.useState('');
+        // alert handled by parent via onShowAlert
 
         return (
             <div className="challenge-card" style={{ 
@@ -133,22 +181,48 @@ function Challenge({ closeChallengeModal, onCreateSuccess }) {
                         <button 
                             className="challenge-detail-btn" 
                             style={{ border: '1px solid #247b7b', borderRadius: '20px', padding: '8px 25px', backgroundColor: 'white', color: '#247b7b', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.95rem', whiteSpace: 'nowrap' }}
-                            onClick={() => {
-                                // 클릭 시 바로 모달만 띄움
-                                setAlertMessage('참가 완료!');
-                                setAlertOpen(true);
+                            onClick={async () => {
+                                if (joinLoading) return;
+                                setJoinLoading(true);
+                                try {
+                                    const username = localStorage.getItem('username');
+                                    if (!username) {
+                                        onShowAlert('로그인이 필요합니다.');
+                                        return;
+                                    }
+
+                                    const res = await fetch(`/api/challenges/${challenge.challenge_id}/join`, {
+                                        method: 'POST',
+                                        headers: { 'X-Username': encodeURIComponent(username) }
+                                    });
+                                    let payload = null;
+                                    try { payload = await res.json(); } catch (e) { }
+
+                                    if (res.ok) {
+                                        onShowAlert(payload?.message || '참가 완료!');
+                                        window.dispatchEvent(new CustomEvent('challenge-joined', { detail: { challengeId: challenge.challenge_id, members: payload?.members || [] } }));
+                                        setTimeout(() => fetchChallenges(), 400);
+                                    } else {
+                                        const msg = payload?.message || payload?.error || '이미 참가중입니다.';
+                                        onShowAlert(msg);
+                                    }
+                                } catch (err) {
+                                    console.error('참가 처리 오류', err);
+                                    onShowAlert('참가 처리 실패');
+                                } finally {
+                                    setJoinLoading(false);
+                                }
                             }}
                         >
                             참여하기
                         </button>
-                        {alertOpen && (
-                            <CustomAlertModal onClose={() => setAlertOpen(false)} message={alertMessage} />
-                        )}
+                        
                     </div>
                 </div>
             </div>
         );
     };
+
 
     return (
         <div id="challenge-modal" className="modal" style={{ backgroundColor: '#eeeeee', minHeight: '100vh', padding: '38px 40px' }}>
@@ -191,7 +265,7 @@ function Challenge({ closeChallengeModal, onCreateSuccess }) {
                         </p>
                     ) : challenges.length > 0 ? (
                         challenges.map(challenge => (
-                            <ChallengeCard key={challenge.challenge_id} challenge={challenge} />
+                            <ChallengeCard key={challenge.challenge_id} challenge={challenge} onShowAlert={showAlert} />
                         ))
                     ) : (
                         <p style={{ textAlign: 'center', gridColumn: 'span 2', color: '#888', padding: '50px' }}>
@@ -207,6 +281,9 @@ function Challenge({ closeChallengeModal, onCreateSuccess }) {
                     closeCreateChallengeModal={closeCreateChallengeModal}
                     onCreateSuccess={handleCreateSuccess}
                 />
+            )}
+            {globalAlertOpen && (
+                <CustomAlertModal onClose={() => setGlobalAlertOpen(false)} message={globalAlertMessage} />
             )}
         </div>
     );
