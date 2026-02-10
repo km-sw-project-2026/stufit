@@ -101,6 +101,9 @@ function Challenge({ closeChallengeModal, onCreateSuccess }) {
     const ChallengeCard = ({ challenge }) => {
         const startDate = formatDate(challenge.created_at);
         const endDate = formatDate(challenge.end_date);
+        const [showJoinModal, setShowJoinModal] = React.useState(false);
+        const [joinLoading, setJoinLoading] = React.useState(false);
+        const JoinModal = React.lazy(() => import('../modal/JoinModal'));
 
         return (
             <div className="challenge-card" style={{ 
@@ -128,9 +131,36 @@ function Challenge({ closeChallengeModal, onCreateSuccess }) {
                         <button 
                             className="challenge-detail-btn" 
                             style={{ border: '1px solid #247b7b', borderRadius: '20px', padding: '8px 25px', backgroundColor: 'white', color: '#247b7b', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.95rem' }}
+                            onClick={() => setShowJoinModal(true)}
                         >
                             참여하기
                         </button>
+                        {showJoinModal && (
+                            <React.Suspense fallback={<div />}>
+                                <JoinModal
+                                    open={showJoinModal}
+                                    loading={joinLoading}
+                                    onClose={() => setShowJoinModal(false)}
+                                    onConfirm={async () => {
+                                        if (joinLoading) return;
+                                        setJoinLoading(true);
+                                        try {
+                                            const username = localStorage.getItem('username');
+                                            const res = await fetch(`/api/challenges/${challenge.challenge_id}/join`, { method: 'POST', headers: username ? { 'X-Username': encodeURIComponent(username) } : {} });
+                                            const payload = await res.json();
+                                            if (!res.ok) throw new Error(payload?.message || '참가 실패');
+                                            window.dispatchEvent(new CustomEvent('challenge-joined', { detail: { challengeId: challenge.challenge_id, members: payload.members || [] } }));
+                                            setShowJoinModal(false);
+                                            fetchChallenges();
+                                        } catch (e) {
+                                            alert(e.message || '참가 중 오류');
+                                        } finally {
+                                            setJoinLoading(false);
+                                        }
+                                    }}
+                                />
+                            </React.Suspense>
+                        )}
                     </div>
                 </div>
             </div>

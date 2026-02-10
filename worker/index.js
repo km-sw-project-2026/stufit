@@ -12,6 +12,12 @@ import * as logout from '../functions/api/auth/logout';
 // posts
 import * as posts from '../functions/api/posts';
 import * as postById from '../functions/api/post/[[id]]';
+import * as postLike from '../functions/api/post/[id]/like';
+import * as postComments from '../functions/api/post/[id]/comments';
+
+// comments
+import * as commentById from '../functions/api/comment/[id]/index';
+import * as commentLike from '../functions/api/comment/[id]/like';
 
 // shop/user
 import * as shopPurchase from '../functions/api/shop/purchase';
@@ -27,6 +33,7 @@ import challengeEdit from '../functions/api/challenges/[id]/edit';
 import challengeResult from '../functions/api/challenges/[id]/result';
 import challengeGiveupQuote from '../functions/api/challenges/[id]/giveup-quote';
 import challengeLeave from '../functions/api/challenges/[id]/leave';
+import challengeJoin from '../functions/api/challenges/[id]/join';
 
 export default {
   /**
@@ -64,9 +71,39 @@ export default {
         return posts.onRequestGet({ env });
       }
 
+      // Comments for a post (public GET)
+      const publicPostCommentsMatch = pathname.match(/^\/api\/post\/(\d+)\/comments$/);
+      if (publicPostCommentsMatch && request.method === 'GET') {
+        return postComments.onRequestGet({ env, params: { id: publicPostCommentsMatch[1] } });
+      }
+
       const postMatch = pathname.match(/^\/api\/post\/(\d+)$/);
       if (postMatch) {
         return postById.onRequestGet({ env, params: { id: postMatch[1] } });
+      }
+
+      const commentListMatch = pathname.match(/^\/api\/post\/(\d+)\/comments$/);
+      if (commentListMatch && request.method === 'GET') {
+        let optionalUserId;
+        let headerUsername = request.headers.get('X-Username');
+
+        if (headerUsername) {
+          // URL 디코딩
+          try {
+            headerUsername = decodeURIComponent(headerUsername);
+          } catch (e) {}
+
+          const userRow = await env.D1_DB
+            .prepare('SELECT user_id FROM users WHERE username = ?')
+            .bind(headerUsername)
+            .first();
+
+          if (userRow?.user_id) {
+            optionalUserId = userRow.user_id;
+          }
+        }
+
+        return postComments.onRequestGet({ env, params: { id: commentListMatch[1] }, userId: optionalUserId });
       }
 
       /* =========================
@@ -74,21 +111,34 @@ export default {
       ========================= */
 
       // username으로 userId 조회 (간단한 인증)
-      const username = request.headers.get('X-Username');
+      let username = request.headers.get('X-Username');
       
       if (!username) {
+        console.log('❌ No X-Username header');
         return new Response(JSON.stringify({ message: '로그인이 필요합니다.' }), { 
           status: 401,
           headers: { 'Content-Type': 'application/json' }
         });
       }
 
+      // URL 디코딩 (한글 이름 지원)
+      const originalUsername = username;
+      try {
+        username = decodeURIComponent(username);
+        console.log('✅ Decoded username:', originalUsername, '->', username);
+      } catch (e) {
+        console.log('⚠️ Failed to decode username:', originalUsername, e);
+        // 디코딩 실패 시 원본 사용
+      }
+
+      console.log('🔍 Looking up user:', username);
       const userRow = await env.D1_DB
         .prepare('SELECT user_id FROM users WHERE username = ?')
         .bind(username)
         .first();
 
       if (!userRow) {
+        console.log('❌ User not found:', username);
         return new Response(JSON.stringify({ message: '사용자를 찾을 수 없습니다.' }), { 
           status: 401,
           headers: { 'Content-Type': 'application/json' }
@@ -96,6 +146,7 @@ export default {
       }
 
       const userId = userRow.user_id;
+      console.log('✅ User authenticated:', username, 'userId:', userId);
 
       if (pathname === '/api/user/points' || pathname.startsWith('/api/user/points/')) {
         return userPoints.onRequestGet({ request, env, userId });
@@ -109,11 +160,40 @@ export default {
         return posts.onRequestPost({ request, env, userId });
       }
 
+      // Post comments (authenticated POST)
+      const postCommentsMatch = pathname.match(/^\/api\/post\/(\d+)\/comments$/);
+      if (postCommentsMatch && request.method === 'POST') {
+        return postComments.onRequestPost({ request, env, params: { id: postCommentsMatch[1] }, userId });
+      }
+
+      // Comment operations (like / edit / delete)
+      const commentMatch = pathname.match(/^\/api\/comment\/(\d+)(?:\/(.+))?$/);
+      if (commentMatch) {
+        const cid = commentMatch[1];
+        const action = commentMatch[2];
+
+        if (action === 'like' && request.method === 'POST') {
+          return commentLike.onRequestPost({ env, params: { id: cid }, userId });
+        }
+
+        if (!action && request.method === 'PATCH') {
+          return commentById.onRequestPatch({ request, env, params: { id: cid }, userId });
+        }
+
+        if (!action && request.method === 'DELETE') {
+          return commentById.onRequestDelete({ env, params: { id: cid }, userId });
+        }
+      }
+
       const authPostMatch = pathname.match(/^\/api\/post\/(\d+)$/);
       if (authPostMatch && (request.method === 'PUT' || request.method === 'PATCH' || request.method === 'DELETE')) {
          return postById.default(request, { env, params: { id: authPostMatch[1] }, userId });
       }
 
+      const postLikeMatch = pathname.match(/^\/api\/post\/(\d+)\/like$/);
+      if (postLikeMatch && request.method === 'POST') {
+        return postLike.onRequestPost({ env, params: { id: postLikeMatch[1] }, userId });
+      }
 
       if (pathname === '/api/user/resolve' || pathname.startsWith('/api/user/resolve/')) {
         return userResolve.onRequestGet({ request, env });
@@ -204,6 +284,9 @@ export default {
               params: { id },
               userId
             });
+
+          case 'join':
+            return challengeJoin(request, { env, params: { id }, userId });
 
           default:
             return new Response('Not Found', { status: 404 });
