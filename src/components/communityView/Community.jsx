@@ -576,11 +576,93 @@ function Community() {
         setSelectedPost(null);
     };
 
-    // 삭제, 수정, 좋아요 핸들러 (기존 로직 유지)
-    const handleDeletePost = async (postId) => { /* ...기존과 동일... */ fetchPosts(); };
-    const handleEditPost = async (updatedPost) => { /* ...기존과 동일... */ fetchPosts(); };
-    const handleToggleLike = async (postId) => { /* ...기존과 동일... */ fetchPosts(); };
-    const handleUpdatePostState = (updatedPost) => { fetchPosts(); };
+    // 삭제, 수정, 좋아요 핸들러
+    const handleDeletePost = async (postId) => {
+        const username = localStorage.getItem('username');
+        if (!username) return alert('로그인이 필요합니다.');
+
+        try {
+            const response = await fetch(`/api/post/${postId}`, {
+                method: 'DELETE',
+                headers: { 'X-Username': encodeURIComponent(username) }
+            });
+
+            if (!response.ok) {
+                const payload = await response.json().catch(() => ({}));
+                return alert(payload.message || '게시글 삭제에 실패했습니다.');
+            }
+
+            await fetchPosts();
+        } catch (error) {
+            console.error('게시글 삭제 실패:', error);
+            alert('게시글 삭제에 실패했습니다.');
+        }
+    };
+
+    const handleEditPost = async (updatedPost) => {
+        const username = localStorage.getItem('username');
+        if (!username) return alert('로그인이 필요합니다.');
+
+        try {
+            const response = await fetch(`/api/post/${updatedPost.id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Username': encodeURIComponent(username)
+                },
+                body: JSON.stringify({
+                    title: updatedPost.title,
+                    content: updatedPost.content
+                })
+            });
+
+            const payload = await response.json();
+            if (!response.ok) return alert(payload.message || '게시글 수정에 실패했습니다.');
+
+            await fetchPosts();
+        } catch (error) {
+            console.error('게시글 수정 실패:', error);
+            alert('게시글 수정에 실패했습니다.');
+        }
+    };
+
+    const handleToggleLike = async (postId) => {
+        const username = localStorage.getItem('username');
+        if (!username) return alert('로그인이 필요합니다.');
+
+        try {
+            const response = await fetch(`/api/post/${postId}/like`, {
+                method: 'POST',
+                headers: { 'X-Username': encodeURIComponent(username) }
+            });
+
+            const payload = await response.json();
+            if (!response.ok) return alert(payload.message || '좋아요 처리에 실패했습니다.');
+
+            // 좋아요 토글 성공 후 상태 즉시 업데이트
+            const { liked, count } = payload.data || {};
+            setPosts(prev => ({
+                ...prev,
+                popular: prev.popular.map(p => p.id === postId ? { ...p, liked, likes: count } : p),
+                tips: prev.tips.map(p => p.id === postId ? { ...p, liked, likes: count } : p),
+                data: prev.data.map(p => p.id === postId ? { ...p, liked, likes: count } : p),
+                mypost: prev.mypost.map(p => p.id === postId ? { ...p, liked, likes: count } : p)
+            }));
+        } catch (error) {
+            console.error('좋아요 처리 실패:', error);
+            alert('좋아요 처리에 실패했습니다.');
+        }
+    };
+
+    const handleUpdatePostState = (updatedPost) => {
+        setPosts(prev => ({
+            ...prev,
+            popular: prev.popular.map(p => p.id === updatedPost.id ? { ...p, ...updatedPost } : p),
+            tips: prev.tips.map(p => p.id === updatedPost.id ? { ...p, ...updatedPost } : p),
+            data: prev.data.map(p => p.id === updatedPost.id ? { ...p, ...updatedPost } : p),
+            mypost: prev.mypost.map(p => p.id === updatedPost.id ? { ...p, ...updatedPost } : p)
+        }));
+    };
 
     // 탭 라우팅 관련
     const navigate = useNavigate();
