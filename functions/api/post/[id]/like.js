@@ -20,6 +20,8 @@ export async function onRequestPost({ env, params, userId }) {
 
     const countRow = await env.D1_DB.prepare('SELECT COUNT(*) as cnt FROM post_likes WHERE post_id = ?').bind(postId).first();
     const count = countRow?.cnt || 0;
+    
+    let promoted = false;
 
     // 좋아요 1개 이상이면 Popular 등록 및 포인트 지급 (테스트용)
     try {
@@ -35,6 +37,8 @@ export async function onRequestPost({ env, params, userId }) {
             .prepare('UPDATE posts SET category = ?, popular_reward_paid = 1 WHERE post_id = ?')
             .bind('popular', postId)
             .run();
+
+          promoted = true;
 
           // 작성자에게 포인트 200 지급
           const authorId = post.user_id;
@@ -58,7 +62,7 @@ export async function onRequestPost({ env, params, userId }) {
       console.log('Popular reward error (ignored):', popularErr.message);
     }
 
-    return Response.json({ success: true, data: { liked: !exists, count } });
+    return Response.json({ success: true, data: { liked: !exists, count, promoted } });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     return Response.json({ success: false, message: '좋아요 처리 실패', error: message }, { status: 500 });

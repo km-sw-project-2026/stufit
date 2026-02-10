@@ -638,7 +638,18 @@ function Community() {
             if (!response.ok) return alert(payload.message || '좋아요 처리에 실패했습니다.');
 
             // 좋아요 토글 성공 후 상태 즉시 업데이트
-            const { liked, count } = payload.data || {};
+            const { liked, count, promoted } = payload.data || {};
+
+            // Popular 등급으로 승격된 경우 목록 새로고침
+            if (promoted) {
+                await fetchPosts();
+                if (activeTab !== 'popular') {
+                    // 선택적: 알림을 띄우거나 자동으로 탭 이동
+                    alert('이 게시글이 Popular 게시판으로 이동되었습니다!');
+                }
+                return;
+            }
+
             setPosts(prev => ({
                 ...prev,
                 popular: prev.popular.map(p => p.id === postId ? { ...p, liked, likes: count } : p),
