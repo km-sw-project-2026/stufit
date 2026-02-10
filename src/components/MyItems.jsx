@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import ItemDetailModal from './modal/ItemDetailModal';
 import './shopView/Shop.css';
-import { shopItems } from './shopView/shopItems';
+import { shopItems } from '../../shopItems';
 
 function MyItems() {
   const [selectedItem, setSelectedItem] = useState(null);
