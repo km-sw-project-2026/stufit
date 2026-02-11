@@ -120,36 +120,37 @@ color: #000;
 /* ------------------------------------------- */
 
 
-/* 상단 헤더 고정 */
-.header, header { 
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 70px; /* 헤더의 대략적인 높이 */
-  background-color: #ffffff;
-  z-index: 1000;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 20px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+/* 1. 헤더를 무조건 상단에 고정 (도망가지 못하게) */
+header, .header, [class*="Header"] {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 60px !important;
+  background-color: white !important;
+  z-index: 9999 !important;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1) !important;
 }
 
-/* 챌린지 페이지 전체 컨테이너 */
-.challenge-page, .main-container {
-  margin-top: 70px; /* 헤더 높이만큼 띄워줌 */
-  padding: 40px 20px;
-  min-height: 100vh;
-  overflow-y: auto; /* 세로 스크롤 허용 */
+/* 2. 멈춰있는 카드들을 강제로 움직이게 만들기 */
+/* 모든 중간 부모들의 높이 제한과 스크롤 차단을 해제합니다 */
+html, body, #root, [class*="container"], main {
+  height: auto !important;
+  min-height: 100vh !important;
+  overflow-y: visible !important; /* 막힌 스크롤 뚫기 */
+  overflow-x: hidden !important;
 }
 
-/* 챌린지 리스트 영역 */
-.challenge-list-container {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 30px;
-  max-width: 1200px;
-  margin: 0 auto;
+/* 3. 챌린지 목록이 헤더에 가려지지 않게 전체적으로 내려주기 */
+#root {
+  padding-top: 80px !important; /* 헤더 높이만큼 공간 확보 */
+  display: block !important;    /* 중앙 정렬 등으로 갇히지 않게 함 */
+}
+
+/* 4. 카드 리스트 영역 자체 설정 */
+.challenge-list-container, [class*="List"] {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  justify-content: center !important;
+  overflow: visible !important;
 }
