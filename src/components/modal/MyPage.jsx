@@ -35,32 +35,6 @@ function MyPage({ isOpen, onClose }) {
     const cachedPoints = localStorage.getItem('points');
 
     if (username) {
-      let postCount = 0;
-      try {
-        const savedPosts = localStorage.getItem('communityPosts');
-        if (savedPosts) {
-          const posts = JSON.parse(savedPosts);
-          if (posts.mypost && Array.isArray(posts.mypost)) {
-            postCount = posts.mypost.length;
-          }
-        }
-      } catch (error) {
-        console.error('게시글 개수 계산 실패:', error);
-      }
-
-      let commentCount = 0;
-      try {
-        for (let i = 0; i < localStorage.length; i++) {
-          const key = localStorage.key(i);
-          if (key && key.startsWith('comments_')) {
-            const comments = JSON.parse(localStorage.getItem(key) || '[]');
-            commentCount += comments.filter(c => c.author === username).length;
-          }
-        }
-      } catch (error) {
-        console.error('댓글 개수 계산 실패:', error);
-      }
-
       const computeOwnedCount = () => {
         try {
           const stored = localStorage.getItem('purchasedItems');
@@ -84,19 +58,19 @@ function MyPage({ isOpen, onClose }) {
         currentRank: '1위',
         challenges: '10개',
         points: cachedPoints ? Number(cachedPoints) : 0,
-        posts: `${postCount}개`,
-        comments: `${commentCount}개`,
+        posts: '0개',
+        comments: '0개',
         items: `${ownedCount}개`
       });
     }
 
-    const fetchPoints = async () => {
+    const fetchStats = async () => {
       if (!userId) {
         return;
       }
 
       try {
-        const response = await fetch(`/api/user/points?userId=${userId}`, {
+        const response = await fetch(`/api/user/stats?userId=${userId}`, {
           headers: { 'X-Username': username || '' },
         });
         const data = await response.json();
@@ -105,15 +79,26 @@ function MyPage({ isOpen, onClose }) {
           return;
         }
 
-        const nextPoints = Number(data?.points) || 0;
-        localStorage.setItem('points', String(nextPoints));
-        setUserData((prev) => (prev ? { ...prev, points: nextPoints } : prev));
+        if (data.success && data.stats) {
+          const nextPoints = Number(data.stats.points) || 0;
+          const posts = data.stats.posts;
+          const comments = data.stats.comments;
+
+          localStorage.setItem('points', String(nextPoints));
+          
+          setUserData((prev) => (prev ? { 
+            ...prev, 
+            points: nextPoints,
+            posts: `${posts}개`,
+            comments: `${comments}개`
+          } : prev));
+        }
       } catch (err) {
-        console.error('Points fetch error:', err);
+        console.error('Stats fetch error:', err);
       }
     };
 
-    fetchPoints();
+    fetchStats();
   }, [isOpen]);
 
   // activeItems: currently applied items (frame/bg/image)
