@@ -131,6 +131,9 @@ function ChallengeDetailView({ challenge, onClose }) {
                 return;
             }
 
+            // 제출 성공 시 즉시 상태 업데이트
+            setSubmittedToday(true);
+            
             await loadProgress();
             await fetchMembers(); // 멤버 상태 즉시 갱신
             console.log('[handleSubmitProgress] Refreshed progress and members');
