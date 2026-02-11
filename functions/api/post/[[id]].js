@@ -17,6 +17,8 @@ export default async function onRequest(request, { env, params, userId }) {
         const id = Number(params.id);
         if (Number.isNaN(id)) return new Response('Invalid post id', { status: 400 });
 
+        console.log('[post/[[id]]] handler', request.method, 'postId:', id, 'userId:', userId);
+
         // fetch post
         const post = await env.D1_DB.prepare('SELECT * FROM posts WHERE post_id = ?').bind(id).first();
         if (!post) return Response.json({ success: false, message: '게시글 없음' }, { status: 404 });
@@ -27,6 +29,7 @@ export default async function onRequest(request, { env, params, userId }) {
         }
 
         if (request.method === 'DELETE') {
+            console.log('[post/[[id]]] deleting post:', id);
             // 게시글 삭제 시 연관 데이터(댓글, 좋아요 등) 먼저 삭제 (Cascade)
             
             // 1. 댓글의 좋아요 삭제
@@ -42,8 +45,9 @@ export default async function onRequest(request, { env, params, userId }) {
             await env.D1_DB.prepare('DELETE FROM post_likes WHERE post_id = ?').bind(id).run();
 
             // 4. 게시글 삭제
-            await env.D1_DB.prepare('DELETE FROM posts WHERE post_id = ?').bind(id).run();
-            
+            const delRes = await env.D1_DB.prepare('DELETE FROM posts WHERE post_id = ?').bind(id).run();
+            console.log('[post/[[id]]] delete result meta:', delRes?.meta || delRes);
+
             return Response.json({ success: true, data: { postId: id }, message: '게시글 삭제 완료' });
         }
 
