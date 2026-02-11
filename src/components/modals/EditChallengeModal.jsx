@@ -3,7 +3,6 @@ import { useState } from 'react';
 function EditChallengeModal({ onClose }) {
   const [formData, setFormData] = useState({
     name: '',
-    user: '',
     duration: '',
     category: '',
     goal: '',
@@ -35,16 +34,7 @@ function EditChallengeModal({ onClose }) {
             onChange={handleInputChange}
           />
         </div>
-        <div className="form-group">
-          <label>내 이름</label>
-          <input
-            type="text"
-            id="edit-challenge-user"
-            placeholder="예: 김예선"
-            value={formData.user}
-            onChange={handleInputChange}
-          />
-        </div>
+        {/* '내 이름' 입력 제거 - 사용자 이름은 로그인 정보로 처리됩니다. */}
         <div className="form-row">
           <div className="form-group half">
             <label>기간 (일)</label>

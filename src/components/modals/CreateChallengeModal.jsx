@@ -35,16 +35,7 @@ function CreateChallengeModal({ onClose }) {
             onChange={handleInputChange}
           />
         </div>
-        {/* <div className="form-group">
-          <label>내 이름</label>
-          <input
-            type="text"
-            id="new-challenge-user"
-            placeholder="예: 김예선"
-            value={formData.user}
-            onChange={handleInputChange}
-          />
-        </div> */}
+        {/* '내 이름' 입력 완전 제거 - 로그인된 사용자 이름 사용 */}
         <div className="form-row">
           <div className="form-group half">
             <label>기간 (일)</label>

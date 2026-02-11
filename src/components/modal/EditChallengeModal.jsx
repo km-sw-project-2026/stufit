@@ -227,7 +227,6 @@ import React, { useState } from 'react';
 function EditChallengeModal({ challenge, onClose, onSuccess }) {
     // 1. 부모로부터 받은 현재 챌린지 데이터를 초기값으로 설정합니다.
     const [title, setTitle] = useState(challenge?.title || '');
-    const [name, setName] = useState(challenge?.name || '');
     const [goal, setGoal] = useState(challenge?.goal || '');
     const [category, setCategory] = useState(challenge?.category || 'EXERCISE');
     const [duration, setDuration] = useState('3'); // 기본값 3일
@@ -337,12 +336,7 @@ function EditChallengeModal({ challenge, onClose, onSuccess }) {
                         placeholder="예: 매일 물 2L 마시기"
                     />
 
-                    <label style={labelStyle}>내 이름</label>
-                    <input 
-                        style={inputStyle} 
-                        value={name} 
-                        onChange={(e) => setName(e.target.value)} 
-                    />
+                    {/* '내 이름' 입력 제거 - 사용자 이름은 로그인 정보로 처리됩니다. */}
 
                     <div style={{ display: 'flex', gap: '15px' }}>
                         <div style={{ flex: 1 }}>
