@@ -9,6 +9,8 @@ import * as login from '../functions/api/auth/login';
 import * as register from '../functions/api/auth/register';
 import * as logout from '../functions/api/auth/logout';
 
+import * as attendance from '../functions/api/attendance';
+
 // posts
 import * as posts from '../functions/api/posts';
 import * as postById from '../functions/api/post/[[id]]';
@@ -68,6 +70,10 @@ export default {
 
       if (pathname === '/api/auth/logout') {
         return logout.onRequestPost({ request, env });
+      }
+
+      if (pathname === '/api/attendance') {
+        return attendance.onRequestPost({ request, env });
       }
 
       // Public Challenges API (인증 불필요)
