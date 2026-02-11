@@ -99,21 +99,33 @@ function ChallengeDetailView({ challenge, onClose }) {
     const giveupHandler = () => setModalOpen(true);
 
     const handleSubmitProgress = async () => {
-        if (submitLoading) return;
+        console.log('[handleSubmitProgress] 시작, submittedToday:', submittedToday);
+        
+        if (submitLoading) {
+            console.log('[handleSubmitProgress] 이미 제출 중');
+            return;
+        }
 
         if (submittedToday) {
+            console.log('[handleSubmitProgress] 이미 오늘 제출함');
             alert('오늘은 이미 제출했습니다.');
             return;
         }
 
         const username = localStorage.getItem('username');
+        console.log('[handleSubmitProgress] username:', username);
+        
         if (!username || !challenge?.challenge_id) {
+            console.log('[handleSubmitProgress] 로그인 정보 없음');
             alert('로그인이 필요합니다.');
             return;
         }
 
         setSubmitLoading(true);
+        console.log('[handleSubmitProgress] 제출 중 상태로 변경');
+        
         try {
+            console.log('[handleSubmitProgress] API 호출 시작');
             const response = await fetch(`/api/challenges/${challenge.challenge_id}/verify`, {
                 method: 'PATCH',
                 headers: {
@@ -123,25 +135,27 @@ function ChallengeDetailView({ challenge, onClose }) {
             });
 
             const result = await response.json();
-
-            console.log('[handleSubmitProgress] Submit result:', result);
+            console.log('[handleSubmitProgress] API 응답:', response.status, result);
 
             if (!response.ok) {
+                console.log('[handleSubmitProgress] API 실패');
                 alert(result?.message || '제출에 실패했습니다.');
                 return;
             }
 
+            console.log('[handleSubmitProgress] 제출 성공! setSubmittedToday(true) 호출');
             // 제출 성공 시 즉시 상태 업데이트
             setSubmittedToday(true);
             
             await loadProgress();
             await fetchMembers(); // 멤버 상태 즉시 갱신
-            console.log('[handleSubmitProgress] Refreshed progress and members');
+            console.log('[handleSubmitProgress] 진행도 및 멤버 갱신 완료');
         } catch (error) {
-            console.error('제출 오류:', error);
+            console.error('[handleSubmitProgress] 오류:', error);
             alert('제출 중 오류가 발생했습니다.');
         } finally {
             setSubmitLoading(false);
+            console.log('[handleSubmitProgress] 제출 중 상태 해제, submittedToday:', submittedToday);
         }
     };
 
