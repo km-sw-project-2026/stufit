@@ -159,8 +159,10 @@ function Attendance() {
       const response = await fetch('/api/attendance', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, date: todayDateString })
+        body: JSON.stringify({ userId: parseInt(userId, 10), date: todayDateString })
       });
+
+      const responseData = await response.json();
 
       if (response.ok) {
         // 성공 시 화면 UI 업데이트
@@ -174,9 +176,9 @@ function Attendance() {
           date: todayDateString
         }));
         
-        showAlert(`${days[index]}요일 출석 완료! 랭킹 포인트가 반영되었습니다.`);
+        showAlert(responseData.message || `${days[index]}요일 출석 완료! 랭킹 포인트가 반영되었습니다.`);
       } else {
-        showAlert("출석 처리 중 오류가 발생했습니다.");
+        showAlert(responseData.message || "출석 처리 중 오류가 발생했습니다.");
       }
     } catch (error) {
       console.error("Attendance error:", error);

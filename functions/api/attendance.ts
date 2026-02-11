@@ -22,7 +22,8 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     }
     
     const { userId, date } = body as { userId: string, date: string };
-    console.log(`[Attendance API] Parsed data - UserId: ${userId}, Date: ${date}`);
+    const userIdNum = parseInt(userId, 10);
+    console.log(`[Attendance API] Parsed data - UserId: ${userIdNum}, Date: ${date}`);
 
     if (!userId || !date) {
       return new Response(JSON.stringify({ message: "데이터가 부족합니다." }), { 
@@ -31,10 +32,10 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
       });
     }
 
-    // 2. 이미 오늘 출석했는지 확인 (중복 출석 방지) (테이블명: attendance_logs)
+    // 2. 이미 오늘 출석했는지 확인 (중복 출석 방지)
     const existing = await env.D1_DB.prepare(
       "SELECT * FROM attendance_logs WHERE user_id = ? AND date = ?"
-    ).bind(userId, date).first();
+    ).bind(userIdNum, date).first();
 
     if (existing) {
       return new Response(JSON.stringify({ message: "이미 오늘 출석하셨습니다." }), { 
@@ -44,7 +45,6 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     }
 
     // 3. 요일별 포인트 계산 (0: 일요일 ~ 6: 토요일)
-    // Cloudflare Workers 시간은 UTC.
     const now = new Date();
     // KST 변환 (UTC+9)
     const kstOffset = 9 * 60 * 60 * 1000;
@@ -53,23 +53,39 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
 
     const rewardPoints = 100 + (dayOfWeek * 20);
 
-    // 4. DB 트랜잭션 처리 (출석 기록 + 포인트 로그 + 유저 포인트 업데이트)
+    // 4. user_profiles 존재 확인
+    const userProfile = await env.D1_DB.prepare(
+      "SELECT * FROM user_profiles WHERE user_id = ?"
+    ).bind(userIdNum).first();
+
+    // 4-1. DB 트랜잭션 처리 (출석 기록 + 포인트 로그 + 유저 포인트 업데이트)
     const stmts = [
-      // 4-1. 출석 기록 추가
+      // 출석 기록 추가
       env.D1_DB.prepare(
         "INSERT INTO attendance_logs (user_id, date) VALUES (?, ?)"
-      ).bind(userId, date),
+      ).bind(userIdNum, date),
 
-      // 4-2. 포인트 로그 추가 (테이블명: point_logs, 컬럼: point)
+      // 포인트 로그 추가
       env.D1_DB.prepare(
         "INSERT INTO point_logs (user_id, reason, point, created_at) VALUES (?, ?, ?, ?)"
-      ).bind(userId, '출석체크 ( ' + date + ' )', rewardPoints, kstDate.toISOString()),
-
-      // 4-3. 유저 프로필 포인트 업데이트 (테이블명: user_profiles, 컬럼: points)
-      env.D1_DB.prepare(
-        "UPDATE user_profiles SET points = points + ? WHERE user_id = ?"
-      ).bind(rewardPoints, userId)
+      ).bind(userIdNum, '출석체크 ( ' + date + ' )', rewardPoints, kstDate.toISOString())
     ];
+
+    // user_profiles가 없으면 먼저 생성
+    if (!userProfile) {
+      stmts.push(
+        env.D1_DB.prepare(
+          "INSERT INTO user_profiles (user_id, points) VALUES (?, ?)"
+        ).bind(userIdNum, rewardPoints)
+      );
+    } else {
+      // 있으면 포인트 업데이트
+      stmts.push(
+        env.D1_DB.prepare(
+          "UPDATE user_profiles SET points = points + ? WHERE user_id = ?"
+        ).bind(rewardPoints, userIdNum)
+      );
+    }
 
     await env.D1_DB.batch(stmts);
 
