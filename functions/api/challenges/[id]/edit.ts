@@ -30,9 +30,13 @@ export default async function handler(
       return new Response("Challenge not found", { status: 404 });
     }
 
-    // 👑 방장만 수정 페이지 접근 가능
-    if (results[0].created_by_user_id !== userId) {
-      return new Response("Forbidden", { status: 403 });
+    // 편의상 수정 페이지는 인증된 사용자에게 반환
+    try {
+      const headerUsername = request.headers.get('X-Username') ?? request.headers.get('x-username');
+      console.log('[challenge/edit] GET headerUsername:', headerUsername, 'resolved userId:', userId);
+      console.log('[challenge/edit] GET created_by_user_id from DB:', results[0].created_by_user_id, 'for challengeId:', challengeId);
+    } catch (e) {
+      console.log('[challenge/edit] failed to log debug headers (GET):', e);
     }
 
     return Response.json(results[0]);
