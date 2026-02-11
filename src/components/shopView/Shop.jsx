@@ -104,6 +104,11 @@ function Shop() {
         setPurchasedItemsByKey((prev) => {
             const next = { ...prev, [itemKey]: true };
             localStorage.setItem('purchasedItems', JSON.stringify(next));
+            try {
+                window.dispatchEvent(new CustomEvent('purchasedItemsUpdated', { detail: { key: itemKey } }));
+            } catch (e) {
+                // ignore
+            }
             return next;
         });
     };

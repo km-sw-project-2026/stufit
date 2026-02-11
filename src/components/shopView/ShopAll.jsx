@@ -11,6 +11,7 @@ function ShopAll({ wishlistScope, isWishlisted, isPurchased, toggleWishlist, onP
 
                 return (
                     <div key={item.id} className="shop-item-card">
+                    {item.rare && <div className="rare-badge">레어템</div>}
                     <div
                         className={`item-image ${item.image ? 'has-image' : ''} ${item.type === 'bg' ? 'is-bg' : ''}`}
                         style={{ backgroundColor: item.color }}

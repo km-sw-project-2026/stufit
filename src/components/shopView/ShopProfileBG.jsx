@@ -13,6 +13,7 @@ function ShopProfileBG({ wishlistScope, isWishlisted, isPurchased, toggleWishlis
 
                 return (
                     <div key={item.id} className="shop-item-card">
+                    {item.rare && <div className="rare-badge">레어템</div>}
                     <div
                         className={`item-image ${item.image ? 'has-image' : ''} is-bg`}
                         style={{ backgroundColor: item.color }}

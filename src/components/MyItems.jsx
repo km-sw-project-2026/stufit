@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import ItemDetailModal from './modal/ItemDetailModal';
+import { shopItems } from './shopView/shopItems';
 import './shopView/Shop.css';
 
 function MyItems() {
@@ -7,21 +8,48 @@ function MyItems() {
   const [isItemDetailOpen, setIsItemDetailOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState('all');
 
-  // 보유한 아이템 샘플 데이터
-  const ownedItems = [
-    { id: 1, category: '프로필 테두리', name: '행복한 버거 테두리', price: '3,000 P', color: '#fff4e6', type: 'frame', image: '', isUsing: true, isPurchased: true },
-    { id: 2, category: '프로필 이미지', name: '반짝 하얀 이빨', price: '2,000 P', color: '#f0f8ff', type: 'image', image: '', isUsing: false, isPurchased: true },
-    { id: 3, category: '프로필 배경', name: '밤하늘', price: '2,500 P', color: '#1a1a2e', type: 'bg', image: '', isUsing: false, isPurchased: true },
-    { id: 4, category: '프로필 테두리', name: '달달한 아이스콘 테두리', price: '4,000 P', color: '#ffeaa7', type: 'frame', image: '', isUsing: false, isPurchased: true },
-    { id: 5, category: '프로필 테두리', name: '딸기사탕 달콤테두리', price: '3,500 P', color: '#ffe0e6', type: 'frame', image: '', isUsing: false, isPurchased: true },
-    { id: 6, category: '프로필 테두리', name: '멋진 캡짱', price: '4,500 P', color: '#2c3e50', type: 'frame', image: '', isUsing: false, isPurchased: true },
-    { id: 7, category: '프로필 배경', name: '민트색 멋', price: '3,000 P', color: '#b8e6d5', type: 'bg', image: '', isUsing: false, isPurchased: true },
-  ];
+  const [purchasedItemsByKey, setPurchasedItemsByKey] = useState(() => {
+    const stored = localStorage.getItem('purchasedItems');
+    if (!stored) return {};
+
+    try {
+      const parsed = JSON.parse(stored);
+      return parsed && typeof parsed === 'object' ? parsed : {};
+    } catch {
+      return {};
+    }
+  });
+
+  useEffect(() => {
+    const onStorage = (e) => {
+      if (e.key === 'purchasedItems') {
+        try {
+          const parsed = JSON.parse(e.newValue || '{}');
+          setPurchasedItemsByKey(parsed && typeof parsed === 'object' ? parsed : {});
+        } catch {
+          setPurchasedItemsByKey({});
+        }
+      }
+    };
+
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
 
   const handleItemClick = (item) => {
     setSelectedItem(item);
     setIsItemDetailOpen(true);
   };
+
+  const ownedItems = Object.keys(purchasedItemsByKey).map((key) => {
+    const parts = String(key).split(':');
+    const idPart = parts.length > 1 ? parts[1] : parts[0];
+    const id = Number(idPart);
+    if (Number.isNaN(id)) return null;
+    const found = shopItems.find((s) => s.id === id);
+    if (!found) return null;
+    return { ...found, isPurchased: true, isUsing: false, _wishlistKey: key };
+  }).filter(Boolean);
 
   const getFilteredItems = () => {
     if (activeCategory === 'all') return ownedItems;
