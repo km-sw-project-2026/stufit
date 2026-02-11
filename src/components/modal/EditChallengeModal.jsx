@@ -232,22 +232,58 @@ function EditChallengeModal({ challenge, onClose, onSuccess }) {
     const [category, setCategory] = useState(challenge?.category || 'EXERCISE');
     const [duration, setDuration] = useState('3'); // 기본값 3일
 
-    // 2. 수정 완료 버튼 클릭 시 실행
-    const handleSubmit = (e) => {
+    // 2. 수정 완료 버튼 클릭 시 실행 — 서버에 PATCH 요청하여 영구 저장 후 부모에 알립니다.
+    const handleSubmit = async (e) => {
         e.preventDefault();
 
-        // 부모 컴포넌트로 전달할 데이터 객체 생성
-        const updatedData = {
-            ...challenge, // 기존 ID 등 유지
-            title: title,
-            name: name,
-            goal: goal,
-            category: category
-        };
+        try {
+            const username = localStorage.getItem('username');
 
-        // ⭐️ 서버에 보내는 대신 부모의 handleUpdateLocal을 실행합니다.
-        onSuccess(updatedData); 
-        alert("수정이 완료되었습니다!");
+            // 1) 기존 서버 데이터 불러오기 (PATCH가 모든 필드를 기대하므로 기존값과 병합)
+            const getRes = await fetch(`/api/challenges/${challenge.challenge_id}/edit`, {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json', ...(username ? { 'X-Username': username } : {}) }
+            });
+
+            if (!getRes.ok) {
+                alert('수정할 수 있는 권한이 없거나 챌린지를 불러올 수 없습니다.');
+                return;
+            }
+
+            const existing = await getRes.json();
+
+            // 2) 서버에 보낼 페이로드를 기존값과 병합
+            const payload = {
+                title: title || existing.title,
+                description: existing.description || '',
+                goal: goal || existing.goal,
+                end_date: existing.end_date || null,
+                max_members: existing.max_members || null,
+                is_private: existing.is_private || false
+            };
+
+            // 3) 변경 요청
+            const patchRes = await fetch(`/api/challenges/${challenge.challenge_id}/edit`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', ...(username ? { 'X-Username': username } : {}) },
+                body: JSON.stringify(payload)
+            });
+
+            if (!patchRes.ok) {
+                const errText = await patchRes.text().catch(() => '서버 오류');
+                alert('수정에 실패했습니다: ' + errText);
+                return;
+            }
+
+            // 4) UI에 반영
+            const updatedData = { ...challenge, title: payload.title, goal: payload.goal, category };
+            onSuccess(updatedData);
+            alert('수정이 완료되었습니다!');
+            onClose();
+        } catch (err) {
+            console.error('수정 요청 실패', err);
+            alert('수정 중 오류가 발생했습니다.');
+        }
     };
 
     // 모달 디자인 (사진 image_8fc5d4 스타일 반영)
