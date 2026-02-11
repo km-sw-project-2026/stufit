@@ -124,12 +124,19 @@ function ChallengeDetailView({ challenge, onClose }) {
 
             const result = await response.json();
 
+            console.log('[handleSubmitProgress] Submit result:', result);
+
             if (!response.ok) {
                 alert(result?.message || '제출에 실패했습니다.');
                 return;
             }
 
+            // 제출 성공 시 즉시 상태 업데이트
+            setSubmittedToday(true);
+            
             await loadProgress();
+            await fetchMembers(); // 멤버 상태 즉시 갱신
+            console.log('[handleSubmitProgress] Refreshed progress and members');
         } catch (error) {
             console.error('제출 오류:', error);
             alert('제출 중 오류가 발생했습니다.');
@@ -151,39 +158,43 @@ function ChallengeDetailView({ challenge, onClose }) {
 
     const [members, setMembers] = useState([]);
 
+    // 챌린지 멤버 목록 로드 함수
+    const fetchMembers = async () => {
+        if (!challenge?.challenge_id) return;
+        
+        try {
+            const username = localStorage.getItem('username');
+            const headers = {};
+            if (username) headers['X-Username'] = username;
+
+            // Prefer fetching challenge detail which includes members + isJoined
+            const res = await fetch(`/api/challenges/${challenge.challenge_id}`, { headers });
+            console.log('[fetchMembers] response status:', res.status);
+            if (!res.ok) {
+                console.warn('loadMembers: non-ok response', res.status);
+                return;
+            }
+            const payload = await res.json();
+            console.log('[fetchMembers] payload:', payload);
+            const list = (payload?.data && payload.data.members) ? payload.data.members : (payload?.members || []);
+            console.log('[fetchMembers] members list:', list);
+
+            // If members list empty but server marks user as joined, show current user as member
+            if ((list.length === 0) && payload?.data?.isJoined && username) {
+              list.push({ user_id: null, username, status: 'not_submitted' });
+            }
+
+            setMembers(list || []);
+        } catch (e) {
+            console.error('멤버 목록 로드 실패:', e);
+        }
+    };
+
     // 챌린지 멤버 목록 로드
     useEffect(() => {
         if (!challenge?.challenge_id) return;
 
-        let mounted = true;
         let intervalId = 0;
-
-        const fetchMembers = async () => {
-            try {
-                const username = localStorage.getItem('username');
-                const headers = {};
-                if (username) headers['X-Username'] = username;
-
-                // Prefer fetching challenge detail which includes members + isJoined
-                const res = await fetch(`/api/challenges/${challenge.challenge_id}`, { headers });
-                console.debug('loadMembers: response status', res.status);
-                if (!res.ok) {
-                    console.warn('loadMembers: non-ok response', res.status);
-                    return;
-                }
-                const payload = await res.json();
-                const list = (payload?.data && payload.data.members) ? payload.data.members : (payload?.members || []);
-
-                // If members list empty but server marks user as joined, show current user as member
-                if ((list.length === 0) && payload?.data?.isJoined && username) {
-                  list.push({ user_id: null, username, status: 'not_submitted' });
-                }
-
-                if (mounted) setMembers(list || []);
-            } catch (e) {
-                console.error('멤버 목록 로드 실패:', e);
-            }
-        };
 
         // initial fetch
         fetchMembers();
@@ -209,7 +220,6 @@ function ChallengeDetailView({ challenge, onClose }) {
         window.addEventListener('challenge-joined', handler);
 
         return () => {
-            mounted = false;
             window.removeEventListener('challenge-joined', handler);
             clearInterval(intervalId);
         };
@@ -297,7 +307,7 @@ function ChallengeDetailView({ challenge, onClose }) {
                                 onClick={handleSubmitProgress}
                                 disabled={submittedToday || submitLoading}
                             >
-                                {submittedToday ? '오늘 제출 완료' : submitLoading ? '제출 중...' : '제출하기'}
+                                {submittedToday ? '제출이 완료되었습니다' : submitLoading ? '제출 중...' : '제출하기'}
                             </button>
                         </div>
 

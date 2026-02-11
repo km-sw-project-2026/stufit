@@ -28,7 +28,9 @@ export default async function handler(request: Request, { env, userId }: Handler
             .prepare('SELECT u.user_id, u.username, cm.status FROM challenge_members cm JOIN users u ON cm.user_id = u.user_id WHERE cm.challenge_id = ?')
             .bind(id)
             .all();
+          console.log(`[Challenge Detail] Loaded ${members.results?.length || 0} members with status for challenge ${id}`);
         } else {
+          console.warn(`[Challenge Detail] status column missing for challenge ${id}`);
           members = await env.D1_DB
             .prepare('SELECT u.user_id, u.username FROM challenge_members cm JOIN users u ON cm.user_id = u.user_id WHERE cm.challenge_id = ?')
             .bind(id)

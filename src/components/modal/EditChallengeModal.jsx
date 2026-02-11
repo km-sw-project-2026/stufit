@@ -240,39 +240,22 @@ function EditChallengeModal({ challenge, onClose, onSuccess }) {
             const username = localStorage.getItem('username');
 
             // prepare headers (encode username to be safe for headers)
-            const headers = { 'Content-Type': 'application/json' };
-            if (username) headers['X-Username'] = encodeURIComponent(username);
-
-            // 1) 기존 서버 데이터 불러오기 (PATCH가 모든 필드를 기대하므로 기존값과 병합)
-            console.debug('[EditChallengeModal] GET edit - headers:', headers);
-            const getRes = await fetch(`/api/challenges/${challenge.challenge_id}/edit`, {
-                method: 'GET',
-                headers
-            });
-
-            if (!getRes.ok) {
-                const text = await getRes.text().catch(() => '');
-                console.warn('[EditChallengeModal] GET edit failed', getRes.status, text);
-                alert('수정할 수 있는 권한이 없거나 챌린지를 불러올 수 없습니다.');
-                return;
-            }
-
-            const existing = await getRes.json();
-
-            // 2) 서버에 보낼 페이로드를 기존값과 병합
-            const payload = {
-                title: title || existing.title,
-                description: existing.description || '',
-                goal: goal || existing.goal,
-                end_date: existing.end_date || null,
-                max_members: existing.max_members || null,
-                is_private: existing.is_private || false
-            };
-
-            // 3) 변경 요청
-            console.debug('[EditChallengeModal] PATCH edit - payload:', payload);
             const patchHeaders = { 'Content-Type': 'application/json' };
             if (username) patchHeaders['X-Username'] = encodeURIComponent(username);
+
+            // Build payload from current inputs, fallback to incoming `challenge` props
+            const payload = {
+                title: title || challenge?.title || '',
+                description: challenge?.description || '',
+                goal: goal || challenge?.goal || ''
+            };
+
+            // Only include optional fields when they exist to avoid sending explicit nulls
+            if (challenge?.end_date) payload.end_date = challenge.end_date;
+            if (typeof challenge?.max_members !== 'undefined' && challenge?.max_members !== null) payload.max_members = challenge.max_members;
+            payload.is_private = challenge?.is_private ?? false;
+
+            console.debug('[EditChallengeModal] PATCH edit - payload:', payload);
 
             const patchRes = await fetch(`/api/challenges/${challenge.challenge_id}/edit`, {
                 method: 'PATCH',
@@ -288,7 +271,7 @@ function EditChallengeModal({ challenge, onClose, onSuccess }) {
                 return;
             }
 
-            // 4) UI에 반영
+            // UI에 반영
             const updatedData = { ...challenge, title: payload.title, goal: payload.goal, category };
             onSuccess(updatedData);
             alert('수정이 완료되었습니다!');

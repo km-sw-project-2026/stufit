@@ -46,6 +46,43 @@ export default {
     try {
       const url = new URL(request.url);
       const { pathname } = url;
+      console.log(`[Worker] ${request.method} ${pathname}`);
+      // header getter that tolerates header name case/format variations
+      const getHeader = (name) => request.headers.get(name) ?? request.headers.get(name.toLowerCase());
+
+      // [DEBUG] Log all requests to ensure we are seeing traffic
+      console.log(`[Worker] Incoming: ${request.method} ${pathname}`);
+
+      if (pathname.startsWith('/api/attendance')) {
+        console.log('[Worker] Matched /api/attendance');
+        
+        if (request.method === 'OPTIONS') {
+           return new Response(null, {
+             status: 204,
+             headers: {
+                 'Access-Control-Allow-Origin': '*',
+                 'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS, PATCH',
+                 'Access-Control-Allow-Headers': 'Content-Type, X-Username, Authorization',
+             }
+           });
+        }
+        
+        if (request.method === 'POST') {
+          console.log('[Worker] Routing to attendance.onRequestPost');
+          const response = await attendance.onRequestPost({ request, env });
+          
+          // Ensure response has CORS headers
+          const newHeaders = new Headers(response.headers);
+          newHeaders.set('Access-Control-Allow-Origin', '*');
+          
+          return new Response(response.body, {
+            status: response.status,
+            statusText: response.statusText,
+            headers: newHeaders
+          });
+        }
+      }
+      
       // 빠른 공용 상세 조회 처리: X-Username 없이도 /api/challenges/:id GET 반환
       const publicDetailMatch = pathname.match(/^\/api\/challenges\/(\d+)(?:\/.*)?$/);
       if (publicDetailMatch && request.method === 'GET') {
@@ -72,10 +109,6 @@ export default {
         return logout.onRequestPost({ request, env });
       }
 
-      if (pathname === '/api/attendance' && request.method === 'POST') {
-        return attendance.onRequestPost({ request, env });
-      }
-
       // Public Challenges API (인증 불필요)
       if (pathname === '/api/challenges/public') {
         return publicChallenges(request, { env });
@@ -100,7 +133,7 @@ export default {
       const commentListMatch = pathname.match(/^\/api\/post\/(\d+)\/comments$/);
       if (commentListMatch && request.method === 'GET') {
         let optionalUserId;
-        let headerUsername = request.headers.get('X-Username');
+        let headerUsername = getHeader('X-Username');
 
         if (headerUsername) {
           // URL 디코딩
@@ -126,7 +159,7 @@ export default {
       ========================= */
 
       // username으로 userId 조회 (간단한 인증)
-      let username = request.headers.get('X-Username');
+      let username = getHeader('X-Username');
 
       if (!username) {
         // Allow unauthenticated GET for challenge detail (show members public view)

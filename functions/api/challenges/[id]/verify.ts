@@ -4,13 +4,16 @@ type HandlerContext = {
 };
 
 export default async function handler(request: Request, { env, userId }: HandlerContext) {
+  console.log('[Verify] Handler called, userId:', userId);
   try {
     if (request.method !== 'PATCH') return new Response('Method not allowed', { status: 405 });
 
     const id = Number(new URL(request.url).pathname.split('/')[3]);
+    console.log('[Verify] challenge_id:', id);
     if (Number.isNaN(id)) return new Response('Invalid challengeId', { status: 400 });
 
     const today = new Date().toISOString().slice(0, 10);
+    console.log('[Verify] today:', today);
 
     const already = await env.D1_DB.prepare(
       'SELECT 1 FROM challenge_daily_progress WHERE challenge_id = ? AND user_id = ? AND date = ?'
@@ -21,6 +24,19 @@ export default async function handler(request: Request, { env, userId }: Handler
     await env.D1_DB.prepare(
       'INSERT INTO challenge_daily_progress (challenge_id, user_id, date, is_checked, study_time_minutes) VALUES (?, ?, ?, 1, 0)'
     ).bind(id, userId, today).run();
+
+    console.log('[Verify] Inserted progress for user ${userId}, challenge ${id}');
+
+    // Update challenge_members status to 'submitted' (check if column exists)
+    console.log('[Verify] About to update status...');
+    try {
+      const updateResult = await env.D1_DB.prepare(
+        'UPDATE challenge_members SET status = ? WHERE challenge_id = ? AND user_id = ?'
+      ).bind('submitted', id, userId).run();
+      console.log('[Verify] Status update result:', JSON.stringify(updateResult));
+    } catch (statusErr) {
+      console.error('[Verify] Failed to update status:', statusErr);
+    }
 
     const progressCount = await env.D1_DB.prepare(
       'SELECT COUNT(*) as cnt FROM challenge_daily_progress WHERE challenge_id = ? AND user_id = ?'
