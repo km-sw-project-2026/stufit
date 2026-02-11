@@ -128,13 +128,14 @@ function HostGiveUpModal({ setModalOpen, setFinalModalOpen, challenge, onLeave }
                     {loading ? '처리 중...' : '나가기'}
                 </button>
             </div>
+        </div>
             {alertOpen && (
                 <CustomAlertModal
                     message={alertMessage}
                     onClose={handleAlertClose}
                 />
             )}
-        </div>
+        </>
     );
 }
 
