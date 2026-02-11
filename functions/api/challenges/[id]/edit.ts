@@ -33,7 +33,10 @@ export default async function handler(
       return new Response("Challenge not found", { status: 404 });
     }
 
-    // 편의상 수정 페이지는 인증된 사용자에게 반환
+    // 방장만 수정 페이지 접근 가능
+    if (results[0].created_by_user_id !== userId) {
+      return new Response(JSON.stringify({ ok: false, message: 'Forbidden: not owner' }), { status: 403, headers: { 'Content-Type': 'application/json' } });
+    }
     try {
       const headerUsername = request.headers.get('X-Username') ?? request.headers.get('x-username');
       console.log('[challenge/edit] GET headerUsername:', headerUsername, 'resolved userId:', userId);
@@ -70,7 +73,10 @@ export default async function handler(
       console.log('[challenge/edit] failed to log debug headers:', e);
     }
 
-    // 권한 검사: 현재는 편의상 인증된 사용자면 수정 허용
+    // 권한 검사: 방장만 수정 가능
+    if (results[0].created_by_user_id !== userId) {
+      return new Response(JSON.stringify({ ok: false, message: 'Forbidden: you are not the owner', created_by_user_id: results[0].created_by_user_id, userId }), { status: 403, headers: { 'Content-Type': 'application/json' } });
+    }
 
       // Read raw body text first to capture parse errors
       const rawBody = await request.text();
