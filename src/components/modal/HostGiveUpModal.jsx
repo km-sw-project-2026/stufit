@@ -12,8 +12,7 @@ function HostGiveUpModal({ setModalOpen, setFinalModalOpen, challenge, onLeave }
         
         const username = localStorage.getItem('username');
         if (!username || !challenge?.challenge_id) {
-            setAlertMessage('로그인 정보가 없습니다.');
-            setAlertOpen(true);
+            alert('로그인 정보가 없습니다.');
             return;
         }
 
@@ -30,7 +29,6 @@ function HostGiveUpModal({ setModalOpen, setFinalModalOpen, challenge, onLeave }
                 });
 
                 const result = await response.json();
-                console.log('[HostGiveUpModal] API response:', result);
 
                 if (response.ok) {
                     // 챌린지 업데이트 이벤트 발생
@@ -45,35 +43,21 @@ function HostGiveUpModal({ setModalOpen, setFinalModalOpen, challenge, onLeave }
                         window.dispatchEvent(event);
                     }
                     
-                    // 기존 모달 먼저 닫기
-                    setModalOpen(false);
-                    
-                    // 짧은 딜레이 후 알림 표시
-                    setTimeout(() => {
-                        setAlertMessage('챌린지를 나갔습니다. 방장 권한이 다른 멤버에게 이전되었습니다.');
-                        setAlertOpen(true);
-                    }, 100);
+                    setAlertMessage('챌린지를 나갔습니다. 방장 권한이 다른 멤버에게 이전되었습니다.');
+                    setAlertOpen(true);
                 } else {
-                    setModalOpen(false);
-                    setTimeout(() => {
-                        setAlertMessage(result.message || '나가기에 실패했습니다.');
-                        setAlertOpen(true);
-                    }, 100);
+                    setAlertMessage(result.message || '나가기에 실패했습니다.');
+                    setAlertOpen(true);
                 }
             } else if (selectedOption === 'delete') {
                 // 챌린지 삭제 - 기존 FinalGiveUpModal 사용
                 setModalOpen(false);
-                setTimeout(() => {
-                    setFinalModalOpen(true);
-                }, 100);
+                setFinalModalOpen(true);
             }
         } catch (error) {
             console.error('Error:', error);
-            setModalOpen(false);
-            setTimeout(() => {
-                setAlertMessage('오류가 발생했습니다.');
-                setAlertOpen(true);
-            }, 100);
+            setAlertMessage('오류가 발생했습니다.');
+            setAlertOpen(true);
         } finally {
             setLoading(false);
         }
@@ -81,15 +65,15 @@ function HostGiveUpModal({ setModalOpen, setFinalModalOpen, challenge, onLeave }
 
     const handleAlertClose = () => {
         setAlertOpen(false);
+        setModalOpen(false);
         if (onLeave) onLeave();
     };
 
     return (
         <>
-            {!alertOpen && (
-                <div id="host-give-up-modal" className="popup-modal">
-                    <div className="popup-overlay" onClick={() => setModalOpen(false)}></div>
-                    <div className="popup-content host-giveup-modal-content">
+            <div id="host-give-up-modal" className="popup-modal">
+                <div className="popup-overlay"></div>
+                <div className="popup-content host-giveup-modal-content">
                 <button className="modal-close-btn" onClick={() => setModalOpen(false)}>
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -144,11 +128,13 @@ function HostGiveUpModal({ setModalOpen, setFinalModalOpen, challenge, onLeave }
                     {loading ? '처리 중...' : '나가기'}
                 </button>
             </div>
-                </div>
-            )}
+            {alertOpen && (
+                <CustomAlertModal
+                    message={alertMessage}
+                    onClose={handleAlertClose}
                 />
             )}
-        </>
+        </div>
     );
 }
 
