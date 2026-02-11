@@ -49,6 +49,24 @@ export default {
       console.log(`[Worker] ${request.method} ${pathname}`);
       // header getter that tolerates header name case/format variations
       const getHeader = (name) => request.headers.get(name) ?? request.headers.get(name.toLowerCase());
+
+      if (pathname === '/api/attendance') {
+        if (request.method === 'POST') {
+          console.log('[Worker] Routing to attendance.onRequestPost');
+          return attendance.onRequestPost({ request, env });
+        } else if (request.method === 'OPTIONS') {
+           // CORS Preflight 처리
+           return new Response(null, {
+             status: 204,
+             headers: {
+                 'Access-Control-Allow-Origin': '*',
+                 'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS, PATCH',
+                 'Access-Control-Allow-Headers': 'Content-Type, X-Username, Authorization',
+             }
+           });
+        }
+      }
+      
       // 빠른 공용 상세 조회 처리: X-Username 없이도 /api/challenges/:id GET 반환
       const publicDetailMatch = pathname.match(/^\/api\/challenges\/(\d+)(?:\/.*)?$/);
       if (publicDetailMatch && request.method === 'GET') {
@@ -73,23 +91,6 @@ export default {
 
       if (pathname === '/api/auth/logout') {
         return logout.onRequestPost({ request, env });
-      }
-
-      if (pathname === '/api/attendance') {
-        if (request.method === 'POST') {
-          console.log('[Worker] Routing to attendance.onRequestPost');
-          return attendance.onRequestPost({ request, env });
-        } else if (request.method === 'OPTIONS') {
-           // CORS Preflight 처리
-           return new Response(null, {
-             status: 204,
-             headers: {
-                 'Access-Control-Allow-Origin': '*',
-                 'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS, PATCH',
-                 'Access-Control-Allow-Headers': 'Content-Type, X-Username, Authorization',
-             }
-           });
-        }
       }
 
       // Public Challenges API (인증 불필요)
