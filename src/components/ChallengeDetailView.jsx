@@ -307,7 +307,7 @@ function ChallengeDetailView({ challenge, onClose }) {
                                 onClick={handleSubmitProgress}
                                 disabled={submittedToday || submitLoading}
                             >
-                                {submittedToday ? '오늘 제출 완료' : submitLoading ? '제출 중...' : '제출하기'}
+                                {submittedToday ? '제출이 완료되었습니다' : submitLoading ? '제출 중...' : '제출하기'}
                             </button>
                         </div>
 
