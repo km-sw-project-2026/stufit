@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
 import GiveUpModal from "./modal/GiveUpModal";
+import HostGiveUpModal from "./modal/HostGiveUpModal";
 import FinalGiveUpModal from "./modal/FinalGiveUpModal";
 import CustomAlertModal from "./modal/CustomAlertModal";
 
 function ChallengeDetailView({ challenge, onClose }) {
     const [modalOpen, setModalOpen] = useState(false);
+    const [hostModalOpen, setHostModalOpen] = useState(false);
     const [finalModalOpen, setFinalModalOpen] = useState(false);
     const [alertOpen, setAlertOpen] = useState(false);
     const [timerSeconds, setTimerSeconds] = useState(0);
@@ -102,7 +104,23 @@ function ChallengeDetailView({ challenge, onClose }) {
         loadProgress();
     }, [challenge]);
 
-    const giveupHandler = () => setModalOpen(true);
+    const giveupHandler = () => {
+        const username = localStorage.getItem('username');
+        if (!username) {
+            setModalOpen(true);
+            return;
+        }
+
+        // 현재 사용자가 방장인지 확인
+        const currentUser = members.find(m => m.username === username);
+        const isHost = currentUser && challenge?.created_by_user_id === currentUser.user_id;
+
+        if (isHost) {
+            setHostModalOpen(true);
+        } else {
+            setModalOpen(true);
+        }
+    };
 
     const handleSubmitProgress = async () => {
         console.log('[handleSubmitProgress] 시작, submittedToday:', submittedToday);
@@ -430,6 +448,7 @@ function ChallengeDetailView({ challenge, onClose }) {
             </div>
 
             {modalOpen && <GiveUpModal setModalOpen={setModalOpen} setFinalModalOpen={setFinalModalOpen} />}
+            {hostModalOpen && <HostGiveUpModal setModalOpen={setHostModalOpen} setFinalModalOpen={setFinalModalOpen} challenge={challenge} />}
             {finalModalOpen && (
                 <FinalGiveUpModal
                     setModalOpen={setFinalModalOpen}
