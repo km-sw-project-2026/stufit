@@ -3958,6 +3958,14 @@ body.modal-open {
     padding: 0;
     margin-left: 150px;
 }
+.mypage-modal {
+    background-color: transparent;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+.mypage-header .profile-img { position: relative; }
+.mypage-header .profile-img > img { object-fit: cover; }
+.profile-frame-overlay { display: none; pointer-events: none; }
 .attendance-footer-outside {
     text-align: right;   /* 이미지와 동일하게 오른쪽 정렬 */
     font-size: 20px;     /* 시원하게 큰 글씨 */
