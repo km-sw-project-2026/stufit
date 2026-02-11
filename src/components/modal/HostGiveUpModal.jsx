@@ -99,8 +99,8 @@ function HostGiveUpModal({ setModalOpen, setFinalModalOpen, challenge, onLeave }
                             </div>
                         </div>
                         <p className="option-description">
-                            나홀로 이어가 불가능 합니다.<br />
-                            초도 포기시에는 준수가 100점을 차감됩니다
+                            나중에 이어서 불가능 합니다.<br />
+                            초도 포기시에는 점수가 100점 차감됩니다
                         </p>
                     </div>
 
