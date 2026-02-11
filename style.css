@@ -1318,6 +1318,119 @@ body.modal-open {
     background-color: #13554B;
 }
 
+/* Host GiveUp Modal Styles */
+.host-giveup-modal-content {
+    padding: 40px 30px;
+    width: 400px;
+    border-radius: 20px;
+}
+
+.modal-close-btn {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 5px;
+    color: #333;
+}
+
+.modal-close-btn:hover {
+    opacity: 0.7;
+}
+
+.host-giveup-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.host-giveup-options {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.host-option {
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.host-option.selected {
+    border-color: #176B5F;
+    background-color: #f0f8f7;
+}
+
+.host-option:hover {
+    border-color: #176B5F;
+}
+
+.option-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.option-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+}
+
+.radio-button {
+    width: 24px;
+    height: 24px;
+    border: 2px solid #ddd;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: white;
+    transition: all 0.2s;
+}
+
+.host-option.selected .radio-button {
+    background-color: #176B5F;
+    border-color: #176B5F;
+}
+
+.option-description {
+    font-size: 13px;
+    color: #666;
+    line-height: 1.5;
+    margin: 0;
+}
+
+.host-confirm-btn {
+    width: 100%;
+    padding: 15px;
+    background-color: #176B5F;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.host-confirm-btn:hover {
+    background-color: #13554B;
+}
+
+.host-confirm-btn:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
 
 .confirm-modal-content {
     padding: 0 !important;
