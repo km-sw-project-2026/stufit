@@ -25,6 +25,7 @@ import * as commentLike from '../functions/api/comment/[id]/like';
 import * as shopPurchase from '../functions/api/shop/purchase';
 import * as userPoints from '../functions/api/user/points';
 import * as userResolve from '../functions/api/user/resolve';
+import * as userStats from '../functions/api/user/stats';
 
 // challenges extra
 import * as progress from '../functions/api/challenges/[id]/progress';
@@ -209,6 +210,10 @@ export default {
 
       if (pathname === '/api/user/points' || pathname.startsWith('/api/user/points/')) {
         return userPoints.onRequestGet({ request, env, userId });
+      }
+      if (pathname === '/api/user/stats' || pathname.startsWith('/api/user/stats/')) {
+        // stats handler reads userId from query or X-Username header itself
+        return userStats.onRequestGet({ request, env });
       }
 
       if (pathname === '/api/shop/purchase' || pathname.startsWith('/api/shop/purchase/')) {
