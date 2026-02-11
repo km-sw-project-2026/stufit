@@ -11,6 +11,25 @@ export default async function handler(request: Request, { env, userId }: Handler
   // ========== GET: 챌린지 목록 조회 ==========
   if (request.method === 'GET') {
     try {
+      const url = new URL(request.url);
+      const code = url.searchParams.get('code');
+
+      // If a code query param is provided, return the matching challenge (used for "join by code")
+      if (code) {
+        console.log('Looking up challenge by code:', code);
+        // case-insensitive match for code
+        const row = await env.D1_DB
+          .prepare("SELECT * FROM challenges WHERE lower(challenge_code) = lower(?) AND deleted_at IS NULL LIMIT 1")
+          .bind(code)
+          .first();
+
+        if (!row) {
+          return Response.json({ success: false, message: '코드에 해당하는 챌린지를 찾을 수 없습니다.' }, { status: 404 });
+        }
+
+        return Response.json({ success: true, challenge: row }, { status: 200 });
+      }
+
       console.log('Fetching challenges for userId:', userId);
 
       const userChallenges = await env.D1_DB

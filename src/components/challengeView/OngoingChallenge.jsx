@@ -683,6 +683,39 @@ function OngoingChallenge() {
         fetchChallenges(); // 챌린지 상세보기 닫은 후 목록 새로고침
     };
 
+    // search code state (for the header search box)
+    const [codeSearch, setCodeSearch] = useState('');
+
+    // Handler: lookup challenge by code and join
+    const handleCodeSearch = async (code) => {
+        const c = (code || codeSearch || '').trim();
+        if (!c) return alert('코드를 입력해주세요.');
+        try {
+            const res = await fetch(`/api/challenges?code=${encodeURIComponent(c)}`);
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                return alert(err?.message || '해당 코드를 가진 챌린지를 찾을 수 없습니다.');
+            }
+            const payload = await res.json();
+            const challenge = payload.challenge;
+            if (!challenge) return alert('챌린지를 불러오지 못했습니다.');
+
+            const username = localStorage.getItem('username');
+            const headers = { 'Content-Type': 'application/json' };
+            if (username) headers['X-Username'] = encodeURIComponent(username);
+            const joinRes = await fetch(`/api/challenges/${challenge.challenge_id}/join`, { method: 'POST', headers });
+            const joinPayload = await joinRes.json().catch(() => ({}));
+            if (!joinRes.ok) return alert(joinPayload?.message || '참가에 실패했습니다.');
+
+            openChallengeDetail(challenge);
+            fetchChallenges();
+            alert('참가되었습니다!');
+        } catch (e) {
+            console.error('code search/join error', e);
+            alert('코드로 참가하는 중 오류가 발생했습니다.');
+        }
+    };
+
     const openEditModal = async (challenge) => {
         // Check permission by requesting the edit view (server returns 200 for owner, 403 for non-owner)
         try {
@@ -793,9 +826,12 @@ function OngoingChallenge() {
                                     <input 
                                         type="text" 
                                         placeholder="Enter code" 
+                                        value={codeSearch}
+                                        onChange={(e) => setCodeSearch(e.target.value)}
+                                        onKeyDown={(e) => { if (e.key === 'Enter') handleCodeSearch(); }}
                                         style={{ border: 'none', outline: 'none', width: '180px' }} 
                                     />
-                                    <button style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}>
+                                    <button onClick={() => handleCodeSearch()} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}>
                                         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                             <circle cx="11" cy="11" r="8"></circle>
                                             <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
