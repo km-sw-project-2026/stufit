@@ -115,6 +115,7 @@ function Attendance() {
   const [lastCheckDate, setLastCheckDate] = useState(null);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const days = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
   const points = ["100P", "120P", "140P", "160P", "180P", "200P", "220P"];
@@ -123,11 +124,16 @@ function Attendance() {
   const todayDateString = new Date().toLocaleDateString();
 
   useEffect(() => {
+    // 로컬스토리지에서 저장된 데이터 로드
     const savedData = localStorage.getItem('stufit_attendance');
     if (savedData) {
-      const { days, date } = JSON.parse(savedData);
-      setCheckedDays(days);
-      setLastCheckDate(date);
+      try {
+        const parsed = JSON.parse(savedData);
+        setCheckedDays(parsed.days || Array(7).fill(false));
+        setLastCheckDate(parsed.date || null);
+      } catch (e) {
+        console.error('localStorage 파싱 오류:', e);
+      }
     }
   }, []);
 
@@ -137,25 +143,29 @@ function Attendance() {
   };
 
   const handleCardClick = async (index) => {
+    if (isLoading) return; // 중복 클릭 방지
+
     if (index !== todayIndex) {
       showAlert(`오늘은 ${days[todayIndex]}요일입니다. 해당 요일에만 출석 가능해요!`);
       return;
     }
+    
     if (lastCheckDate === todayDateString) {
       showAlert("오늘 출석은 이미 완료되었습니다. 내일 다시 와주세요!");
       return;
     }
 
     // 🚀 서버(DB)에 출석 기록 보내기
-    const userId = localStorage.getItem('userId'); // 로그인 시 저장된 userId 가져오기
+    const userId = localStorage.getItem('userId');
     
     if (!userId) {
       showAlert("로그인이 필요한 서비스입니다.");
       return;
     }
 
+    setIsLoading(true);
+
     try {
-      // 랭킹 시스템과 연동된 서버 경로로 출석 정보 전송
       const response = await fetch('/api/attendance', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -163,28 +173,35 @@ function Attendance() {
       });
 
       const responseData = await response.json();
+      console.log('출석 응답:', responseData, '상태:', response.status);
 
       if (response.ok) {
-        // 성공 시 화면 UI 업데이트
+        // ✅ state와 localStorage 동시 업데이트
         const newCheckedDays = [...checkedDays];
         newCheckedDays[index] = true;
+        
+        // 상태 업데이트
         setCheckedDays(newCheckedDays);
         setLastCheckDate(todayDateString);
         
+        // localStorage 업데이트
         localStorage.setItem('stufit_attendance', JSON.stringify({
           days: newCheckedDays,
           date: todayDateString
         }));
         
-        showAlert(responseData.message || `${days[index]}요일 출석 완료! 랭킹 포인트가 반영되었습니다.`);
+        console.log('업데이트됨:', newCheckedDays);
+        showAlert(responseData.message || `${days[index]}요일 출석 완료! ${responseData.rewardPoints}P가 지급되었습니다.`);
       } else {
-        showAlert(responseData.message || "출석 처리 중 오류가 발생했습니다.");
+        console.error('API 실패:', response.status, responseData);
+        showAlert(responseData.message || "출석 처리 중 오류가 발생했습니다. (상태: " + response.status + ")");
       }
     } catch (error) {
       console.error("Attendance error:", error);
-      showAlert("서버와 통신할 수 없습니다.");
+      showAlert("서버와 통신할 수 없습니다. 네트워크를 확인해주세요.");
+    } finally {
+      setIsLoading(false);
     }
-  };
 
   return (
     <div className="attendance-section">
