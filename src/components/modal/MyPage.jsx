@@ -127,10 +127,14 @@ function MyPage({ isOpen, onClose }) {
       if (modalEl) {
         if (bgItem && bgItem.image) {
           modalEl.style.backgroundImage = `url(${bgItem.image})`;
-          modalEl.style.backgroundSize = 'cover';
+          modalEl.style.backgroundSize = 'contain';
           modalEl.style.backgroundPosition = 'center';
+          modalEl.style.backgroundRepeat = 'no-repeat';
         } else {
           modalEl.style.backgroundImage = '';
+          modalEl.style.backgroundSize = '';
+          modalEl.style.backgroundPosition = '';
+          modalEl.style.backgroundRepeat = '';
         }
       }
 
@@ -138,6 +142,13 @@ function MyPage({ isOpen, onClose }) {
       if (profileImgEl) {
         if (imageItem && imageItem.image) profileImgEl.src = imageItem.image;
         else profileImgEl.src = '/img/Profile2.png';
+        // ensure the profile image shows whole image
+        try {
+          profileImgEl.style.objectFit = 'contain';
+          profileImgEl.style.width = profileImgEl.style.width || profileImgEl.width ? '' : '';
+        } catch (e) {
+          // ignore
+        }
       }
 
       // frame overlay
@@ -146,8 +157,38 @@ function MyPage({ isOpen, onClose }) {
         if (frameItem && frameItem.image) {
           frameOverlay.src = frameItem.image;
           frameOverlay.style.display = 'block';
+          // position overlay to exactly cover the profile image
+          try {
+            const imgRect = profileImgEl && profileImgEl.getBoundingClientRect && profileImgEl.getBoundingClientRect();
+            if (imgRect) {
+              frameOverlay.style.position = 'fixed';
+              frameOverlay.style.left = `${imgRect.left}px`;
+              frameOverlay.style.top = `${imgRect.top}px`;
+              frameOverlay.style.width = `${imgRect.width}px`;
+              frameOverlay.style.height = `${imgRect.height}px`;
+              frameOverlay.style.objectFit = 'contain';
+              frameOverlay.style.pointerEvents = 'none';
+              frameOverlay.style.zIndex = '1002';
+            } else {
+              // fallback to relative overlay inside container
+              frameOverlay.style.position = 'absolute';
+              frameOverlay.style.top = '0';
+              frameOverlay.style.left = '0';
+              frameOverlay.style.width = '100%';
+              frameOverlay.style.height = '100%';
+              frameOverlay.style.objectFit = 'contain';
+            }
+          } catch (err) {
+            console.error('frame overlay positioning failed', err);
+          }
         } else {
           frameOverlay.style.display = 'none';
+          frameOverlay.style.position = '';
+          frameOverlay.style.left = '';
+          frameOverlay.style.top = '';
+          frameOverlay.style.width = '';
+          frameOverlay.style.height = '';
+          frameOverlay.style.zIndex = '';
         }
       }
     };
