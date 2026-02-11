@@ -1,11 +1,50 @@
 import { useState } from "react";
 
-function HostGiveUpModal({ setModalOpen, setFinalModalOpen, challenge }) {
+function HostGiveUpModal({ setModalOpen, setFinalModalOpen, challenge, onLeave }) {
     const [selectedOption, setSelectedOption] = useState('leave'); // 'leave' 또는 'delete'
+    const [loading, setLoading] = useState(false);
 
-    const handleConfirm = () => {
-        setModalOpen(false);
-        setFinalModalOpen(true);
+    const handleConfirm = async () => {
+        if (loading) return;
+        
+        const username = localStorage.getItem('username');
+        if (!username || !challenge?.challenge_id) {
+            alert('로그인 정보가 없습니다.');
+            return;
+        }
+
+        setLoading(true);
+
+        try {
+            if (selectedOption === 'leave') {
+                // 챌린지 나가기 - 방장 권한 이전
+                const response = await fetch(`/api/challenges/${challenge.challenge_id}/leave`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-Username': username
+                    }
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert('챌린지를 나갔습니다. 방장 권한이 다른 멤버에게 이전되었습니다.');
+                    setModalOpen(false);
+                    if (onLeave) onLeave();
+                } else {
+                    alert(result.message || '나가기에 실패했습니다.');
+                }
+            } else if (selectedOption === 'delete') {
+                // 챌린지 삭제 - 기존 FinalGiveUpModal 사용
+                setModalOpen(false);
+                setFinalModalOpen(true);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('오류가 발생했습니다.');
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (

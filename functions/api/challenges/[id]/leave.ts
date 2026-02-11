@@ -47,16 +47,61 @@ export default async function handler(
     console.log("Is owner:", isOwner);
 
     if (isOwner) {
-      console.log("📝 Deleting challenge (owner) - cascade delete");
-      // 관련된 모든 데이터 먼저 삭제
-      await env.D1_DB.prepare("DELETE FROM challenge_results WHERE challenge_id = ?")
-        .bind(challengeId).run();
-      await env.D1_DB.prepare("DELETE FROM challenge_daily_progress WHERE challenge_id = ?")
-        .bind(challengeId).run();
-      await env.D1_DB.prepare("DELETE FROM challenge_members WHERE challenge_id = ?")
-        .bind(challengeId).run();
-      await env.D1_DB.prepare("DELETE FROM challenges WHERE challenge_id = ?")
-        .bind(challengeId).run();
+      console.log("📝 Host leaving - transferring ownership");
+      
+      // 다른 멤버 찾기 (방장 제외)
+      const nextOwner = await env.D1_DB.prepare(
+        "SELECT user_id FROM challenge_members WHERE challenge_id = ? AND user_id != ? LIMIT 1"
+      ).bind(challengeId, userId).first();
+
+      if (nextOwner) {
+        console.log("📝 Transferring ownership to user:", nextOwner.user_id);
+        // 방장 권한 이전
+        await env.D1_DB.prepare(
+          "UPDATE challenges SET created_by_user_id = ? WHERE challenge_id = ?"
+        ).bind(nextOwner.user_id, challengeId).run();
+        
+        // 현재 방장 멤버 목록에서 제거
+        await env.D1_DB.prepare(
+          "DELETE FROM challenge_members WHERE challenge_id = ? AND user_id = ?"
+        ).bind(challengeId, userId).run();
+        
+        // 진행도 확인 (날짜를 다 채웠는지)
+        const progressCount = await env.D1_DB.prepare(
+          "SELECT COUNT(*) as count FROM challenge_daily_progress WHERE challenge_id = ? AND user_id = ?"
+        ).bind(challengeId, userId).first();
+        
+        // 챌린지 총 기간 계산
+        const challengeInfo = await env.D1_DB.prepare(
+          "SELECT created_at, end_date FROM challenges WHERE challenge_id = ?"
+        ).bind(challengeId).first();
+        
+        const totalDays = Math.ceil(
+          (new Date(challengeInfo.end_date).getTime() - new Date(challengeInfo.created_at).getTime()) 
+          / (1000 * 60 * 60 * 24)
+        );
+        
+        console.log("Progress:", progressCount?.count, "Total days:", totalDays);
+        
+        // 날짜를 다 채우지 않았으면 100점 차감
+        if ((progressCount?.count || 0) < totalDays) {
+          console.log("📝 Reducing score (incomplete challenge)");
+          await env.D1_DB.prepare(
+            "UPDATE user_profiles SET score = COALESCE(score, 0) - 100 WHERE user_id = ?"
+          ).bind(userId).run();
+        }
+      } else {
+        console.log("📝 No other members - deleting challenge");
+        // 멤버가 없으면 챌린지 삭제
+        await env.D1_DB.prepare("DELETE FROM challenge_results WHERE challenge_id = ?")
+          .bind(challengeId).run();
+        await env.D1_DB.prepare("DELETE FROM challenge_daily_progress WHERE challenge_id = ?")
+          .bind(challengeId).run();
+        await env.D1_DB.prepare("DELETE FROM challenge_members WHERE challenge_id = ?")
+          .bind(challengeId).run();
+        await env.D1_DB.prepare("DELETE FROM challenges WHERE challenge_id = ?")
+          .bind(challengeId).run();
+      }
     } else {
       console.log("📝 Removing member from challenge");
       try {
@@ -67,10 +112,10 @@ export default async function handler(
         console.log("⚠️ Member delete failed:", deleteErr?.message);
       }
 
-      console.log("📝 Reducing score");
+      console.log("📝 Reducing score (100 points)");
       try {
         await env.D1_DB.prepare(
-          "UPDATE user_profiles SET score = score - 100 WHERE user_id = ?"
+          "UPDATE user_profiles SET score = COALESCE(score, 0) - 100 WHERE user_id = ?"
         ).bind(userId).run();
       } catch (scoreErr) {
         console.log("⚠️ Score update failed (continuing anyway):", scoreErr?.message);

@@ -463,7 +463,7 @@ function ChallengeDetailView({ challenge, onClose }) {
             </div>
 
             {modalOpen && <GiveUpModal setModalOpen={setModalOpen} setFinalModalOpen={setFinalModalOpen} />}
-            {hostModalOpen && <HostGiveUpModal setModalOpen={setHostModalOpen} setFinalModalOpen={setFinalModalOpen} challenge={challenge} />}
+            {hostModalOpen && <HostGiveUpModal setModalOpen={setHostModalOpen} setFinalModalOpen={setFinalModalOpen} challenge={challenge} onLeave={handleLeaveSuccess} />}
             {finalModalOpen && (
                 <FinalGiveUpModal
                     setModalOpen={setFinalModalOpen}
