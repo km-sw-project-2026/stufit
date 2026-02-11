@@ -50,12 +50,13 @@ export default {
       // header getter that tolerates header name case/format variations
       const getHeader = (name) => request.headers.get(name) ?? request.headers.get(name.toLowerCase());
 
-      if (pathname === '/api/attendance') {
-        if (request.method === 'POST') {
-          console.log('[Worker] Routing to attendance.onRequestPost');
-          return attendance.onRequestPost({ request, env });
-        } else if (request.method === 'OPTIONS') {
-           // CORS Preflight 처리
+      // [DEBUG] Log all requests to ensure we are seeing traffic
+      console.log(`[Worker] Incoming: ${request.method} ${pathname}`);
+
+      if (pathname.startsWith('/api/attendance')) {
+        console.log('[Worker] Matched /api/attendance');
+        
+        if (request.method === 'OPTIONS') {
            return new Response(null, {
              status: 204,
              headers: {
@@ -64,6 +65,21 @@ export default {
                  'Access-Control-Allow-Headers': 'Content-Type, X-Username, Authorization',
              }
            });
+        }
+        
+        if (request.method === 'POST') {
+          console.log('[Worker] Routing to attendance.onRequestPost');
+          const response = await attendance.onRequestPost({ request, env });
+          
+          // Ensure response has CORS headers
+          const newHeaders = new Headers(response.headers);
+          newHeaders.set('Access-Control-Allow-Origin', '*');
+          
+          return new Response(response.body, {
+            status: response.status,
+            statusText: response.statusText,
+            headers: newHeaders
+          });
         }
       }
       
