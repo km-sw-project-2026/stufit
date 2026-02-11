@@ -106,7 +106,9 @@ export default async function handler(
           const testFlagQuery = url.searchParams.get('__test_only');
           const testTitleQuery = url.searchParams.get('title');
           if ((body && body.__test_only) || testFlagQuery) {
-          console.log('[challenge/edit] Test-only update requested');
+            console.log('[challenge/edit] Test-only update requested');
+            console.log('[challenge/edit] challengeId:', challengeId, 'type:', typeof challengeId);
+            console.log('[challenge/edit] db binding exists:', !!db);
           try {
               const newTitle = (body && body.title) || testTitleQuery || 'test';
               const r = await db.prepare(`UPDATE challenges SET title = ? WHERE challenge_id = ?`).bind(newTitle, challengeId).run();
