@@ -203,6 +203,10 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose }) {
         fetchMembers();
         setFinalModalOpen(false);
         setAlertOpen(true);
+        // 자세히보기도 닫기
+        setTimeout(() => {
+            if (onClose) onClose();
+        }, 1500);
     };
 
     // Props 기본값 설정

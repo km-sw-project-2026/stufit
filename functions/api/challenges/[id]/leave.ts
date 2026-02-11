@@ -89,13 +89,22 @@ export default async function handler(
           
           // user_profiles 레코드가 없으면 생성
           await env.D1_DB.prepare(
-            "INSERT OR IGNORE INTO user_profiles (user_id, score) VALUES (?, 0)"
+            "INSERT OR IGNORE INTO user_profiles (user_id, score, points) VALUES (?, 0, 0)"
           ).bind(userId).run();
+          
+          // 현재 점수 확인
+          const currentProfile = await env.D1_DB.prepare(
+            "SELECT score FROM user_profiles WHERE user_id = ?"
+          ).bind(userId).first();
+          
+          const newScore = Math.max(0, (currentProfile?.score || 0) - 100);
           
           // 점수 차감
           await env.D1_DB.prepare(
-            "UPDATE user_profiles SET score = MAX(0, score - 100) WHERE user_id = ?"
-          ).bind(userId).run();
+            "UPDATE user_profiles SET score = ? WHERE user_id = ?"
+          ).bind(newScore, userId).run();
+          
+          console.log("📝 Score updated from", currentProfile?.score, "to", newScore);
           
           // 포인트 로그 기록
           await env.D1_DB.prepare(
@@ -128,13 +137,22 @@ export default async function handler(
       try {
         // user_profiles 레코드가 없으면 생성
         await env.D1_DB.prepare(
-          "INSERT OR IGNORE INTO user_profiles (user_id, score) VALUES (?, 0)"
+          "INSERT OR IGNORE INTO user_profiles (user_id, score, points) VALUES (?, 0, 0)"
         ).bind(userId).run();
+        
+        // 현재 점수 확인
+        const currentProfile = await env.D1_DB.prepare(
+          "SELECT score FROM user_profiles WHERE user_id = ?"
+        ).bind(userId).first();
+        
+        const newScore = Math.max(0, (currentProfile?.score || 0) - 100);
         
         // 점수 차감
         await env.D1_DB.prepare(
-          "UPDATE user_profiles SET score = MAX(0, score - 100) WHERE user_id = ?"
-        ).bind(userId).run();
+          "UPDATE user_profiles SET score = ? WHERE user_id = ?"
+        ).bind(newScore, userId).run();
+        
+        console.log("📝 Score updated from", currentProfile?.score, "to", newScore);
         
         // 포인트 로그 기록
         await env.D1_DB.prepare(

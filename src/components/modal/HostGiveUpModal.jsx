@@ -70,9 +70,10 @@ function HostGiveUpModal({ setModalOpen, setFinalModalOpen, challenge, onLeave }
     };
 
     return (
-        <div id="host-give-up-modal" className="popup-modal">
-            <div className="popup-overlay"></div>
-            <div className="popup-content host-giveup-modal-content">
+        <>
+            <div id="host-give-up-modal" className="popup-modal">
+                <div className="popup-overlay"></div>
+                <div className="popup-content host-giveup-modal-content">
                 <button className="modal-close-btn" onClick={() => setModalOpen(false)}>
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -127,13 +128,14 @@ function HostGiveUpModal({ setModalOpen, setFinalModalOpen, challenge, onLeave }
                     {loading ? '처리 중...' : '나가기'}
                 </button>
             </div>
+            </div>
             {alertOpen && (
                 <CustomAlertModal
                     message={alertMessage}
                     onClose={handleAlertClose}
                 />
             )}
-        </div>
+        </>
     );
 }
 
