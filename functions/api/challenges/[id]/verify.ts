@@ -22,10 +22,24 @@ export default async function handler(request: Request, { env, userId }: Handler
       'INSERT INTO challenge_daily_progress (challenge_id, user_id, date, is_checked, study_time_minutes) VALUES (?, ?, ?, 1, 0)'
     ).bind(id, userId, today).run();
 
-    // Update challenge_members status to 'submitted'
-    await env.D1_DB.prepare(
-      'UPDATE challenge_members SET status = ? WHERE challenge_id = ? AND user_id = ?'
-    ).bind('submitted', id, userId).run();
+    console.log(`[Verify] Inserted progress for user ${userId}, challenge ${id}`);
+
+    // Update challenge_members status to 'submitted' (check if column exists)
+    try {
+      const pragma = await env.D1_DB.prepare("PRAGMA table_info('challenge_members')").all();
+      const hasStatus = (pragma.results || []).some((c: any) => c.name === 'status');
+      
+      if (hasStatus) {
+        const updateResult = await env.D1_DB.prepare(
+          'UPDATE challenge_members SET status = ? WHERE challenge_id = ? AND user_id = ?'
+        ).bind('submitted', id, userId).run();
+        console.log(`[Verify] Updated status to 'submitted' for user ${userId}, challenge ${id}`, updateResult);
+      } else {
+        console.warn('[Verify] status column does not exist in challenge_members');
+      }
+    } catch (statusErr) {
+      console.error('[Verify] Failed to update status:', statusErr);
+    }
 
     const progressCount = await env.D1_DB.prepare(
       'SELECT COUNT(*) as cnt FROM challenge_daily_progress WHERE challenge_id = ? AND user_id = ?'
