@@ -17,8 +17,57 @@ function CreateChallengeModal({ onClose }) {
   };
 
   const handleSubmit = () => {
-    console.log('Challenge created:', formData);
-    onClose();
+    // Basic validation
+    const durationNum = Number(formData.duration) || 0;
+    if (!formData.name || !formData.category || !durationNum || !formData.goal) {
+      alert('필수 항목을 모두 입력해주세요.');
+      return;
+    }
+
+    const username = localStorage.getItem('username');
+    if (!username) {
+      alert('로그인이 필요합니다.');
+      return;
+    }
+
+    // Compute endDate using duration-1 semantics so N일 입력 시 정확히 N일이 보이도록 함
+    const start = new Date();
+    const daysToAdd = Math.max(0, durationNum - 1);
+    const endDateObj = new Date(start);
+    endDateObj.setDate(start.getDate() + daysToAdd);
+    const pad = (n) => String(n).padStart(2, '0');
+    const endDateStr = `${endDateObj.getFullYear()}-${pad(endDateObj.getMonth() + 1)}-${pad(endDateObj.getDate())}`;
+
+    // Send create request to server
+    (async () => {
+      try {
+        const res = await fetch('/api/challenges', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Username': encodeURIComponent(username) },
+            body: JSON.stringify({
+            challengeName: formData.name,
+            category: formData.category.toUpperCase(),
+            maxParticipants: 10,
+              endDate: endDateStr,
+            duration: durationNum,
+            goalDescription: formData.goal,
+            inviteCode: formData.code || null
+          })
+        });
+
+        const json = await res.json();
+        if (!res.ok) {
+          alert(json.message || '챌린지 생성에 실패했습니다.');
+          return;
+        }
+
+        alert('챌린지가 성공적으로 생성되었습니다!');
+        onClose();
+      } catch (e) {
+        console.error('챌린지 생성 오류', e);
+        alert('서버 오류가 발생했습니다.');
+      }
+    })();
   };
 
   return (

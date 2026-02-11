@@ -46,6 +46,21 @@ export default async function handler(request: Request, { env, userId }: Handler
         members.results = (members.results || []).map((r: any) => ({ ...r, status: 'not_submitted' }));
       }
 
+      // compute duration to help clients display correct total days
+      try {
+        const msPerDay = 24 * 60 * 60 * 1000;
+        if (challenge.end_date && challenge.created_at) {
+          const s = new Date(challenge.created_at);
+          const e = new Date(challenge.end_date);
+          const sd = Date.UTC(s.getFullYear(), s.getMonth(), s.getDate());
+          const ed = Date.UTC(e.getFullYear(), e.getMonth(), e.getDate());
+          const diffExclusive = Math.floor((ed - sd) / msPerDay);
+          (challenge as any).duration = diffExclusive + 1;
+        }
+      } catch (e) {
+        // ignore
+      }
+
       return Response.json({ success: true, data: { ...challenge, isJoined: !!member, members: members.results || [] }, message: '챌린지 상세 조회' });
     }
 

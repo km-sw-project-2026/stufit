@@ -63,7 +63,7 @@ export default async function handler(request: Request, { env, userId }: Handler
     );
   }
 
-  const { challengeName, category, maxParticipants, endDate, goalDescription, inviteCode, timerHours, timerMinutes } = body;
+  const { challengeName, category, maxParticipants, endDate, goalDescription, inviteCode, timerHours, timerMinutes, duration } = body;
   const normalizedInviteCode = typeof inviteCode === 'string' ? inviteCode.trim() : '';
 
   console.log('Received data:', { challengeName, category, maxParticipants, endDate, goalDescription, inviteCode, timerHours, timerMinutes });
@@ -180,6 +180,28 @@ export default async function handler(request: Request, { env, userId }: Handler
       .prepare('SELECT * FROM challenges WHERE challenge_id = ?')
       .bind(challengeId)
       .first();
+
+    // compute duration to include in response: prefer client-provided `duration`,
+    // otherwise compute inclusive day count from created_at -> end_date
+    try {
+      const msPerDay = 24 * 60 * 60 * 1000;
+      let computedDuration = null;
+      if (typeof duration !== 'undefined' && duration !== null && !isNaN(Number(duration))) {
+        computedDuration = Number(duration);
+      } else if (createdChallenge && createdChallenge.end_date && createdChallenge.created_at) {
+        const s = new Date(createdChallenge.created_at);
+        const e = new Date(createdChallenge.end_date);
+        const sd = Date.UTC(s.getFullYear(), s.getMonth(), s.getDate());
+        const ed = Date.UTC(e.getFullYear(), e.getMonth(), e.getDate());
+        const diffExclusive = Math.floor((ed - sd) / msPerDay);
+        computedDuration = diffExclusive + 1;
+      }
+      if (computedDuration !== null && createdChallenge) {
+        (createdChallenge as any).duration = computedDuration;
+      }
+    } catch (e) {
+      // ignore duration computation errors
+    }
 
     // fetch members robustly (handle DBs without status)
     const pragma = await env.D1_DB.prepare("PRAGMA table_info('challenge_members')").all();
