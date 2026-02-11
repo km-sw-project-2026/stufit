@@ -144,11 +144,13 @@ function ChallengeDetailView({ challenge, onClose }) {
             }
 
             console.log('[handleSubmitProgress] 제출 성공! setSubmittedToday(true) 호출');
-            // 제출 성공 시 즉시 상태 업데이트
-            setSubmittedToday(true);
             
             await loadProgress();
             await fetchMembers(); // 멤버 상태 즉시 갱신
+            
+            // loadProgress()가 상태를 덮어쓸 수 있으므로 다시 설정
+            setSubmittedToday(true);
+            
             console.log('[handleSubmitProgress] 진행도 및 멤버 갱신 완료');
         } catch (error) {
             console.error('[handleSubmitProgress] 오류:', error);
