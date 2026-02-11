@@ -72,7 +72,7 @@ export default {
         return logout.onRequestPost({ request, env });
       }
 
-      if (pathname === '/api/attendance') {
+      if (pathname === '/api/attendance' && request.method === 'POST') {
         return attendance.onRequestPost({ request, env });
       }
 
