@@ -182,6 +182,21 @@ function MyPage({ isOpen, onClose }) {
     };
 
     window.addEventListener('pointsUpdated', handlePointsUpdated);
+    const handleUserStatsChanged = (event) => {
+      const detail = event?.detail || {};
+      const parseCount = (s) => {
+        try { return Number(String(s).replace(/\D/g, '')) || 0; } catch { return 0; }
+      };
+      setUserData((prev) => {
+        if (!prev) return prev;
+        const prevPosts = parseCount(prev.posts);
+        const prevComments = parseCount(prev.comments);
+        const postsDelta = Number(detail.postsDelta || 0);
+        const commentsDelta = Number(detail.commentsDelta || 0);
+        return { ...prev, posts: `${Math.max(0, prevPosts + postsDelta)}개`, comments: `${Math.max(0, prevComments + commentsDelta)}개` };
+      });
+    };
+
     const handlePurchasedUpdated = () => {
       const stored = localStorage.getItem('purchasedItems');
       let count = 0;
@@ -194,14 +209,16 @@ function MyPage({ isOpen, onClose }) {
 
       setUserData((prev) => (prev ? { ...prev, items: `${count}개` } : prev));
     };
-
     window.addEventListener('purchasedItemsUpdated', handlePurchasedUpdated);
     window.addEventListener('storage', handlePurchasedUpdated);
-    return () => window.removeEventListener('pointsUpdated', handlePointsUpdated);
-    // cleanup additional listeners
-    // (explicitly remove purchasedItemsUpdated and storage)
-    window.removeEventListener('purchasedItemsUpdated', handlePurchasedUpdated);
-    window.removeEventListener('storage', handlePurchasedUpdated);
+    window.addEventListener('user-stats-changed', handleUserStatsChanged);
+
+    return () => {
+      window.removeEventListener('pointsUpdated', handlePointsUpdated);
+      window.removeEventListener('purchasedItemsUpdated', handlePurchasedUpdated);
+      window.removeEventListener('storage', handlePurchasedUpdated);
+      window.removeEventListener('user-stats-changed', handleUserStatsChanged);
+    };
   }, [isOpen]);
 
   const handleLogout = async () => {
