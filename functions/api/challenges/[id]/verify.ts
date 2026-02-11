@@ -22,6 +22,11 @@ export default async function handler(request: Request, { env, userId }: Handler
       'INSERT INTO challenge_daily_progress (challenge_id, user_id, date, is_checked, study_time_minutes) VALUES (?, ?, ?, 1, 0)'
     ).bind(id, userId, today).run();
 
+    // Update challenge_members status to 'submitted'
+    await env.D1_DB.prepare(
+      'UPDATE challenge_members SET status = ? WHERE challenge_id = ? AND user_id = ?'
+    ).bind('submitted', id, userId).run();
+
     const progressCount = await env.D1_DB.prepare(
       'SELECT COUNT(*) as cnt FROM challenge_daily_progress WHERE challenge_id = ? AND user_id = ?'
     ).bind(id, userId).first();
