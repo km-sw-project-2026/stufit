@@ -1,8 +1,10 @@
 ﻿// Cloudflare Pages용 타입 정의
+// import type { D1Database } from "@cloudflare/workers-types";
+
 type PagesFunction<T = any> = (context: { request: Request, env: T }) => Promise<Response>;
 
 interface Env {
-  D1_DB: D1Database;
+  D1_DB: any;
 }
 
 export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
