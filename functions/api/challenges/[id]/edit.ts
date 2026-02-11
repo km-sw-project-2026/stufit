@@ -68,30 +68,39 @@ export default async function handler(
       is_private
     } = body;
 
-    await db
-      .prepare(`
-        UPDATE challenges
-        SET
-          title = ?,
-          description = ?,
-          goal = ?,
-          end_date = ?,
-          max_members = ?,
-          is_private = ?
-        WHERE challenge_id = ?
-      `)
-      .bind(
-        title,
-        description,
-        goal,
-        end_date,
-        max_members,
-        is_private,
-        challengeId
-      )
-      .run();
+    // 로그: 들어온 페이로드
+    console.log('[challenge/edit] PATCH payload:', { challengeId, userId, body });
 
-    return Response.json({ ok: true });
+    try {
+      const result = await db
+        .prepare(`
+          UPDATE challenges
+          SET
+            title = ?,
+            description = ?,
+            goal = ?,
+            end_date = ?,
+            max_members = ?,
+            is_private = ?
+          WHERE challenge_id = ?
+        `)
+        .bind(
+          title,
+          description,
+          goal,
+          end_date,
+          max_members,
+          is_private,
+          challengeId
+        )
+        .run();
+
+      console.log('[challenge/edit] Update result:', result);
+      return Response.json({ ok: true, result });
+    } catch (err) {
+      console.error('[challenge/edit] Update failed:', err);
+      return new Response(JSON.stringify({ ok: false, error: String(err) }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+    }
   }
 
   return new Response("Method Not Allowed", { status: 405 });
