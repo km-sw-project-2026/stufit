@@ -7,6 +7,7 @@ export default async function handler(
     const method = request.method;
     const challengeId = params.id;
     const db = env.D1_DB;
+    const url = new URL(request.url);
 
   // GET /challenges/{id}/edit
   if (method === "GET") {
@@ -101,11 +102,14 @@ export default async function handler(
       console.log('[challenge/edit] Bind params:', { title: body.title, description: body.description, goal: body.goal, end_date: body.end_date, max_members: body.max_members, is_private: body.is_private, challengeId });
 
       try {
-        // If test-only flag present, run a minimal update to isolate DB errors
-        if (body && body.__test_only) {
+          // If test-only flag present via body or query, run a minimal update to isolate DB errors
+          const testFlagQuery = url.searchParams.get('__test_only');
+          const testTitleQuery = url.searchParams.get('title');
+          if ((body && body.__test_only) || testFlagQuery) {
           console.log('[challenge/edit] Test-only update requested');
           try {
-            const r = await db.prepare(`UPDATE challenges SET title = ? WHERE challenge_id = ?`).bind(body.title || 'test', challengeId).run();
+              const newTitle = (body && body.title) || testTitleQuery || 'test';
+              const r = await db.prepare(`UPDATE challenges SET title = ? WHERE challenge_id = ?`).bind(newTitle, challengeId).run();
             console.log('[challenge/edit] Test update result:', r);
             return new Response(JSON.stringify({ ok: true, testResult: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });
           } catch (e) {
