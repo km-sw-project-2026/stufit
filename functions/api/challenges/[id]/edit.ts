@@ -71,12 +71,20 @@ export default async function handler(
 
     // 권한 검사: 현재는 편의상 인증된 사용자면 수정 허용
 
-      const body = await request.json();
-      console.log('[challenge/edit] incoming body type:', typeof body);
+      // Read raw body text first to capture parse errors
+      const rawBody = await request.text();
+      console.log('[challenge/edit] raw request body length:', rawBody?.length);
       try {
-        console.log('[challenge/edit] incoming body preview:', JSON.stringify(body));
+        console.log('[challenge/edit] raw body preview:', rawBody.slice(0, 200));
       } catch (e) {
-        console.log('[challenge/edit] failed to stringify body preview');
+        console.log('[challenge/edit] failed to preview raw body');
+      }
+      let body:any = null;
+      try {
+        body = rawBody ? JSON.parse(rawBody) : {};
+      } catch (errBody) {
+        console.error('[challenge/edit] JSON parse error for request body:', String(errBody));
+        return new Response(JSON.stringify({ ok: false, error: `Bad JSON: ${String(errBody)}`, rawBody }), { status: 400, headers: { 'Content-Type': 'application/json' } });
       }
     const {
       title,
