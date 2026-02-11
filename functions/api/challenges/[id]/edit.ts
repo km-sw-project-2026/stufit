@@ -107,7 +107,8 @@ export default async function handler(
         .run();
 
       console.log('[challenge/edit] Update result:', result);
-      return Response.json({ ok: true, result });
+      // Return minimal success response to avoid JSON serialization issues
+      return Response.json({ ok: true });
     } catch (err) {
         console.error('[challenge/edit] Update failed:', err);
         try {
