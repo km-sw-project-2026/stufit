@@ -85,7 +85,7 @@ export default async function handler(
         
         // 날짜를 다 채우지 않았으면 100점 차감
         if ((progressCount?.count || 0) < totalDays) {
-          console.log("📝 Reducing points and score (incomplete challenge)");
+          console.log("📝 Reducing points (incomplete challenge)");
           
           // user_profiles 레코드가 없으면 생성
           await env.D1_DB.prepare(
@@ -94,18 +94,17 @@ export default async function handler(
           
           // 현재 상태 확인
           const currentProfile = await env.D1_DB.prepare(
-            "SELECT score, points FROM user_profiles WHERE user_id = ?"
+            "SELECT points FROM user_profiles WHERE user_id = ?"
           ).bind(userId).first();
           
           const newPoints = Math.max(0, (currentProfile?.points || 0) - 100);
-          const newScore = Math.max(0, (currentProfile?.score || 0) - 100);
           
-          // 포인트 및 점수 차감
+          // 포인트 차감
           await env.D1_DB.prepare(
-            "UPDATE user_profiles SET points = ?, score = ? WHERE user_id = ?"
-          ).bind(newPoints, newScore, userId).run();
+            "UPDATE user_profiles SET points = ? WHERE user_id = ?"
+          ).bind(newPoints, userId).run();
           
-          console.log(`📝 Updated: Points ${currentProfile?.points}->${newPoints}, Score ${currentProfile?.score}->${newScore}`);
+          console.log(`📝 Updated: Points ${currentProfile?.points}->${newPoints}`);
           
           // 포인트 로그 기록
           await env.D1_DB.prepare(
@@ -134,7 +133,7 @@ export default async function handler(
         console.log("⚠️ Member delete failed:", deleteErr?.message);
       }
 
-      console.log("📝 Reducing points and score (100 points)");
+      console.log("📝 Reducing points (100 points)");
       try {
         // user_profiles 레코드가 없으면 생성
         await env.D1_DB.prepare(
@@ -143,18 +142,17 @@ export default async function handler(
         
         // 현재 상태 확인
         const currentProfile = await env.D1_DB.prepare(
-          "SELECT score, points FROM user_profiles WHERE user_id = ?"
+          "SELECT points FROM user_profiles WHERE user_id = ?"
         ).bind(userId).first();
         
         const newPoints = Math.max(0, (currentProfile?.points || 0) - 100);
-        const newScore = Math.max(0, (currentProfile?.score || 0) - 100);
         
-        // 포인트 및 점수 차감
+        // 포인트 차감
         await env.D1_DB.prepare(
-          "UPDATE user_profiles SET points = ?, score = ? WHERE user_id = ?"
-        ).bind(newPoints, newScore, userId).run();
+          "UPDATE user_profiles SET points = ? WHERE user_id = ?"
+        ).bind(newPoints, userId).run();
         
-        console.log(`📝 Updated: Points ${currentProfile?.points}->${newPoints}, Score ${currentProfile?.score}->${newScore}`);
+        console.log(`📝 Updated: Points ${currentProfile?.points}->${newPoints}`);
         
         // 포인트 로그 기록
         await env.D1_DB.prepare(

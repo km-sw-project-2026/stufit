@@ -100,7 +100,7 @@ function HostGiveUpModal({ setModalOpen, setFinalModalOpen, challenge, onLeave }
                         </div>
                         <p className="option-description">
                             나중에 이어서 불가능 합니다.<br />
-                            초도 포기시에는 점수가 100점 차감됩니다
+                            초도 포기시에는 포인트가 100P 차감됩니다
                         </p>
                     </div>
 
