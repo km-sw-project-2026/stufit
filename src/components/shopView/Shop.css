@@ -458,9 +458,23 @@
 }
 
 /* Item detail modal: make image square and position close button */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(0,0,0,0.35);
+    z-index: 2000;
+}
+
 .item-detail-modal {
-    position: relative;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
     padding: 24px;
+    z-index: 2010;
 }
 
 .item-detail-image-section {
@@ -479,6 +493,7 @@
     justify-content: center;
     background-color: #f5f5f5;
     flex-shrink: 0;
+    z-index: 1;
 }
 
 .item-detail-image img {
@@ -505,6 +520,7 @@
     justify-content: center;
     cursor: pointer;
     box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    z-index: 2020;
 }
 
 .item-detail-modal .modal-close-btn:hover {
