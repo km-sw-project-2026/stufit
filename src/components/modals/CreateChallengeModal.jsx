@@ -3,7 +3,7 @@ import { useState } from 'react';
 function CreateChallengeModal({ onClose }) {
   const [formData, setFormData] = useState({
     name: '',
-    user: '',
+    // user: '',
     duration: '',
     category: '',
     goal: '',
