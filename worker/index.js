@@ -93,6 +93,18 @@ export default {
           userId: undefined
         });
       }
+
+      // Allow unauthenticated code lookup: GET /api/challenges?code=... should work without X-Username
+      if (pathname === '/api/challenges' && request.method === 'GET') {
+        try {
+          const u = new URL(request.url);
+          if (u.searchParams.has('code')) {
+            return challengesIndex.default(request, { env, userId: undefined });
+          }
+        } catch (e) {
+          // ignore URL parse errors and continue
+        }
+      }
       
       /* =========================
          0️⃣ 인증 필요 없는 API

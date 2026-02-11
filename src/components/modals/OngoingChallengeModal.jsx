@@ -5,8 +5,16 @@ function OngoingChallengeModal({ onClose }) {
   const joinByCode = async (codeParam) => {
     const code = (codeParam || searchCode || '').trim();
     if (!code) return alert('코드를 입력해주세요.');
+    const username = localStorage.getItem('username');
+    if (!username) {
+      if (confirm('로그인이 필요합니다. 로그인 페이지로 이동하시겠습니까?')) window.location.href = '/login';
+      return;
+    }
     try {
-      const res = await fetch(`/api/challenges?code=${encodeURIComponent(code)}`);
+      const headersForGet = {};
+      const headerUser = localStorage.getItem('username');
+      if (headerUser) headersForGet['X-Username'] = encodeURIComponent(headerUser);
+      const res = await fetch(`/api/challenges?code=${encodeURIComponent(code)}`, { headers: headersForGet });
       if (!res.ok) {
         const e = await res.json().catch(() => ({}));
         return alert(e?.message || '챌린지를 찾을 수 없습니다.');
@@ -14,9 +22,7 @@ function OngoingChallengeModal({ onClose }) {
       const payload = await res.json();
       const challenge = payload.challenge;
       if (!challenge) return alert('챌린지를 불러오지 못했습니다.');
-      const username = localStorage.getItem('username');
-      const headers = { 'Content-Type': 'application/json' };
-      if (username) headers['X-Username'] = encodeURIComponent(username);
+      const headers = { 'Content-Type': 'application/json', 'X-Username': encodeURIComponent(username) };
       const joinRes = await fetch(`/api/challenges/${challenge.challenge_id}/join`, { method: 'POST', headers });
       const joinPayload = await joinRes.json().catch(() => ({}));
       if (!joinRes.ok) return alert(joinPayload?.message || '참가에 실패했습니다.');
