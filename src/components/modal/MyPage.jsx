@@ -35,32 +35,6 @@ function MyPage({ isOpen, onClose }) {
     const cachedPoints = localStorage.getItem('points');
 
     if (username) {
-      let postCount = 0;
-      try {
-        const savedPosts = localStorage.getItem('communityPosts');
-        if (savedPosts) {
-          const posts = JSON.parse(savedPosts);
-          if (posts.mypost && Array.isArray(posts.mypost)) {
-            postCount = posts.mypost.length;
-          }
-        }
-      } catch (error) {
-        console.error('게시글 개수 계산 실패:', error);
-      }
-
-      let commentCount = 0;
-      try {
-        for (let i = 0; i < localStorage.length; i++) {
-          const key = localStorage.key(i);
-          if (key && key.startsWith('comments_')) {
-            const comments = JSON.parse(localStorage.getItem(key) || '[]');
-            commentCount += comments.filter(c => c.author === username).length;
-          }
-        }
-      } catch (error) {
-        console.error('댓글 개수 계산 실패:', error);
-      }
-
       const computeOwnedCount = () => {
         try {
           const stored = localStorage.getItem('purchasedItems');
@@ -84,19 +58,19 @@ function MyPage({ isOpen, onClose }) {
         currentRank: '1위',
         challenges: '10개',
         points: cachedPoints ? Number(cachedPoints) : 0,
-        posts: `${postCount}개`,
-        comments: `${commentCount}개`,
+        posts: '0개',
+        comments: '0개',
         items: `${ownedCount}개`
       });
     }
 
-    const fetchPoints = async () => {
+    const fetchStats = async () => {
       if (!userId) {
         return;
       }
 
       try {
-        const response = await fetch(`/api/user/points?userId=${userId}`, {
+        const response = await fetch(`/api/user/stats?userId=${userId}`, {
           headers: { 'X-Username': username || '' },
         });
         const data = await response.json();
@@ -105,15 +79,26 @@ function MyPage({ isOpen, onClose }) {
           return;
         }
 
-        const nextPoints = Number(data?.points) || 0;
-        localStorage.setItem('points', String(nextPoints));
-        setUserData((prev) => (prev ? { ...prev, points: nextPoints } : prev));
+        if (data.success && data.stats) {
+          const nextPoints = Number(data.stats.points) || 0;
+          const posts = data.stats.posts;
+          const comments = data.stats.comments;
+
+          localStorage.setItem('points', String(nextPoints));
+          
+          setUserData((prev) => (prev ? { 
+            ...prev, 
+            points: nextPoints,
+            posts: `${posts}개`,
+            comments: `${comments}개`
+          } : prev));
+        }
       } catch (err) {
-        console.error('Points fetch error:', err);
+        console.error('Stats fetch error:', err);
       }
     };
 
-    fetchPoints();
+    fetchStats();
   }, [isOpen]);
 
   // activeItems: currently applied items (frame/bg/image)
@@ -137,15 +122,18 @@ function MyPage({ isOpen, onClose }) {
       const bgItem = active.bg ? shopItems.find(s => s.id === Number(active.bg)) : null;
       const imageItem = active.image ? shopItems.find(s => s.id === Number(active.image)) : null;
 
-      // Apply background to modal by setting data attributes on modal element
-      const modalEl = document.querySelector('.mypage-modal');
-      if (modalEl) {
+      // Apply background to header area only
+      const headerBgEl = document.querySelector('.mypage-header .mypage-header-bg');
+      if (headerBgEl) {
         if (bgItem && bgItem.image) {
-          modalEl.style.backgroundImage = `url(${bgItem.image})`;
-          modalEl.style.backgroundSize = 'cover';
-          modalEl.style.backgroundPosition = 'center';
+          headerBgEl.style.backgroundImage = `url(${bgItem.image})`;
+          headerBgEl.style.backgroundSize = 'contain';
+          headerBgEl.style.backgroundPosition = 'center';
+          headerBgEl.style.backgroundRepeat = 'no-repeat';
+          headerBgEl.style.display = 'block';
         } else {
-          modalEl.style.backgroundImage = '';
+          headerBgEl.style.backgroundImage = '';
+          headerBgEl.style.display = 'none';
         }
       }
 
@@ -153,14 +141,36 @@ function MyPage({ isOpen, onClose }) {
       if (profileImgEl) {
         if (imageItem && imageItem.image) profileImgEl.src = imageItem.image;
         else profileImgEl.src = '/img/Profile2.png';
+        // ensure the profile image shows whole image
+        try {
+          profileImgEl.style.objectFit = 'contain';
+          profileImgEl.style.width = profileImgEl.style.width || profileImgEl.width ? '' : '';
+        } catch (e) {
+          // ignore
+        }
       }
 
-      // frame overlay
+      // frame overlay: place as absolute overlay inside .profile-img container
       const frameOverlay = document.querySelector('.mypage-modal .profile-frame-overlay');
       if (frameOverlay) {
         if (frameItem && frameItem.image) {
           frameOverlay.src = frameItem.image;
           frameOverlay.style.display = 'block';
+          frameOverlay.style.position = 'absolute';
+          frameOverlay.style.top = '0';
+          frameOverlay.style.left = '0';
+          // allow frame to be slightly larger than profile to appear as a border
+          const scale = typeof frameItem?.scale === 'number' ? frameItem.scale : 1.08;
+          const widthPct = (scale * 100).toFixed(2) + '%';
+          const offsetPct = ((scale - 1) / 2 * 100).toFixed(2) + '%';
+          frameOverlay.style.width = widthPct;
+          frameOverlay.style.height = widthPct; // keep square
+          frameOverlay.style.left = `-${offsetPct}`;
+          frameOverlay.style.top = `-${offsetPct}`;
+          frameOverlay.style.objectFit = 'contain';
+          frameOverlay.style.pointerEvents = 'none';
+          frameOverlay.style.zIndex = '1015';
+          frameOverlay.style.transformOrigin = 'center center';
         } else {
           frameOverlay.style.display = 'none';
         }
@@ -245,6 +255,7 @@ function MyPage({ isOpen, onClose }) {
         <button className="modal-close-btn" onClick={onClose}>×</button>
         
         <div className="mypage-header">
+          <div className="mypage-header-bg" />
           <div className="profile-img">
             <img src="/img/Profile2.png" alt="프로필" />
             <img src="" alt="frame" className="profile-frame-overlay" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'none', pointerEvents: 'none' }} />

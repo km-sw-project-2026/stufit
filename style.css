@@ -1318,6 +1318,119 @@ body.modal-open {
     background-color: #13554B;
 }
 
+/* Host GiveUp Modal Styles */
+.host-giveup-modal-content {
+    padding: 40px 30px;
+    width: 400px;
+    border-radius: 20px;
+}
+
+.modal-close-btn {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 5px;
+    color: #333;
+}
+
+.modal-close-btn:hover {
+    opacity: 0.7;
+}
+
+.host-giveup-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.host-giveup-options {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.host-option {
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.host-option.selected {
+    border-color: #176B5F;
+    background-color: #f0f8f7;
+}
+
+.host-option:hover {
+    border-color: #176B5F;
+}
+
+.option-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.option-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+}
+
+.radio-button {
+    width: 24px;
+    height: 24px;
+    border: 2px solid #ddd;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: white;
+    transition: all 0.2s;
+}
+
+.host-option.selected .radio-button {
+    background-color: #176B5F;
+    border-color: #176B5F;
+}
+
+.option-description {
+    font-size: 13px;
+    color: #666;
+    line-height: 1.5;
+    margin: 0;
+}
+
+.host-confirm-btn {
+    width: 100%;
+    padding: 15px;
+    background-color: #176B5F;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.host-confirm-btn:hover {
+    background-color: #13554B;
+}
+
+.host-confirm-btn:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
 
 .confirm-modal-content {
     padding: 0 !important;
@@ -3814,6 +3927,24 @@ body.modal-open {
     margin-bottom: 30px;
 }
 
+.mypage-header { position: relative; }
+.mypage-header .mypage-header-bg {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    height: 120px;
+    z-index: 1000;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+    display: none;
+    pointer-events: none;
+    border-radius: 12px 12px 0 0;
+}
+
+.mypage-header > * { position: relative; z-index: 1010; }
+
 .mypage-header .profile-img {
     flex-shrink: 0;
     background-image: none !important;
@@ -3845,6 +3976,16 @@ body.modal-open {
     padding: 0;
     margin-left: 150px;
 }
+.mypage-modal {
+    background-color: white !important;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+}
+.mypage-header .profile-img { position: relative; width: 230px; height: 230px; border-radius: 50%; overflow: hidden; }
+.mypage-header .profile-img > img { object-fit: contain; width: 100%; height: 100%; display: block; }
+.profile-frame-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: none; object-fit: contain; pointer-events: none; z-index: 1015; transform-origin: center center; }
+.profile-frame-overlay { display: none; pointer-events: none; }
 .attendance-footer-outside {
     text-align: right;   /* 이미지와 동일하게 오른쪽 정렬 */
     font-size: 20px;     /* 시원하게 큰 글씨 */

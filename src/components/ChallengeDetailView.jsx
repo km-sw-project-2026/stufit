@@ -1,10 +1,13 @@
 import { useState, useEffect } from "react";
 import GiveUpModal from "./modal/GiveUpModal";
+import HostGiveUpModal from "./modal/HostGiveUpModal";
 import FinalGiveUpModal from "./modal/FinalGiveUpModal";
 import CustomAlertModal from "./modal/CustomAlertModal";
 
-function ChallengeDetailView({ challenge, onClose }) {
+function ChallengeDetailView({ challenge: initialChallenge, onClose }) {
+    const [challenge, setChallenge] = useState(initialChallenge);
     const [modalOpen, setModalOpen] = useState(false);
+    const [hostModalOpen, setHostModalOpen] = useState(false);
     const [finalModalOpen, setFinalModalOpen] = useState(false);
     const [alertOpen, setAlertOpen] = useState(false);
     const [timerSeconds, setTimerSeconds] = useState(0);
@@ -14,6 +17,11 @@ function ChallengeDetailView({ challenge, onClose }) {
     const [submitLoading, setSubmitLoading] = useState(false);
     const [elapsedDays, setElapsedDays] = useState(0);
     const [remainingDays, setRemainingDays] = useState(0);
+
+    // props로 받은 challenge가 변경되면 state 업데이트
+    useEffect(() => {
+        setChallenge(initialChallenge);
+    }, [initialChallenge]);
 
     useEffect(() => {
         document.body.classList.add('modal-open');
@@ -40,6 +48,7 @@ function ChallengeDetailView({ challenge, onClose }) {
     }, [isTimerRunning, timerSeconds]);
 
     const getTotalDays = () => {
+
         // Prefer an explicit `duration` property if present (some clients store it locally)
         if (typeof challenge?.duration !== 'undefined' && challenge?.duration !== null) {
             const d = Number(challenge.duration);
@@ -74,6 +83,21 @@ function ChallengeDetailView({ challenge, onClose }) {
         };
 
         return categoryDays[challenge?.category] || 30;
+
+        if (!challenge?.end_date || !challenge?.created_at) return 30;
+        
+        try {
+            const startDate = new Date(challenge.created_at);
+            const endDate = new Date(challenge.end_date);
+            const diffTime = endDate - startDate;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            return diffDays > 0 ? diffDays : 30;
+        } catch (error) {
+            console.error('[getTotalDays] 날짜 계산 오류:', error);
+            return 30;
+        }
+
     };
 
     const loadProgress = async () => {
@@ -133,7 +157,23 @@ function ChallengeDetailView({ challenge, onClose }) {
         loadProgress();
     }, [challenge]);
 
-    const giveupHandler = () => setModalOpen(true);
+    const giveupHandler = () => {
+        const username = localStorage.getItem('username');
+        if (!username) {
+            setModalOpen(true);
+            return;
+        }
+
+        // 현재 사용자가 방장인지 확인
+        const currentUser = members.find(m => m.username === username);
+        const isHost = currentUser && challenge?.created_by_user_id === currentUser.user_id;
+
+        if (isHost) {
+            setHostModalOpen(true);
+        } else {
+            setModalOpen(true);
+        }
+    };
 
     const handleSubmitProgress = async () => {
         console.log('[handleSubmitProgress] 시작, submittedToday:', submittedToday);
@@ -200,8 +240,14 @@ function ChallengeDetailView({ challenge, onClose }) {
 
     // 챌린지 나가기 성공 시 호출
     const handleLeaveSuccess = () => {
+        // 멤버 목록 즉시 갱신
+        fetchMembers();
         setFinalModalOpen(false);
         setAlertOpen(true);
+        // 자세히보기도 닫기
+        setTimeout(() => {
+            if (onClose) onClose();
+        }, 1500);
     };
 
     // Props 기본값 설정
@@ -285,10 +331,29 @@ function ChallengeDetailView({ challenge, onClose }) {
                 }
             } catch (err) { console.error('challenge-joined handler error', err); }
         };
+        
+        const updateHandler = (e) => {
+            try {
+                console.debug('challenge-updated event received:', e?.detail);
+                if (e?.detail?.challengeId === challenge?.challenge_id) {
+                    if (e.detail.challenge) {
+                        console.debug('challenge-updated: updating challenge', e.detail.challenge);
+                        setChallenge(e.detail.challenge);
+                    }
+                    if (Array.isArray(e.detail.members)) {
+                        console.debug('challenge-updated: updating members', e.detail.members);
+                        setMembers(e.detail.members);
+                    }
+                }
+            } catch (err) { console.error('challenge-updated handler error', err); }
+        };
+        
         window.addEventListener('challenge-joined', handler);
+        window.addEventListener('challenge-updated', updateHandler);
 
         return () => {
             window.removeEventListener('challenge-joined', handler);
+            window.removeEventListener('challenge-updated', updateHandler);
             clearInterval(intervalId);
         };
     }, [challenge]);
@@ -328,7 +393,16 @@ function ChallengeDetailView({ challenge, onClose }) {
                             {members.length === 0 ? (
                                 <div className="member-item empty">참여자가 없습니다.</div>
                             ) : (
-                                members.map((m) => (
+                                members
+                                    .sort((a, b) => {
+                                        // 방장을 맨 위로
+                                        const aIsHost = challenge?.created_by_user_id === a.user_id;
+                                        const bIsHost = challenge?.created_by_user_id === b.user_id;
+                                        if (aIsHost && !bIsHost) return -1;
+                                        if (!aIsHost && bIsHost) return 1;
+                                        return 0;
+                                    })
+                                    .map((m) => (
                                     <div key={m.user_id} className="member-item">
                                         <div className="member-avatar">
                                             <img src="/img/Profile.png" alt="Profile" />
@@ -476,6 +550,7 @@ function ChallengeDetailView({ challenge, onClose }) {
             </div>
 
             {modalOpen && <GiveUpModal setModalOpen={setModalOpen} setFinalModalOpen={setFinalModalOpen} />}
+            {hostModalOpen && <HostGiveUpModal setModalOpen={setHostModalOpen} setFinalModalOpen={setFinalModalOpen} challenge={challenge} onLeave={handleLeaveSuccess} />}
             {finalModalOpen && (
                 <FinalGiveUpModal
                     setModalOpen={setFinalModalOpen}

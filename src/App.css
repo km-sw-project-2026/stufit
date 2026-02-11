@@ -1,4 +1,4 @@
-﻿#root {
+﻿/* #root {
 max-width: 1280px;
 margin: 0 auto;
 padding: 2rem;
@@ -44,7 +44,7 @@ padding: 2em;
 color: #888;
 }
 
-/* Timer Styles */
+
 .timer-display {
 display: flex;
 flex-direction: column;
@@ -112,4 +112,135 @@ color: #333;
 .timer-btn.reset:hover {
 background-color: #d0d0d0;
 color: #000;
+}
+
+
+ */
+
+
+ /* ------------------------------------------------------------ */
+
+
+
+ /* 1. 브라우저 기본 설정 초기화 및 스크롤 허용 */
+html, body {
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 100%;
+  /* 화면을 가두고 있던 설정을 풀고 스크롤을 활성화합니다 */
+  overflow-y: auto !important;
+  height: auto !important;
+}
+
+/* 2. 리액트 루트 컨테이너 설정 */
+#root {
+  width: 100%;
+  /* 기존의 max-width: 1280px 설정을 해제하여 전체 배경색이 잘 나오게 합니다 */
+  max-width: none !important;
+  margin: 0 auto;
+  text-align: center;
+  /* 내부 요소가 길어지면 같이 늘어나도록 설정 */
+  height: auto !important;
+  display: block;
+}
+
+/* 3. 상단 헤더(stu fit 로고 영역) 고정 */
+/* Challenge.jsx의 상단 로고가 스크롤해도 따라오게 만듭니다 */
+header, .header, [class*="Header"] {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 70px !important;
+  background-color: white !important;
+  z-index: 10000 !important; /* 모달보다 위에 위치 */
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 4. Challenge.jsx 전용 스타일 수정 */
+/* 인라인 스타일(100vh)을 이기기 위해 !important를 사용합니다 */
+#challenge-modal.modal {
+  position: relative !important;
+  min-height: 100vh !important; /* 최소 화면 높이는 채우되 */
+  height: auto !important;      /* 카드가 많아지면 아래로 늘어납니다 */
+  overflow: visible !important;  /* 내부 스크롤이 아닌 브라우저 스크롤 사용 */
+  display: block !important;
+  /* 헤더(70px)에 가려지지 않도록 위쪽 여백을 충분히 줍니다 */
+  padding-top: 100px !important; 
+  background-color: #eeeeee !important;
+}
+
+/* 5. 기존 타이머 스타일 (유지) */
+.timer-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 30px;
+  padding: 50px 30px;
+  background: #f5f5f5;
+  border-radius: 12px;
+  min-height: 280px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.timer-time {
+  font-size: 90px;
+  font-weight: 300;
+  font-family: 'Courier New', monospace;
+  letter-spacing: 4px;
+  color: #1a1a1a;
+  line-height: 1;
+  margin: 0 auto;
+  padding: 20px;
+  background: #e0e0e0;
+  border-radius: 12px;
+  width: 80%;
+  transform: translateY(-20px);
+}
+
+.timer-btn {
+  width: 250px;
+  height: 48px;
+  background-color: #0d6b63;
+  border: none;
+  border-radius: 24px;
+  display: block;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: white;
+  font-weight: 600;
+}
+
+.timer-btn:hover {
+  background-color: #138d75;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(22, 160, 133, 0.3);
+}
+
+/* 6. 기존 로고 애니메이션 (유지) */
+.logo {
+  height: 6em;
+  padding: 1.5em;
+  will-change: filter;
+  transition: filter 300ms;
+}
+
+.logo:hover {
+  filter: drop-shadow(0 0 2em #646cffaa);
+}
+
+@keyframes logo-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  a:nth-of-type(2) .logo {
+    animation: logo-spin infinite 20s linear;
+  }
 }
