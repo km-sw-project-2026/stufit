@@ -3,7 +3,7 @@ import { useState } from 'react';
 function CreateChallengeModal({ onClose }) {
   const [formData, setFormData] = useState({
     name: '',
-    user: '',
+    // user: '',
     duration: '',
     category: '',
     goal: '',
@@ -35,7 +35,7 @@ function CreateChallengeModal({ onClose }) {
             onChange={handleInputChange}
           />
         </div>
-        <div className="form-group">
+        {/* <div className="form-group">
           <label>내 이름</label>
           <input
             type="text"
@@ -44,7 +44,7 @@ function CreateChallengeModal({ onClose }) {
             value={formData.user}
             onChange={handleInputChange}
           />
-        </div>
+        </div> */}
         <div className="form-row">
           <div className="form-group half">
             <label>기간 (일)</label>

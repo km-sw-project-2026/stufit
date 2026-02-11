@@ -67,10 +67,14 @@ function ChallengeDetailView({ challenge, onClose }) {
             }
 
             const result = await response.json();
+            console.log('[loadProgress] API 응답:', result);
             const rows = Array.isArray(result?.data) ? result.data : [];
             const userRows = rows.filter(row => row.username === username);
             const count = userRows.length;
             const today = new Date().toISOString().slice(0, 10);
+            console.log('[loadProgress] today:', today);
+            console.log('[loadProgress] userRows:', userRows);
+            
                 const totalDays = getTotalDays();
                 const total = totalDays || 0;
                 const elapsed = Math.min(count, total);
@@ -85,7 +89,9 @@ function ChallengeDetailView({ challenge, onClose }) {
                     setRemainingDays(Math.max(total - elapsed, 0));
                 }
 
-                setSubmittedToday(userRows.some(row => row.date === today));
+                const hasToday = userRows.some(row => row.date === today);
+                console.log('[loadProgress] hasToday:', hasToday, '각 row의 date:', userRows.map(r => r.date));
+                setSubmittedToday(hasToday);
         } catch (error) {
             console.error('진행도 조회 오류:', error);
         }
@@ -99,21 +105,33 @@ function ChallengeDetailView({ challenge, onClose }) {
     const giveupHandler = () => setModalOpen(true);
 
     const handleSubmitProgress = async () => {
-        if (submitLoading) return;
+        console.log('[handleSubmitProgress] 시작, submittedToday:', submittedToday);
+        
+        if (submitLoading) {
+            console.log('[handleSubmitProgress] 이미 제출 중');
+            return;
+        }
 
         if (submittedToday) {
+            console.log('[handleSubmitProgress] 이미 오늘 제출함');
             alert('오늘은 이미 제출했습니다.');
             return;
         }
 
         const username = localStorage.getItem('username');
+        console.log('[handleSubmitProgress] username:', username);
+        
         if (!username || !challenge?.challenge_id) {
+            console.log('[handleSubmitProgress] 로그인 정보 없음');
             alert('로그인이 필요합니다.');
             return;
         }
 
         setSubmitLoading(true);
+        console.log('[handleSubmitProgress] 제출 중 상태로 변경');
+        
         try {
+            console.log('[handleSubmitProgress] API 호출 시작');
             const response = await fetch(`/api/challenges/${challenge.challenge_id}/verify`, {
                 method: 'PATCH',
                 headers: {
@@ -123,25 +141,29 @@ function ChallengeDetailView({ challenge, onClose }) {
             });
 
             const result = await response.json();
-
-            console.log('[handleSubmitProgress] Submit result:', result);
+            console.log('[handleSubmitProgress] API 응답:', response.status, result);
 
             if (!response.ok) {
+                console.log('[handleSubmitProgress] API 실패');
                 alert(result?.message || '제출에 실패했습니다.');
                 return;
             }
 
-            // 제출 성공 시 즉시 상태 업데이트
-            setSubmittedToday(true);
+            console.log('[handleSubmitProgress] 제출 성공! setSubmittedToday(true) 호출');
             
             await loadProgress();
             await fetchMembers(); // 멤버 상태 즉시 갱신
-            console.log('[handleSubmitProgress] Refreshed progress and members');
+            
+            // loadProgress()가 상태를 덮어쓸 수 있으므로 다시 설정
+            setSubmittedToday(true);
+            
+            console.log('[handleSubmitProgress] 진행도 및 멤버 갱신 완료');
         } catch (error) {
-            console.error('제출 오류:', error);
+            console.error('[handleSubmitProgress] 오류:', error);
             alert('제출 중 오류가 발생했습니다.');
         } finally {
             setSubmitLoading(false);
+            console.log('[handleSubmitProgress] 제출 중 상태 해제, submittedToday:', submittedToday);
         }
     };
 
@@ -265,10 +287,17 @@ function ChallengeDetailView({ challenge, onClose }) {
                                         <div className="member-avatar">
                                             <img src="/img/Profile.png" alt="Profile" />
                                         </div>
-                                        <span className="member-name">{m.username}</span>
-                                        <span className={`member-status ${m.status || 'not_submitted'}`} style={{ marginLeft: '8px', fontSize: '0.85rem', color: '#666' }}>
-                                            {m.status === 'submitted' ? '제출' : m.status === 'checked' ? '인증' : '미제출'}
-                                        </span>
+                                        <div className="member-info">
+                                            <div className="member-name-row">
+                                                <span className="member-name">{m.username}</span>
+                                                {challenge?.created_by_user_id === m.user_id && (
+                                                    <span className="host-badge">방장</span>
+                                                )}
+                                            </div>
+                                            <span className={`member-status ${m.status || 'not_submitted'}`}>
+                                                {m.status === 'submitted' ? '제출' : m.status === 'checked' ? '인증' : '미제출'}
+                                            </span>
+                                        </div>
                                     </div>
                                 ))
                             )}
