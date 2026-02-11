@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-function CreateChallengeModal({ setCreateChallengeOpen, closeCreateChallengeModal, onCreateSuccess }) {
+function CreateChallengeModal({ closeCreateChallengeModal, onCreateSuccess }) {
   const [challengeName, setChallengeName] = useState('');
   const [category, setCategory] = useState('');
   const [duration, setDuration] = useState('');
@@ -108,15 +108,7 @@ function CreateChallengeModal({ setCreateChallengeOpen, closeCreateChallengeModa
 
 
         {/* Removed ‘내 이름’ input — username is taken from localStorage on submit */}
-{/* 
-        <div className="form-group">
-          <label>내 이름</label>
-          <input
-            type="text"
-            id="new-challenge-user"
-            placeholder="예: 김예선"
-          />
-        </div> */}
+        {/* '내 이름' 입력 제거 */}
 
         <div className="form-row">
           <div className="form-group half">

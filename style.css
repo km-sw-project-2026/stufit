@@ -3835,6 +3835,8 @@ body.modal-open {
     padding: 10px;
 }
 
+/* (removed modal-specific override to restore original large profile size) */
+
 .mypage-header .profile-info {
     flex: 1;
     display: flex;
