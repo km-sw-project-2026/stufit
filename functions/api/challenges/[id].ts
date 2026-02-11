@@ -36,11 +36,16 @@ export default async function handler(
     }
 
     if (request.method === 'GET') {
+<<<<<<< HEAD
       // fetch members who joined this challenge
       // Some D1 instances may not have the `status` column; detect via PRAGMA and choose columns accordingly.
+=======
+      // fetch members who joined this challenge (handle older DBs without status column)
+>>>>>>> 6fb370f (feat: 챌린지 상세 조회 API 개선 및 불필요한 디버그 로그 제거)
       let members;
 
       try {
+<<<<<<< HEAD
         const cols = await env.D1_DB
           .prepare("PRAGMA table_info('challenge_members')")
           .all();
@@ -49,6 +54,10 @@ export default async function handler(
           Array.isArray(cols.results) &&
           cols.results.some((c: any) => c.name === 'status');
 
+=======
+        const pragma = await env.D1_DB.prepare("PRAGMA table_info('challenge_members')").all();
+        const hasStatus = (pragma.results || []).some((c: any) => c.name === 'status');
+>>>>>>> 6fb370f (feat: 챌린지 상세 조회 API 개선 및 불필요한 디버그 로그 제거)
         if (hasStatus) {
           members = await env.D1_DB
             .prepare(
@@ -63,13 +72,23 @@ export default async function handler(
             )
             .bind(id)
             .all();
+          members.results = (members.results || []).map((r: any) => ({ ...r, status: 'not_submitted' }));
         }
       } catch (e) {
         // fallback: try simple select without status
+<<<<<<< HEAD
         // fetch members who joined this challenge (handle older DBs without status column)
         const pragma = await env.D1_DB
           .prepare("PRAGMA table_info('challenge_members')")
           .all();
+=======
+        members = await env.D1_DB
+          .prepare('SELECT u.user_id, u.username FROM challenge_members cm JOIN users u ON cm.user_id = u.user_id WHERE cm.challenge_id = ?')
+          .bind(id)
+          .all();
+        members.results = (members.results || []).map((r: any) => ({ ...r, status: 'not_submitted' }));
+      }
+>>>>>>> 6fb370f (feat: 챌린지 상세 조회 API 개선 및 불필요한 디버그 로그 제거)
 
         const hasStatus = (pragma.results || []).some(
           (c: any) => c.name === 'status'
