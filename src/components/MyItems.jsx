@@ -20,6 +20,15 @@ function MyItems() {
     }
   });
 
+  const [activeItems, setActiveItems] = useState(() => {
+    try {
+      const stored = localStorage.getItem('activeItems');
+      return stored ? JSON.parse(stored) : {};
+    } catch {
+      return {};
+    }
+  });
+
   useEffect(() => {
     const onStorage = (e) => {
       if (e.key === 'purchasedItems') {
@@ -33,7 +42,31 @@ function MyItems() {
     };
 
     window.addEventListener('storage', onStorage);
+    const onActiveStorage = (e) => {
+      if (e.key === 'activeItems') {
+        try {
+          const parsed = JSON.parse(e.newValue || '{}');
+          setActiveItems(parsed && typeof parsed === 'object' ? parsed : {});
+        } catch {
+          setActiveItems({});
+        }
+      }
+    };
+    window.addEventListener('storage', onActiveStorage);
+    const handleActiveEvent = (ev) => {
+      const next = ev?.detail || {};
+      try {
+        const stored = JSON.parse(localStorage.getItem('activeItems') || '{}');
+        setActiveItems(stored && typeof stored === 'object' ? stored : {});
+      } catch {
+        setActiveItems({});
+      }
+    };
+    window.addEventListener('activeItemsUpdated', handleActiveEvent);
     return () => window.removeEventListener('storage', onStorage);
+    // cleanup additional listeners
+    window.removeEventListener('storage', onActiveStorage);
+    window.removeEventListener('activeItemsUpdated', handleActiveEvent);
   }, []);
 
   const handleItemClick = (item) => {
@@ -48,7 +81,8 @@ function MyItems() {
     if (Number.isNaN(id)) return null;
     const found = shopItems.find((s) => s.id === id);
     if (!found) return null;
-    return { ...found, isPurchased: true, isUsing: false, _wishlistKey: key };
+    const using = Boolean(activeItems && activeItems[found.type] === found.id);
+    return { ...found, isPurchased: true, isUsing: using, _wishlistKey: key };
   }).filter(Boolean);
 
   const getFilteredItems = () => {
@@ -87,10 +121,11 @@ function MyItems() {
       </div>
 
       {/* 오른쪽 콘텐츠 */}
-      <div className="shop-main">
+      <div className="shop-main myitems-main">
         <div className="shop-count">
           <span className="shop-count-number">{filteredItems.length}</span> 항목이 있어요
         </div>
+        <div className="count-divider" />
 
         <div className="shop-items-grid">
           {filteredItems.map((item) => (
@@ -113,7 +148,6 @@ function MyItems() {
               <div className="item-details">
                 <div className="item-category">{item.category}</div>
                 <div className="item-name">{item.name}</div>
-                <div className="item-price">{item.price}</div>
               </div>
             </div>
           ))}

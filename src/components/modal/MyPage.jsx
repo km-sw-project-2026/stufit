@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { shopItems } from '../shopView/shopItems';
 
 function MyPage({ isOpen, onClose }) {
   const [userData, setUserData] = useState(null);
@@ -115,6 +116,68 @@ function MyPage({ isOpen, onClose }) {
     fetchPoints();
   }, [isOpen]);
 
+  // activeItems: currently applied items (frame/bg/image)
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const readActive = () => {
+      try {
+        const stored = localStorage.getItem('activeItems');
+        const parsed = stored ? JSON.parse(stored) : {};
+        return parsed && typeof parsed === 'object' ? parsed : {};
+      } catch {
+        return {};
+      }
+    };
+
+    const applyActiveToUI = () => {
+      const active = readActive();
+      // set CSS or state via DOM updates below by setting attributes on body or storing in local state
+      const frameItem = active.frame ? shopItems.find(s => s.id === Number(active.frame)) : null;
+      const bgItem = active.bg ? shopItems.find(s => s.id === Number(active.bg)) : null;
+      const imageItem = active.image ? shopItems.find(s => s.id === Number(active.image)) : null;
+
+      // Apply background to modal by setting data attributes on modal element
+      const modalEl = document.querySelector('.mypage-modal');
+      if (modalEl) {
+        if (bgItem && bgItem.image) {
+          modalEl.style.backgroundImage = `url(${bgItem.image})`;
+          modalEl.style.backgroundSize = 'cover';
+          modalEl.style.backgroundPosition = 'center';
+        } else {
+          modalEl.style.backgroundImage = '';
+        }
+      }
+
+      const profileImgEl = document.querySelector('.mypage-modal .profile-img img');
+      if (profileImgEl) {
+        if (imageItem && imageItem.image) profileImgEl.src = imageItem.image;
+        else profileImgEl.src = '/img/Profile2.png';
+      }
+
+      // frame overlay
+      const frameOverlay = document.querySelector('.mypage-modal .profile-frame-overlay');
+      if (frameOverlay) {
+        if (frameItem && frameItem.image) {
+          frameOverlay.src = frameItem.image;
+          frameOverlay.style.display = 'block';
+        } else {
+          frameOverlay.style.display = 'none';
+        }
+      }
+    };
+
+    applyActiveToUI();
+
+    const handleActiveEvent = () => applyActiveToUI();
+    window.addEventListener('activeItemsUpdated', handleActiveEvent);
+    window.addEventListener('storage', handleActiveEvent);
+    return () => {
+      window.removeEventListener('activeItemsUpdated', handleActiveEvent);
+      window.removeEventListener('storage', handleActiveEvent);
+    };
+  }, [isOpen]);
+
   useEffect(() => {
     if (!isOpen) {
       return;
@@ -184,6 +247,7 @@ function MyPage({ isOpen, onClose }) {
         <div className="mypage-header">
           <div className="profile-img">
             <img src="/img/Profile2.png" alt="프로필" />
+            <img src="" alt="frame" className="profile-frame-overlay" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'none', pointerEvents: 'none' }} />
           </div>
           <div className="profile-info">
             <div className="profile-name-score">
