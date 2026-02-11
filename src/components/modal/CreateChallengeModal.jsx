@@ -105,7 +105,7 @@ function CreateChallengeModal({ setCreateChallengeOpen, closeCreateChallengeModa
             onChange={(e) => setChallengeName(e.target.value)}
           />
         </div>
-
+{/* 
         <div className="form-group">
           <label>내 이름</label>
           <input
@@ -113,7 +113,7 @@ function CreateChallengeModal({ setCreateChallengeOpen, closeCreateChallengeModa
             id="new-challenge-user"
             placeholder="예: 김예선"
           />
-        </div>
+        </div> */}
 
         <div className="form-row">
           <div className="form-group half">
