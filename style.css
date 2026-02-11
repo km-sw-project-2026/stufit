@@ -3985,6 +3985,9 @@ body.modal-open {
 .mypage-header .profile-img { position: relative; width: 230px; height: 230px; border-radius: 50%; overflow: hidden; }
 .mypage-header .profile-img > img { object-fit: contain; width: 100%; height: 100%; display: block; }
 .profile-frame-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: none; object-fit: contain; pointer-events: none; z-index: 1015; transform-origin: center center; }
+
+.mypage-header .profile-img { position: relative; }
+.mypage-header .profile-img > img { object-fit: cover; }
 .profile-frame-overlay { display: none; pointer-events: none; }
 .attendance-footer-outside {
     text-align: right;   /* 이미지와 동일하게 오른쪽 정렬 */

@@ -126,6 +126,7 @@ function MyPage({ isOpen, onClose }) {
       const headerBgEl = document.querySelector('.mypage-header .mypage-header-bg');
       if (headerBgEl) {
         if (bgItem && bgItem.image) {
+ HEAD
           headerBgEl.style.backgroundImage = `url(${bgItem.image})`;
           headerBgEl.style.backgroundSize = 'contain';
           headerBgEl.style.backgroundPosition = 'center';
@@ -134,6 +135,14 @@ function MyPage({ isOpen, onClose }) {
         } else {
           headerBgEl.style.backgroundImage = '';
           headerBgEl.style.display = 'none';
+          modalEl.style.backgroundImage = `url(${bgItem.image})`;
+          modalEl.style.backgroundSize = 'contain';
+          modalEl.style.backgroundPosition = 'center';
+          modalEl.style.backgroundRepeat = 'no-repeat';
+          modalEl.style.backgroundImage = '';
+          modalEl.style.backgroundSize = '';
+          modalEl.style.backgroundPosition = '';
+          modalEl.style.backgroundRepeat = '';
         }
       }
 
@@ -156,6 +165,7 @@ function MyPage({ isOpen, onClose }) {
         if (frameItem && frameItem.image) {
           frameOverlay.src = frameItem.image;
           frameOverlay.style.display = 'block';
+ HEAD
           frameOverlay.style.position = 'absolute';
           frameOverlay.style.top = '0';
           frameOverlay.style.left = '0';
@@ -171,8 +181,38 @@ function MyPage({ isOpen, onClose }) {
           frameOverlay.style.pointerEvents = 'none';
           frameOverlay.style.zIndex = '1015';
           frameOverlay.style.transformOrigin = 'center center';
+          // position overlay to exactly cover the profile image
+          try {
+            const imgRect = profileImgEl && profileImgEl.getBoundingClientRect && profileImgEl.getBoundingClientRect();
+            if (imgRect) {
+              frameOverlay.style.position = 'fixed';
+              frameOverlay.style.left = `${imgRect.left}px`;
+              frameOverlay.style.top = `${imgRect.top}px`;
+              frameOverlay.style.width = `${imgRect.width}px`;
+              frameOverlay.style.height = `${imgRect.height}px`;
+              frameOverlay.style.objectFit = 'contain';
+              frameOverlay.style.pointerEvents = 'none';
+              frameOverlay.style.zIndex = '1002';
+            } else {
+              // fallback to relative overlay inside container
+              frameOverlay.style.position = 'absolute';
+              frameOverlay.style.top = '0';
+              frameOverlay.style.left = '0';
+              frameOverlay.style.width = '100%';
+              frameOverlay.style.height = '100%';
+              frameOverlay.style.objectFit = 'contain';
+            }
+          } catch (err) {
+            console.error('frame overlay positioning failed', err);
+          }
         } else {
           frameOverlay.style.display = 'none';
+          frameOverlay.style.position = '';
+          frameOverlay.style.left = '';
+          frameOverlay.style.top = '';
+          frameOverlay.style.width = '';
+          frameOverlay.style.height = '';
+          frameOverlay.style.zIndex = '';
         }
       }
     };
