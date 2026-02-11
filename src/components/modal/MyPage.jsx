@@ -70,8 +70,13 @@ function MyPage({ isOpen, onClose }) {
       }
 
       try {
-        const response = await fetch(`/api/user/stats?userId=${userId}`, {
-          headers: { 'X-Username': username || '' },
+        const response = await fetch(`/api/user/stats?userId=${userId}&t=${Date.now()}`, {
+          headers: { 
+            'X-Username': username || '',
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+          },
         });
         const data = await response.json();
 
