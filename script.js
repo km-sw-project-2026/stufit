@@ -2,6 +2,65 @@
 // DOM 로드 완료 후 모든 초기화 및 이벤트 리스너 실행
 // ==========================================
 document.addEventListener('DOMContentLoaded', () => {
+    // 방어: 과거 번들/정적 HTML에 남아있는 '내 이름' 입력 요소가 있으면 제거
+    const removeObsoleteUserInput = () => {
+        const obsoleteUserInput = document.getElementById('new-challenge-user');
+        if (obsoleteUserInput) obsoleteUserInput.remove();
+    };
+    removeObsoleteUserInput();
+
+    // 동적으로 생성되는 경우를 대비해 MutationObserver로 일정 시간 동안 감시하여 발견 즉시 제거
+    try {
+        const observer = new MutationObserver((mutations) => {
+            for (const m of mutations) {
+                for (const node of m.addedNodes) {
+                    if (!node) continue;
+                    if (node.nodeType === Node.ELEMENT_NODE) {
+                        const el = node.nodeType === 1 && /** @type {Element} */ (node);
+                        if (el && el.id === 'new-challenge-user') el.remove();
+                        const nested = el && el.querySelector && el.querySelector('#new-challenge-user');
+                        if (nested) nested.remove();
+                    }
+                }
+            }
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
+        // 10초 후 자동으로 관찰 중지
+        setTimeout(() => observer.disconnect(), 10000);
+    } catch (e) {
+        // ignore if MutationObserver not available
+    }
+
+    // 추가 방어: '내 이름' 레이블이나 '김예선' 플레이스홀더가 있는 input 요소 제거
+    try {
+        // remove inputs with placeholder containing known example name
+        document.querySelectorAll('input[placeholder]').forEach(inp => {
+            try {
+                const ph = inp.getAttribute('placeholder') || '';
+                if (ph.includes('김예선') || ph.includes('내 이름')) inp.remove();
+            } catch (e) {}
+        });
+
+        // remove labels that contain the text '내 이름' and their associated input
+        document.querySelectorAll('label').forEach(lbl => {
+            try {
+                if (lbl.textContent && lbl.textContent.trim().includes('내 이름')) {
+                    const forId = lbl.getAttribute('for');
+                    if (forId) {
+                        const associated = document.getElementById(forId);
+                        if (associated) associated.remove();
+                    }
+                    // if label is directly followed by an input in DOM, remove it
+                    const next = lbl.nextElementSibling;
+                    if (next && next.tagName === 'INPUT') next.remove();
+                    // remove the label itself
+                    lbl.remove();
+                }
+            } catch (e) {}
+        });
+    } catch (e) {
+        // ignore
+    }
     
     // ==========================================
     // 커스텀 알림 모달 설정
@@ -949,7 +1008,8 @@ document.addEventListener('DOMContentLoaded', () => {
          
          const today = new Date(startDate);
          const endDate = new Date(today);
-         endDate.setDate(today.getDate() + duration);
+         const daysToAdd_card = Math.max(0, Number(duration) - 1);
+         endDate.setDate(today.getDate() + daysToAdd_card);
          
          const formatDate = (date) => `${date.getFullYear()}.${date.getMonth() + 1}.${date.getDate()}`;
          const dateString = `${formatDate(today)} ~ ${formatDate(endDate)}`;
@@ -994,7 +1054,8 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const today = createdAt ? new Date(createdAt) : new Date();
         const endDate = new Date(today);
-        endDate.setDate(today.getDate() + duration);
+        const daysToAdd_render = Math.max(0, Number(duration) - 1);
+        endDate.setDate(today.getDate() + daysToAdd_render);
         
         const formatDate = (date) => {
             return `${date.getFullYear()}.${date.getMonth() + 1}.${date.getDate()}`;

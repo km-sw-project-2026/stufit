@@ -29,9 +29,15 @@ function CreateChallengeModal({ closeCreateChallengeModal, onCreateSuccess }) {
       return;
     }
 
-    // 오늘 날짜 기준으로 종료일 계산
-    const endDate = new Date();
-    endDate.setDate(endDate.getDate() + Number(duration));
+    // 오늘 날짜 기준으로 종료일 계산 (로컬 날짜 기준 포맷)
+    // 사용자가 입력한 "기간(일)"이 예: 1이면 당일만 해당하므로
+    // 종료일을 (duration - 1)일 뒤로 설정해 기간이 정확히 일치하도록 보정합니다.
+    const start = new Date();
+    const daysToAdd = Math.max(0, Number(duration) - 1);
+    const endDateObj = new Date(start);
+    endDateObj.setDate(start.getDate() + daysToAdd);
+    const pad = (n) => String(n).padStart(2, '0');
+    const endDateStr = `${endDateObj.getFullYear()}-${pad(endDateObj.getMonth() + 1)}-${pad(endDateObj.getDate())}`;
 
     try {
       const normalizedInviteCode = inviteCode.trim();
@@ -42,11 +48,12 @@ function CreateChallengeModal({ closeCreateChallengeModal, onCreateSuccess }) {
           'Content-Type': 'application/json',
           'X-Username': encodeURIComponent(username)
         },
-        body: JSON.stringify({
+          body: JSON.stringify({
           challengeName,
           category,
           maxParticipants: 10, // 기본값
-          endDate: endDate.toISOString().slice(0, 10),
+          endDate: endDateStr,
+          duration: Number(duration) || null,
           goalDescription,
           inviteCode: normalizedInviteCode || null,
           timerHours: category === 'STUDY' || category === 'EXERCISE' ? Number(timerHours) : null,
