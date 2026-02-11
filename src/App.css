@@ -1,7 +1,7 @@
-﻿#root {
+﻿/* #root {
 max-width: 1280px;
 margin: 0 auto;
-/* padding: 2rem; */
+padding: 2rem;
 text-align: center;
 }
 
@@ -44,7 +44,7 @@ padding: 2em;
 color: #888;
 }
 
-/* Timer Styles */
+
 .timer-display {
 display: flex;
 flex-direction: column;
@@ -115,42 +115,100 @@ color: #000;
 }
 
 
+ */
 
 
-/* ------------------------------------------- */
 
 
-/* 1. 헤더를 무조건 상단에 고정 (도망가지 못하게) */
-header, .header, [class*="Header"] {
-  position: fixed !important;
-  top: 0 !important;
-  left: 0 !important;
+ /* －－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－ */
+
+
+ /* 기본 레이아웃: 스크롤이 가능하도록 높이 제한 해제 */
+html, body {
+  margin: 0 !important;
+  padding: 0 !important;
   width: 100% !important;
-  height: 60px !important;
-  background-color: white !important;
-  z-index: 9999 !important;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1) !important;
-}
-
-/* 2. 멈춰있는 카드들을 강제로 움직이게 만들기 */
-/* 모든 중간 부모들의 높이 제한과 스크롤 차단을 해제합니다 */
-html, body, #root, [class*="container"], main {
-  height: auto !important;
+  height: auto !important;     /* 컨텐츠 길이에 맞춰 늘어남 */
   min-height: 100vh !important;
-  overflow-y: visible !important; /* 막힌 스크롤 뚫기 */
-  overflow-x: hidden !important;
+  overflow-y: auto !important;  /* 브라우저 스크롤 활성화 */
+  background-color: #eeeeee;
 }
 
-/* 3. 챌린지 목록이 헤더에 가려지지 않게 전체적으로 내려주기 */
 #root {
-  padding-top: 80px !important; /* 헤더 높이만큼 공간 확보 */
-  display: block !important;    /* 중앙 정렬 등으로 갇히지 않게 함 */
+  width: 100%;
+  height: auto !important;
+  display: block !important;    /* 레이아웃 붕괴 방지 */
+  margin: 0 auto;
+  text-align: center;
 }
 
-/* 4. 카드 리스트 영역 자체 설정 */
-.challenge-list-container, [class*="List"] {
-  display: flex !important;
-  flex-wrap: wrap !important;
-  justify-content: center !important;
-  overflow: visible !important;
+/* 챌린지 페이지: fixed를 해제하여 검색창이 같이 움직이게 함 */
+#challenge-modal {
+  position: relative !important; 
+  width: 100%;
+  height: auto !important;
+  min-height: 100vh;
+  padding: 100px 40px 50px 40px !important;
+  display: block !important;
+  background-color: #eeeeee;
 }
+
+/* 기존 디자인 요소 (원본 유지) */
+.logo {
+  height: 6em;
+  padding: 1.5em;
+  will-change: filter;
+  transition: filter 300ms;
+}
+.logo:hover { filter: drop-shadow(0 0 2em #646cffaa); }
+
+@keyframes logo-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  a:nth-of-type(2) .logo { animation: logo-spin infinite 20s linear; }
+}
+
+/* 타이머 디자인 (원본 유지) */
+.timer-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 30px;
+  padding: 50px 30px;
+  background: #f5f5f5;
+  border-radius: 12px;
+  min-height: 280px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.timer-time {
+  font-size: 90px;
+  font-weight: 300;
+  font-family: 'Courier New', monospace;
+  letter-spacing: 4px;
+  color: #1a1a1a;
+  line-height: 1;
+  background: #e0e0e0;
+  border-radius: 12px;
+  width: 80%;
+  transform: translateY(-20px);
+}
+
+.timer-btn {
+  width: 250px;
+  height: 48px;
+  background-color: #0d6b63;
+  border: none;
+  border-radius: 24px;
+  cursor: pointer;
+  color: white;
+  font-weight: 600;
+}
+
+.timer-btn:hover { background-color: #138d75; }
+.timer-btn.reset { background-color: #e0e0e0; color: #333; }

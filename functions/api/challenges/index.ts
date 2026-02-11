@@ -11,6 +11,25 @@ export default async function handler(request: Request, { env, userId }: Handler
   // ========== GET: 챌린지 목록 조회 ==========
   if (request.method === 'GET') {
     try {
+      const url = new URL(request.url);
+      const code = url.searchParams.get('code');
+
+      // If a code query param is provided, return the matching challenge (used for "join by code")
+      if (code) {
+        console.log('Looking up challenge by code:', code);
+        // case-insensitive match for code
+        const row = await env.D1_DB
+          .prepare("SELECT * FROM challenges WHERE lower(challenge_code) = lower(?) AND deleted_at IS NULL LIMIT 1")
+          .bind(code)
+          .first();
+
+        if (!row) {
+          return Response.json({ success: false, message: '코드에 해당하는 챌린지를 찾을 수 없습니다.' }, { status: 404 });
+        }
+
+        return Response.json({ success: true, challenge: row }, { status: 200 });
+      }
+
       console.log('Fetching challenges for userId:', userId);
 
       const userChallenges = await env.D1_DB
@@ -63,7 +82,7 @@ export default async function handler(request: Request, { env, userId }: Handler
     );
   }
 
-  const { challengeName, category, maxParticipants, endDate, goalDescription, inviteCode, timerHours, timerMinutes } = body;
+  const { challengeName, category, maxParticipants, endDate, goalDescription, inviteCode, timerHours, timerMinutes, duration } = body;
   const normalizedInviteCode = typeof inviteCode === 'string' ? inviteCode.trim() : '';
 
   console.log('Received data:', { challengeName, category, maxParticipants, endDate, goalDescription, inviteCode, timerHours, timerMinutes });
@@ -180,6 +199,28 @@ export default async function handler(request: Request, { env, userId }: Handler
       .prepare('SELECT * FROM challenges WHERE challenge_id = ?')
       .bind(challengeId)
       .first();
+
+    // compute duration to include in response: prefer client-provided `duration`,
+    // otherwise compute inclusive day count from created_at -> end_date
+    try {
+      const msPerDay = 24 * 60 * 60 * 1000;
+      let computedDuration = null;
+      if (typeof duration !== 'undefined' && duration !== null && !isNaN(Number(duration))) {
+        computedDuration = Number(duration);
+      } else if (createdChallenge && createdChallenge.end_date && createdChallenge.created_at) {
+        const s = new Date(createdChallenge.created_at);
+        const e = new Date(createdChallenge.end_date);
+        const sd = Date.UTC(s.getFullYear(), s.getMonth(), s.getDate());
+        const ed = Date.UTC(e.getFullYear(), e.getMonth(), e.getDate());
+        const diffExclusive = Math.floor((ed - sd) / msPerDay);
+        computedDuration = diffExclusive + 1;
+      }
+      if (computedDuration !== null && createdChallenge) {
+        (createdChallenge as any).duration = computedDuration;
+      }
+    } catch (e) {
+      // ignore duration computation errors
+    }
 
     // fetch members robustly (handle DBs without status)
     const pragma = await env.D1_DB.prepare("PRAGMA table_info('challenge_members')").all();

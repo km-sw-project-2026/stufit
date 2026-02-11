@@ -66,3 +66,9 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+
+/* Defensive: hide any leftover legacy '내 이름' input that may remain in cached/static HTML */
+#new-challenge-user,
+label[for="new-challenge-user"] {
+  display: none !important;
+}

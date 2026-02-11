@@ -48,6 +48,42 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose }) {
     }, [isTimerRunning, timerSeconds]);
 
     const getTotalDays = () => {
+
+        // Prefer an explicit `duration` property if present (some clients store it locally)
+        if (typeof challenge?.duration !== 'undefined' && challenge?.duration !== null) {
+            const d = Number(challenge.duration);
+            if (!Number.isNaN(d) && d > 0) return d;
+        }
+
+        // If we have both a start (created_at/start_date) and end_date, compute day difference.
+        // Use exclusive difference (end - start) so storage styles like end = start + duration
+        // don't cause an extra +1 when displayed.
+        if (challenge?.end_date) {
+            try {
+                const startRaw = challenge.created_at || challenge.start_date || null;
+                if (startRaw) {
+                    const start = new Date(startRaw);
+                    const end = new Date(challenge.end_date);
+                    const msPerDay = 24 * 60 * 60 * 1000;
+                    const sd = Date.UTC(start.getFullYear(), start.getMonth(), start.getDate());
+                    const ed = Date.UTC(end.getFullYear(), end.getMonth(), end.getDate());
+                    // Use floor on UTC-normalized dates and compute inclusive days
+                    const diffInclusive = Math.floor((ed - sd) / msPerDay) + 1;
+                    if (diffInclusive >= 1) return diffInclusive;
+                }
+            } catch (err) {
+                console.error('getTotalDays 계산 오류', err);
+            }
+        }
+
+        // Fallback to category defaults
+        const categoryDays = {
+            DAILY: 30,
+            SHORT: 20
+        };
+
+        return categoryDays[challenge?.category] || 30;
+
         if (!challenge?.end_date || !challenge?.created_at) return 30;
         
         try {
@@ -61,6 +97,7 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose }) {
             console.error('[getTotalDays] 날짜 계산 오류:', error);
             return 30;
         }
+
     };
 
     const loadProgress = async () => {
@@ -103,7 +140,11 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose }) {
                     setRemainingDays(Math.max(total - elapsed, 0));
                 }
 
-                const hasToday = userRows.some(row => row.date === today);
+                // compute local YYYY-MM-DD for today's comparison to avoid TZ shifts
+                const d = new Date();
+                const pad = (n) => String(n).padStart(2, '0');
+                const todayLocal = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+                const hasToday = userRows.some(row => row.date === todayLocal);
                 console.log('[loadProgress] hasToday:', hasToday, '각 row의 date:', userRows.map(r => r.date));
                 setSubmittedToday(hasToday);
         } catch (error) {
@@ -215,36 +256,53 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose }) {
     const category = challenge?.category || '';
 
     const [members, setMembers] = useState([]);
+    const [inviteCode, setInviteCode] = useState('');
+    const [joinLoading, setJoinLoading] = useState(false);
 
-    // 챌린지 멤버 목록 로드 함수
+    // 챌린지 멤버 목록 로드 함수 (초기 전체 상세 조회)
     const fetchMembers = async () => {
         if (!challenge?.challenge_id) return;
-        
         try {
             const username = localStorage.getItem('username');
             const headers = {};
             if (username) headers['X-Username'] = username;
-
-            // Prefer fetching challenge detail which includes members + isJoined
+            // fetch full challenge detail once (includes members + isJoined)
             const res = await fetch(`/api/challenges/${challenge.challenge_id}`, { headers });
-            console.log('[fetchMembers] response status:', res.status);
+            if (res.status === 404) {
+                console.warn('[fetchMembers] challenge not found (404):', challenge.challenge_id);
+                setMembers([]);
+                return;
+            }
             if (!res.ok) {
-                console.warn('loadMembers: non-ok response', res.status);
+                console.warn('[fetchMembers] non-ok response', res.status);
                 return;
             }
             const payload = await res.json();
-            console.log('[fetchMembers] payload:', payload);
             const list = (payload?.data && payload.data.members) ? payload.data.members : (payload?.members || []);
-            console.log('[fetchMembers] members list:', list);
-
             // If members list empty but server marks user as joined, show current user as member
             if ((list.length === 0) && payload?.data?.isJoined && username) {
-              list.push({ user_id: null, username, status: 'not_submitted' });
+                list.push({ user_id: null, username, status: 'not_submitted' });
             }
-
             setMembers(list || []);
         } catch (e) {
             console.error('멤버 목록 로드 실패:', e);
+        }
+    };
+
+    // Polling helper: only fetch members list (lighter) on interval
+    const pollMembers = async () => {
+        if (!challenge?.challenge_id) return;
+        try {
+            const username = localStorage.getItem('username');
+            const headers = {};
+            if (username) headers['X-Username'] = username;
+            const res = await fetch(`/api/challenges/${challenge.challenge_id}/members`, { headers });
+            if (!res.ok) return;
+            const payload = await res.json();
+            const list = payload?.members || [];
+            setMembers(list || []);
+        } catch (e) {
+            console.error('pollMembers 실패:', e);
         }
     };
 
@@ -254,11 +312,11 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose }) {
 
         let intervalId = 0;
 
-        // initial fetch
+        // initial full detail fetch
         fetchMembers();
 
-        // poll every 3s
-        intervalId = window.setInterval(fetchMembers, 3000);
+        // lightweight members polling every 3s
+        intervalId = window.setInterval(pollMembers, 3000);
 
         const handler = (e) => {
             try {
@@ -485,10 +543,63 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose }) {
                             )}
                         </div>
 
-                        <div className="detail-actions">
-                            <button className="btn-giveup" onClick={giveupHandler}>give up</button>
-                            <button className="btn-complete">complete</button>
-                        </div>
+                                        <div className="detail-card">
+                                            <h3 className="detail-title-left">초대 코드로 참가</h3>
+                                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                                <input
+                                                    placeholder="초대 코드 입력"
+                                                    value={inviteCode}
+                                                    onChange={(e) => setInviteCode(e.target.value)}
+                                                    style={{ padding: '10px', borderRadius: '8px', border: '1px solid #ddd', flex: 1 }}
+                                                />
+                                                <button
+                                                    className="submit-btn"
+                                                    onClick={async () => {
+                                                        if (!inviteCode || !challenge?.challenge_id) {
+                                                            alert('코드를 입력해주세요.');
+                                                            return;
+                                                        }
+                                                        if (!challenge.challenge_code) {
+                                                            alert('이 챌린지는 초대 코드가 설정되어 있지 않습니다.');
+                                                            return;
+                                                        }
+                                                        if (String(inviteCode).trim() !== String(challenge.challenge_code)) {
+                                                            alert('코드가 일치하지 않습니다.');
+                                                            return;
+                                                        }
+                                                        setJoinLoading(true);
+                                                        try {
+                                                            const username = localStorage.getItem('username');
+                                                            const headers = { 'Content-Type': 'application/json' };
+                                                            if (username) headers['X-Username'] = username;
+                                                            const res = await fetch(`/api/challenges/${challenge.challenge_id}/join`, { method: 'POST', headers });
+                                                            const result = await res.json();
+                                                            if (!res.ok) {
+                                                                alert(result?.message || '참가에 실패했습니다.');
+                                                                return;
+                                                            }
+                                                            setMembers(result.members || []);
+                                                            window.dispatchEvent(new CustomEvent('challenge-joined', { detail: { challengeId: challenge.challenge_id, members: result.members || [] } }));
+                                                            alert('참가되었습니다!');
+                                                        } catch (err) {
+                                                            console.error('join by code error', err);
+                                                            alert('참가 중 오류가 발생했습니다.');
+                                                        } finally {
+                                                            setJoinLoading(false);
+                                                        }
+                                                    }}
+                                                    disabled={joinLoading}
+                                                    style={{ padding: '10px 16px', borderRadius: '8px', background: '#1f6157', color: 'white', border: 'none', cursor: 'pointer' }}
+                                                >
+                                                    {joinLoading ? '참가 중...' : '참가'}
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <div className="detail-actions">
+                                            <button className="btn-giveup" onClick={giveupHandler}>give up</button>
+                                            <button className="btn-complete">complete</button>
+                                        </div>
                     </div>
                 </div>
             </div>
