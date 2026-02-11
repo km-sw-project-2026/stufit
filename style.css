@@ -4081,15 +4081,19 @@ body.modal-open {
     font-weight: 600;
     color: #222;
     margin-bottom: 12px;
+    text-align: center;
 }
 
 .activity-stats {
+    display: flex;
+    flex-direction: column;
     gap: 15px;
 }
 
 .activity-item {
     flex: 1;
     margin-bottom: 10px;
+    text-align: center;
 }
 
 .activity-label {

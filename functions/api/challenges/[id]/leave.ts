@@ -66,26 +66,21 @@ export default async function handler(
           "DELETE FROM challenge_members WHERE challenge_id = ? AND user_id = ?"
         ).bind(challengeId, userId).run();
         
-        // 진행도 확인 (날짜를 다 채웠는지)
-        const progressCount = await env.D1_DB.prepare(
-          "SELECT COUNT(*) as count FROM challenge_daily_progress WHERE challenge_id = ? AND user_id = ?"
-        ).bind(challengeId, userId).first();
-        
-        // 챌린지 총 기간 계산
+        // 챌린지 정보 확인
         const challengeInfo = await env.D1_DB.prepare(
           "SELECT created_at, end_date FROM challenges WHERE challenge_id = ?"
         ).bind(challengeId).first();
         
-        const totalDays = Math.ceil(
-          (new Date(challengeInfo.end_date).getTime() - new Date(challengeInfo.created_at).getTime()) 
-          / (1000 * 60 * 60 * 24)
-        );
+        const endDate = new Date(challengeInfo.end_date);
+        // 종료일의 다음날 00:00:00으로 설정하여 종료일 당일까지 포함
+        endDate.setDate(endDate.getDate() + 1);
+        const now = new Date();
         
-        console.log("Progress:", progressCount?.count, "Total days:", totalDays);
-        
-        // 날짜를 다 채우지 않았으면 100점 차감
-        if ((progressCount?.count || 0) < totalDays) {
-          console.log("📝 Reducing points (incomplete challenge)");
+        console.log("Check date:", now, "<", endDate);
+
+        // 아직 종료일이 지나지 않았다면 (중도 포기) 차감
+        if (now < endDate) {
+          console.log("📝 Reducing points (leaving ongoing challenge)");
           
           // user_profiles 레코드가 없으면 생성
           await env.D1_DB.prepare(
