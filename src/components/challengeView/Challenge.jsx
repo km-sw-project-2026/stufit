@@ -236,7 +236,7 @@ function Challenge({ closeChallengeModal, onCreateSuccess }) {
 
 
     return (
-       <div id="challenge-modal" className="modal" style={{ backgroundColor: '#eeeeee', padding: '100px 40px 40px 40px' }}>
+        <div id="challenge-modal" className="modal" style={{ backgroundColor: '#eeeeee', minHeight: '100vh', padding: '38px 40px' }}>
             <div className="modal-content" style={{ maxWidth: '1300px', margin: '0 auto' }}>
                 <div className="modal-header-top" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '50px', gap: '30px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '30px' }}>
