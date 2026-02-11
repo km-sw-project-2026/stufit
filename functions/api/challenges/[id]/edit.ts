@@ -119,29 +119,40 @@ export default async function handler(
             return new Response(JSON.stringify({ ok: false, error: String(e) }), { status: 500, headers: { 'Content-Type': 'application/json' } });
           }
         }
-        // run update
+        // run update: ensure no undefined bindings by filling missing fields from DB
+        const existing = await db.prepare(`SELECT title, description, goal, end_date, max_members, is_private FROM challenges WHERE challenge_id = ?`).bind(challengeId).first();
+        if (!existing) {
+          return new Response(JSON.stringify({ ok: false, error: 'Challenge not found (during update)' }), { status: 404, headers: { 'Content-Type': 'application/json' } });
+        }
+        const newTitle = (typeof title !== 'undefined') ? title : existing.title;
+        const newDescription = (typeof description !== 'undefined') ? description : existing.description;
+        const newGoal = (typeof goal !== 'undefined') ? goal : existing.goal;
+        const newEndDate = (typeof end_date !== 'undefined') ? end_date : existing.end_date;
+        const newMaxMembers = (typeof max_members !== 'undefined') ? max_members : existing.max_members;
+        const newIsPrivate = (typeof is_private !== 'undefined') ? is_private : existing.is_private;
+
         const result = await db
-        .prepare(`
-          UPDATE challenges
-          SET
-            title = ?,
-            description = ?,
-            goal = ?,
-            end_date = ?,
-            max_members = ?,
-            is_private = ?
-          WHERE challenge_id = ?
-        `)
-        .bind(
-          title,
-          description,
-          goal,
-          end_date,
-          max_members,
-          is_private,
-          challengeId
-        )
-        .run();
+          .prepare(`
+            UPDATE challenges
+            SET
+              title = ?,
+              description = ?,
+              goal = ?,
+              end_date = ?,
+              max_members = ?,
+              is_private = ?
+            WHERE challenge_id = ?
+          `)
+          .bind(
+            newTitle,
+            newDescription,
+            newGoal,
+            newEndDate,
+            newMaxMembers,
+            newIsPrivate,
+            challengeId
+          )
+          .run();
         console.log('[challenge/edit] Update result:', result);
         return new Response(JSON.stringify({ ok: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });
     } catch (err) {
