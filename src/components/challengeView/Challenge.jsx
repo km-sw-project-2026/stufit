@@ -435,20 +435,25 @@ function Challenge({ closeChallengeModal, onCreateSuccess }) {
     };
 
     return (
-        /* 핵심 수정: minHeight 제거 및 paddingTop 확보 */
         <div id="challenge-modal" style={{ backgroundColor: '#eeeeee', width: '100%', minHeight: '100vh', display: 'block', paddingTop: '120px', paddingBottom: '100px' }}>
             <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 20px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
-                    <h2 style={{ fontSize: '2.2rem', fontWeight: 'bold' }}>전체 챌린지</h2>
-                    <button 
-                        style={{ backgroundColor: 'white', border: '1px solid #70c1b3', borderRadius: '25px', padding: '10px 30px', cursor: 'pointer', color: '#247b7b', fontWeight: 'bold' }}
-                        onClick={() => setCreateChallengeModalOpen(true)}
-                    >
-                        챌린지 만들기
-                    </button>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '40px' }}>
+                    <h2 style={{ fontSize: '2.2rem', fontWeight: 'bold', margin: 0 }}>전체 챌린지</h2>
+                    
+                    {/* 우측 상단 버튼 영역 복구 */}
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '15px' }}>
+                        <div style={{ cursor: 'pointer', color: '#666', fontSize: '1rem', display: 'flex', alignItems: 'center' }} onClick={() => {/* 이동 함수가 있다면 여기에 추가 */}}>
+                            진행중인 챌린지 보러가기 →
+                        </div>
+                        <button 
+                            style={{ backgroundColor: 'white', border: '1px solid #70c1b3', borderRadius: '25px', padding: '10px 30px', cursor: 'pointer', color: '#247b7b', fontWeight: 'bold' }}
+                            onClick={() => setCreateChallengeModalOpen(true)}
+                        >
+                            챌린지 만들기
+                        </button>
+                    </div>
                 </div>
                 
-                {/* 그리드 영역: overflow 제거하여 스크롤 허용 */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px' }}>
                     {loading ? <p>로딩 중...</p> : challenges.map(ch => (
                         <ChallengeCard key={ch.challenge_id} challenge={ch} onShowAlert={(msg) => { setGlobalAlertMessage(msg); setGlobalAlertOpen(true); }} />
@@ -460,6 +465,32 @@ function Challenge({ closeChallengeModal, onCreateSuccess }) {
             {globalAlertOpen && <CustomAlertModal onClose={() => setGlobalAlertOpen(false)} message={globalAlertMessage} />}
         </div>
     );
+    // return (
+    //     /* 핵심 수정: minHeight 제거 및 paddingTop 확보 */
+    //     <div id="challenge-modal" style={{ backgroundColor: '#eeeeee', width: '100%', minHeight: '100vh', display: 'block', paddingTop: '120px', paddingBottom: '100px' }}>
+    //         <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 20px' }}>
+    //             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
+    //                 <h2 style={{ fontSize: '2.2rem', fontWeight: 'bold' }}>전체 챌린지</h2>
+    //                 <button 
+    //                     style={{ backgroundColor: 'white', border: '1px solid #70c1b3', borderRadius: '25px', padding: '10px 30px', cursor: 'pointer', color: '#247b7b', fontWeight: 'bold' }}
+    //                     onClick={() => setCreateChallengeModalOpen(true)}
+    //                 >
+    //                     챌린지 만들기
+    //                 </button>
+    //             </div>
+                
+    //             {/* 그리드 영역: overflow 제거하여 스크롤 허용 */}
+    //             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px' }}>
+    //                 {loading ? <p>로딩 중...</p> : challenges.map(ch => (
+    //                     <ChallengeCard key={ch.challenge_id} challenge={ch} onShowAlert={(msg) => { setGlobalAlertMessage(msg); setGlobalAlertOpen(true); }} />
+    //                 ))}
+    //             </div>
+    //         </div>
+
+    //         {createChallengeModalOpen && <CreateChallengeModal setCreateChallengeOpen={setCreateChallengeModalOpen} onCreateSuccess={fetchChallenges} />}
+    //         {globalAlertOpen && <CustomAlertModal onClose={() => setGlobalAlertOpen(false)} message={globalAlertMessage} />}
+    //     </div>
+    // );
 }
 
 export default Challenge;
