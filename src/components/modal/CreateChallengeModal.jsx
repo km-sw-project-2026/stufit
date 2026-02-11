@@ -106,7 +106,17 @@ function CreateChallengeModal({ setCreateChallengeOpen, closeCreateChallengeModa
           />
         </div>
 
+
         {/* Removed ‘내 이름’ input — username is taken from localStorage on submit */}
+{/* 
+        <div className="form-group">
+          <label>내 이름</label>
+          <input
+            type="text"
+            id="new-challenge-user"
+            placeholder="예: 김예선"
+          />
+        </div> */}
 
         <div className="form-row">
           <div className="form-group half">

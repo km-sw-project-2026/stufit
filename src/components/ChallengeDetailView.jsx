@@ -287,10 +287,17 @@ function ChallengeDetailView({ challenge, onClose }) {
                                         <div className="member-avatar">
                                             <img src="/img/Profile.png" alt="Profile" />
                                         </div>
-                                        <span className="member-name">{m.username}</span>
-                                        <span className={`member-status ${m.status || 'not_submitted'}`} style={{ marginLeft: '8px', fontSize: '0.85rem', color: '#666' }}>
-                                            {m.status === 'submitted' ? '제출' : m.status === 'checked' ? '인증' : '미제출'}
-                                        </span>
+                                        <div className="member-info">
+                                            <div className="member-name-row">
+                                                <span className="member-name">{m.username}</span>
+                                                {challenge?.created_by_user_id === m.user_id && (
+                                                    <span className="host-badge">방장</span>
+                                                )}
+                                            </div>
+                                            <span className={`member-status ${m.status || 'not_submitted'}`}>
+                                                {m.status === 'submitted' ? '제출' : m.status === 'checked' ? '인증' : '미제출'}
+                                            </span>
+                                        </div>
                                     </div>
                                 ))
                             )}
