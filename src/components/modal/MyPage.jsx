@@ -60,6 +60,21 @@ function MyPage({ isOpen, onClose }) {
         console.error('댓글 개수 계산 실패:', error);
       }
 
+      const computeOwnedCount = () => {
+        try {
+          const stored = localStorage.getItem('purchasedItems');
+          if (!stored) return 0;
+          const parsed = JSON.parse(stored);
+          if (!parsed || typeof parsed !== 'object') return 0;
+          return Object.keys(parsed).length;
+        } catch (err) {
+          console.error('purchasedItems 파싱 실패:', err);
+          return 0;
+        }
+      };
+
+      const ownedCount = computeOwnedCount();
+
       setUserData({
         username: username,
         score: '0',
@@ -70,7 +85,7 @@ function MyPage({ isOpen, onClose }) {
         points: cachedPoints ? Number(cachedPoints) : 0,
         posts: `${postCount}개`,
         comments: `${commentCount}개`,
-        items: '7개'
+        items: `${ownedCount}개`
       });
     }
 
@@ -114,7 +129,26 @@ function MyPage({ isOpen, onClose }) {
     };
 
     window.addEventListener('pointsUpdated', handlePointsUpdated);
+    const handlePurchasedUpdated = () => {
+      const stored = localStorage.getItem('purchasedItems');
+      let count = 0;
+      try {
+        const parsed = JSON.parse(stored || '{}');
+        if (parsed && typeof parsed === 'object') count = Object.keys(parsed).length;
+      } catch {
+        count = 0;
+      }
+
+      setUserData((prev) => (prev ? { ...prev, items: `${count}개` } : prev));
+    };
+
+    window.addEventListener('purchasedItemsUpdated', handlePurchasedUpdated);
+    window.addEventListener('storage', handlePurchasedUpdated);
     return () => window.removeEventListener('pointsUpdated', handlePointsUpdated);
+    // cleanup additional listeners
+    // (explicitly remove purchasedItemsUpdated and storage)
+    window.removeEventListener('purchasedItemsUpdated', handlePurchasedUpdated);
+    window.removeEventListener('storage', handlePurchasedUpdated);
   }, [isOpen]);
 
   const handleLogout = async () => {

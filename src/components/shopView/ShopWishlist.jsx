@@ -9,6 +9,7 @@ function ShopWishlist({ wishlistItems, onRemove, isPurchased, onPurchase }) {
 
                         return (
                         <div key={item._wishlistKey ?? item.id} className="shop-item-card wishlist-card">
+                            {item.rare && <div className="rare-badge">레어템</div>}
                             <div
                                 className={`item-image ${item.image ? 'has-image' : ''}`}
                                 style={{ backgroundColor: item.color }}

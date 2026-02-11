@@ -13,6 +13,7 @@ function ShopProfileImage({ wishlistScope, isWishlisted, isPurchased, toggleWish
 
                 return (
                     <div key={item.id} className="shop-item-card">
+                    {item.rare && <div className="rare-badge">레어템</div>}
                     <div
                         className={`item-image ${item.image ? 'has-image' : ''}`}
                         style={{ backgroundColor: item.color }}

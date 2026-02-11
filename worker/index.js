@@ -47,7 +47,8 @@ export default {
       const url = new URL(request.url);
       const { pathname } = url;
       console.log(`[Worker] ${request.method} ${pathname}`);
-
+      // header getter that tolerates header name case/format variations
+      const getHeader = (name) => request.headers.get(name) ?? request.headers.get(name.toLowerCase());
       // 빠른 공용 상세 조회 처리: X-Username 없이도 /api/challenges/:id GET 반환
       const publicDetailMatch = pathname.match(/^\/api\/challenges\/(\d+)(?:\/.*)?$/);
       if (publicDetailMatch && request.method === 'GET') {
@@ -115,7 +116,7 @@ export default {
       const commentListMatch = pathname.match(/^\/api\/post\/(\d+)\/comments$/);
       if (commentListMatch && request.method === 'GET') {
         let optionalUserId;
-        let headerUsername = request.headers.get('X-Username');
+        let headerUsername = getHeader('X-Username');
 
         if (headerUsername) {
           // URL 디코딩
@@ -141,7 +142,7 @@ export default {
       ========================= */
 
       // username으로 userId 조회 (간단한 인증)
-      let username = request.headers.get('X-Username');
+      let username = getHeader('X-Username');
 
       if (!username) {
         // Allow unauthenticated GET for challenge detail (show members public view)

@@ -47,10 +47,10 @@ export const shopItems = [
     { id: 15, category: '프로필 배경', name: '아보카도 배경', price: '3,000 P', color: '#fff', type: 'bg', image: bgAvocado },
     { id: 16, category: '프로필 배경', name: '연두 배경', price: '3,000 P', color: '#fff', type: 'bg', image: bgLightGreen },
     { id: 17, category: '프로필 배경', name: '왕좌 배경', price: '99,999 P', color: '#fff', type: 'bg', image: bgThrone },
-    { id: 18, category: '프로필 배경', name: '이빨 배경', price: '10,150 P', color: '#fff', type: 'bg', image: bgTeeth },
+    { id: 18, category: '프로필 배경', name: '이빨 배경', price: '10,150 P', color: '#fff', type: 'bg', image: bgTeeth, rare: true },
     { id: 19, category: '프로필 배경', name: '초승달 배경', price: '3,000 P', color: '#fff', type: 'bg', image: bgCrescent },
     { id: 20, category: '프로필 배경', name: '핑크 점박이 배경', price: '3,000 P', color: '#fff', type: 'bg', image: bgPinkDots },
-    { id: 21, category: '프로필 배경', name: '호랑이 배경', price: '3,000 P', color: '#fff', type: 'bg', image: bgTiger },
+    { id: 21, category: '프로필 배경', name: '호랑이 배경', price: '99,999 P', color: '#fff', type: 'bg', image: bgTiger },
     { id: 22, category: '프로필 이미지', name: '갈매기', price: '3,000 P', color: '#ff6347', type: 'image', image: seagullImg },
     { id: 23, category: '프로필 이미지', name: '앵무새', price: '3,000 P', color: '#4169e1', type: 'image', image: parrotImg },
     { id: 24, category: '프로필 이미지', name: '오리', price: '3,000 P', color: '#9370db', type: 'image', image: duckImg },
@@ -58,7 +58,7 @@ export const shopItems = [
     { id: 26, category: '프로필 이미지', name: '해파리', price: '3,000 P', color: '#fff0f5', type: 'image', image: jellyfishImg },
     { id: 27, category: '프로필 이미지', name: '펌킨', price: '4,000 P', color: '#8b0000', type: 'image', image: pumpkinImg },
     { id: 28, category: '프로필 이미지', name: '유령', price: '3,000 P', color: '#f2f2f2', type: 'image', image: ghostImg },
-    { id: 29, category: '프로필 이미지', name: '유독성 슬러지', price: '10,150 P', color: '#a7d46f', type: 'image', image: toxicSludgeImg },
+    { id: 29, category: '프로필 이미지', name: '유독성 슬러지', price: '10,150 P', color: '#a7d46f', type: 'image', image: toxicSludgeImg, rare: true },
     { id: 30, category: '프로필 이미지', name: '아귀', price: '3,000 P', color: '#a7d46f', type: 'image', image: anglerfishImg },
 ];
 
