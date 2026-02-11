@@ -212,15 +212,29 @@ function MyPage({ isOpen, onClose }) {
 
       setUserData((prev) => (prev ? { ...prev, items: `${count}개` } : prev));
     };
+    const handleStorageEventForStats = (e) => {
+      try {
+        if (!e || !e.key) return;
+        if (e.key === 'mypage_posts_count' || e.key === 'mypage_comments_count') {
+          const posts = Number(localStorage.getItem('mypage_posts_count') || '0');
+          const comments = Number(localStorage.getItem('mypage_comments_count') || '0');
+          setUserData((prev) => prev ? { ...prev, posts: `${posts}개`, comments: `${comments}개` } : prev);
+        }
+      } catch (err) {
+        console.warn('storage handler error', err);
+      }
+    };
     window.addEventListener('purchasedItemsUpdated', handlePurchasedUpdated);
     window.addEventListener('storage', handlePurchasedUpdated);
     window.addEventListener('user-stats-changed', handleUserStatsChanged);
+    window.addEventListener('storage', handleStorageEventForStats);
 
     return () => {
       window.removeEventListener('pointsUpdated', handlePointsUpdated);
       window.removeEventListener('purchasedItemsUpdated', handlePurchasedUpdated);
       window.removeEventListener('storage', handlePurchasedUpdated);
       window.removeEventListener('user-stats-changed', handleUserStatsChanged);
+      window.removeEventListener('storage', handleStorageEventForStats);
     };
   }, [isOpen]);
 

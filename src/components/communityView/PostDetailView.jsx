@@ -93,6 +93,15 @@ function PostDetailView({ post, onClose, onDeletePost, onEditPost, onUpdatePostS
                 } catch (e) {
                     console.warn('Event dispatch failed:', e);
                 }
+                try {
+                    const key = 'mypage_comments_count';
+                    const prev = Number(localStorage.getItem(key) || '0');
+                    localStorage.setItem(key, String(prev + 1));
+                    // also trigger storage event for same-window listeners
+                    window.dispatchEvent(new StorageEvent('storage', { key, newValue: String(prev + 1), oldValue: String(prev) }));
+                } catch (e) {
+                    console.warn('localStorage update failed:', e);
+                }
             }
             setNewComment('');
 
@@ -233,6 +242,15 @@ function PostDetailView({ post, onClose, onDeletePost, onEditPost, onUpdatePostS
                     } catch (error) {
                         console.error('댓글 삭제 실패:', error);
                         alert('댓글 삭제에 실패했습니다.');
+                    }
+                    try {
+                        const key = 'mypage_comments_count';
+                        const prev = Number(localStorage.getItem(key) || '0');
+                        const next = Math.max(0, prev - 1);
+                        localStorage.setItem(key, String(next));
+                        window.dispatchEvent(new StorageEvent('storage', { key, newValue: String(next), oldValue: String(prev) }));
+                    } catch (e) {
+                        console.warn('localStorage update failed:', e);
                     }
                 })();
             }
