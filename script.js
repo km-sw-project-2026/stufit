@@ -1074,7 +1074,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (startChallengeBtn) {
         startChallengeBtn.addEventListener('click', () => {
              const nameInput = document.getElementById('new-challenge-name');
-             const userInput = document.getElementById('new-challenge-user');
              const durationInput = document.getElementById('new-challenge-duration');
              const categoryInput = document.getElementById('new-challenge-category');
              const goalInput = document.getElementById('new-challenge-goal');
@@ -1083,7 +1082,7 @@ document.addEventListener('DOMContentLoaded', () => {
              const name = nameInput.value;
              const duration = parseInt(durationInput.value) || 0;
              const goal = goalInput.value;
-             const userName = userInput.value;
+             const userName = localStorage.getItem('username') || '';
              // Code is optional
              const code = codeInput ? codeInput.value.trim() : '';
              const category = categoryInput ? categoryInput.value : '';
@@ -1113,7 +1112,6 @@ document.addEventListener('DOMContentLoaded', () => {
              
              createChallengeModal.classList.add('hidden');
              nameInput.value = '';
-             userInput.value = '';
              durationInput.value = '';
              goalInput.value = '';
              if(codeInput) codeInput.value = '';
