@@ -119,38 +119,36 @@ color: #000;
 
 /* ------------------------------------------- */
 
-
-/* 1. 헤더를 무조건 상단에 고정 (도망가지 못하게) */
+/* 1. 헤더 고정: 어떤 상황에서도 상단에 박제 */
 header, .header, [class*="Header"] {
   position: fixed !important;
   top: 0 !important;
   left: 0 !important;
   width: 100% !important;
-  height: 60px !important;
-  background-color: white !important;
   z-index: 9999 !important;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1) !important;
+  background-color: white !important;
+  height: 60px !important;
 }
 
-/* 2. 멈춰있는 카드들을 강제로 움직이게 만들기 */
-/* 모든 중간 부모들의 높이 제한과 스크롤 차단을 해제합니다 */
-html, body, #root, [class*="container"], main {
+/* 2. 챌린지 모달의 '가두는' 성질을 해제 */
+/* Challenge.jsx의 가장 바깥쪽 div인 .modal을 타겟팅합니다 */
+.modal#challenge-modal {
+  position: relative !important; /* 고정된 모달이 아니라 일반 페이지처럼 행동하게 함 */
+  overflow-y: visible !important; 
   height: auto !important;
   min-height: 100vh !important;
-  overflow-y: visible !important; /* 막힌 스크롤 뚫기 */
-  overflow-x: hidden !important;
+  padding-top: 80px !important; /* 고정된 헤더 높이만큼 내려줌 */
+  z-index: 1 !important;
 }
 
-/* 3. 챌린지 목록이 헤더에 가려지지 않게 전체적으로 내려주기 */
-#root {
-  padding-top: 80px !important; /* 헤더 높이만큼 공간 확보 */
-  display: block !important;    /* 중앙 정렬 등으로 갇히지 않게 함 */
+/* 3. 전체 스크롤 길을 터주기 */
+html, body, #root {
+  overflow-y: auto !important;
+  height: auto !important;
 }
 
-/* 4. 카드 리스트 영역 자체 설정 */
-.challenge-list-container, [class*="List"] {
-  display: flex !important;
-  flex-wrap: wrap !important;
-  justify-content: center !important;
+/* 4. 카드 그리드 영역이 잘 움직이게 설정 */
+.challenge-grid {
   overflow: visible !important;
+  display: grid !important;
 }
