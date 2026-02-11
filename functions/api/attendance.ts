@@ -8,9 +8,21 @@ interface Env {
 }
 
 export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
+  console.log('[Attendance API] Started processing request');
   try {
-    // 1. 데이터 수신 및 누락 체크
-    const { userId, date } = await request.json() as { userId: string, date: string };
+    const bodyText = await request.text();
+    console.log('[Attendance API] Raw body:', bodyText);
+    
+    let body;
+    try {
+      body = JSON.parse(bodyText);
+    } catch (e) {
+       console.error('[Attendance API] JSON parse error:', e);
+       return new Response(JSON.stringify({ message: "Invalid JSON" }), { status: 400 });
+    }
+    
+    const { userId, date } = body as { userId: string, date: string };
+    console.log(`[Attendance API] Parsed data - UserId: ${userId}, Date: ${date}`);
 
     if (!userId || !date) {
       return new Response(JSON.stringify({ message: "데이터가 부족합니다." }), { 
