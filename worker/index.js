@@ -84,7 +84,8 @@ export default {
       }
       
       // 빠른 공용 상세 조회 처리: X-Username 없이도 /api/challenges/:id GET 반환
-      const publicDetailMatch = pathname.match(/^\/api\/challenges\/(\d+)(?:\/.*)?$/);
+      // Only match exact /api/challenges/:id (optional trailing slash), not subpaths like /edit
+      const publicDetailMatch = pathname.match(/^\/api\/challenges\/(\d+)\/?$/);
       if (publicDetailMatch && request.method === 'GET') {
         return challengeById.default(request, {
           id: Number(publicDetailMatch[1]),

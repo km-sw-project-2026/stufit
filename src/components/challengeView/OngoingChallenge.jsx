@@ -621,6 +621,8 @@ function OngoingChallenge() {
     // 수정 모달 상태 관리
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [challengeToEdit, setChallengeToEdit] = useState(null);
+    const [showOwnerOnlyModal, setShowOwnerOnlyModal] = useState(false);
+    const [ownerOnlyMessage, setOwnerOnlyMessage] = useState('');
 
     // 서버에서 챌린지 목록 불러오기
     const fetchChallenges = async () => {
@@ -681,9 +683,35 @@ function OngoingChallenge() {
         fetchChallenges(); // 챌린지 상세보기 닫은 후 목록 새로고침
     };
 
-    const openEditModal = (challenge) => {
-        setChallengeToEdit(challenge);
-        setIsEditModalOpen(true);
+    const openEditModal = async (challenge) => {
+        // Check permission by requesting the edit view (server returns 200 for owner, 403 for non-owner)
+        try {
+            const username = localStorage.getItem('username');
+            if (!username) {
+                setOwnerOnlyMessage('로그인이 필요합니다.');
+                setShowOwnerOnlyModal(true);
+                return;
+            }
+
+            const headers = { 'X-Username': encodeURIComponent(username) };
+            const res = await fetch(`/api/challenges/${challenge.challenge_id}/edit`, { method: 'GET', headers });
+            if (res.ok) {
+                // Owner - open edit modal
+                setChallengeToEdit(challenge);
+                setIsEditModalOpen(true);
+            } else if (res.status === 403) {
+                // Not owner - show modal informing only owner can edit
+                setOwnerOnlyMessage('방장만 챌린지 수정이 가능합니다 !');
+                setShowOwnerOnlyModal(true);
+            } else {
+                setOwnerOnlyMessage('수정 권한을 확인할 수 없습니다. 잠시 후 시도해주세요.');
+                setShowOwnerOnlyModal(true);
+            }
+        } catch (e) {
+            console.error('권한 확인 실패', e);
+            setOwnerOnlyMessage('네트워크 오류가 발생했습니다. 다시 시도해주세요.');
+            setShowOwnerOnlyModal(true);
+        }
     };
 
     const formatDate = (dateString) => {
@@ -832,6 +860,16 @@ function OngoingChallenge() {
                     onClose={() => setIsEditModalOpen(false)} 
                     onSuccess={handleUpdateLocal} 
                 />
+            )}
+
+            {showOwnerOnlyModal && (
+                <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000 }} onClick={() => setShowOwnerOnlyModal(false)}>
+                    <div style={{ background: 'white', padding: '24px', borderRadius: '12px', minWidth: '320px', textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
+                        <h3 style={{ marginBottom: '12px' }}>수정 권한 안내</h3>
+                        <p style={{ marginBottom: '18px' }}>{ownerOnlyMessage}</p>
+                        <button onClick={() => setShowOwnerOnlyModal(false)} style={{ padding: '10px 18px', borderRadius: '8px', border: 'none', background: '#1f6157', color: 'white', cursor: 'pointer' }}>확인</button>
+                    </div>
+                </div>
             )}
         </div>
     );

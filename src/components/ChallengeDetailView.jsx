@@ -67,10 +67,14 @@ function ChallengeDetailView({ challenge, onClose }) {
             }
 
             const result = await response.json();
+            console.log('[loadProgress] API 응답:', result);
             const rows = Array.isArray(result?.data) ? result.data : [];
             const userRows = rows.filter(row => row.username === username);
             const count = userRows.length;
             const today = new Date().toISOString().slice(0, 10);
+            console.log('[loadProgress] today:', today);
+            console.log('[loadProgress] userRows:', userRows);
+            
                 const totalDays = getTotalDays();
                 const total = totalDays || 0;
                 const elapsed = Math.min(count, total);
@@ -85,7 +89,9 @@ function ChallengeDetailView({ challenge, onClose }) {
                     setRemainingDays(Math.max(total - elapsed, 0));
                 }
 
-                setSubmittedToday(userRows.some(row => row.date === today));
+                const hasToday = userRows.some(row => row.date === today);
+                console.log('[loadProgress] hasToday:', hasToday, '각 row의 date:', userRows.map(r => r.date));
+                setSubmittedToday(hasToday);
         } catch (error) {
             console.error('진행도 조회 오류:', error);
         }
