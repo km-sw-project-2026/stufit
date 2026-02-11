@@ -130,6 +130,7 @@ function ChallengeDetailView({ challenge, onClose }) {
             }
 
             await loadProgress();
+            await fetchMembers(); // 멤버 상태 즉시 갱신
         } catch (error) {
             console.error('제출 오류:', error);
             alert('제출 중 오류가 발생했습니다.');
@@ -151,39 +152,41 @@ function ChallengeDetailView({ challenge, onClose }) {
 
     const [members, setMembers] = useState([]);
 
+    // 챌린지 멤버 목록 로드 함수
+    const fetchMembers = async () => {
+        if (!challenge?.challenge_id) return;
+        
+        try {
+            const username = localStorage.getItem('username');
+            const headers = {};
+            if (username) headers['X-Username'] = username;
+
+            // Prefer fetching challenge detail which includes members + isJoined
+            const res = await fetch(`/api/challenges/${challenge.challenge_id}`, { headers });
+            console.debug('loadMembers: response status', res.status);
+            if (!res.ok) {
+                console.warn('loadMembers: non-ok response', res.status);
+                return;
+            }
+            const payload = await res.json();
+            const list = (payload?.data && payload.data.members) ? payload.data.members : (payload?.members || []);
+
+            // If members list empty but server marks user as joined, show current user as member
+            if ((list.length === 0) && payload?.data?.isJoined && username) {
+              list.push({ user_id: null, username, status: 'not_submitted' });
+            }
+
+            setMembers(list || []);
+        } catch (e) {
+            console.error('멤버 목록 로드 실패:', e);
+        }
+    };
+
     // 챌린지 멤버 목록 로드
     useEffect(() => {
         if (!challenge?.challenge_id) return;
 
-        let mounted = true;
         let intervalId = 0;
-
-        const fetchMembers = async () => {
-            try {
-                const username = localStorage.getItem('username');
-                const headers = {};
-                if (username) headers['X-Username'] = username;
-
-                // Prefer fetching challenge detail which includes members + isJoined
-                const res = await fetch(`/api/challenges/${challenge.challenge_id}`, { headers });
-                console.debug('loadMembers: response status', res.status);
-                if (!res.ok) {
-                    console.warn('loadMembers: non-ok response', res.status);
-                    return;
-                }
-                const payload = await res.json();
-                const list = (payload?.data && payload.data.members) ? payload.data.members : (payload?.members || []);
-
-                // If members list empty but server marks user as joined, show current user as member
-                if ((list.length === 0) && payload?.data?.isJoined && username) {
-                  list.push({ user_id: null, username, status: 'not_submitted' });
-                }
-
-                if (mounted) setMembers(list || []);
-            } catch (e) {
-                console.error('멤버 목록 로드 실패:', e);
-            }
-        };
 
         // initial fetch
         fetchMembers();
@@ -209,7 +212,6 @@ function ChallengeDetailView({ challenge, onClose }) {
         window.addEventListener('challenge-joined', handler);
 
         return () => {
-            mounted = false;
             window.removeEventListener('challenge-joined', handler);
             clearInterval(intervalId);
         };
