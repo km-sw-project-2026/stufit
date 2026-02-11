@@ -2,9 +2,11 @@ export default async function handler(
   request: Request,
   { env, params, userId }: { env: any; params: { id: string }; userId: number }
 ) {
-  const method = request.method;
-  const challengeId = params.id;
-  const db = env.D1_DB;
+  // Top-level try/catch to capture unexpected runtime errors and ensure logs
+  try {
+    const method = request.method;
+    const challengeId = params.id;
+    const db = env.D1_DB;
 
   // GET /challenges/{id}/edit
   if (method === "GET") {
@@ -42,8 +44,8 @@ export default async function handler(
     return Response.json(results[0]);
   }
 
-  // PATCH /challenges/{id}
-  if (method === "PATCH") {
+    // PATCH /challenges/{id}
+    if (method === "PATCH") {
     // 방장 체크
     const { results } = await db
       .prepare(`
@@ -69,7 +71,13 @@ export default async function handler(
 
     // 권한 검사: 현재는 편의상 인증된 사용자면 수정 허용
 
-    const body = await request.json();
+      const body = await request.json();
+      console.log('[challenge/edit] incoming body type:', typeof body);
+      try {
+        console.log('[challenge/edit] incoming body preview:', JSON.stringify(body));
+      } catch (e) {
+        console.log('[challenge/edit] failed to stringify body preview');
+      }
     const {
       title,
       description,
@@ -79,11 +87,14 @@ export default async function handler(
       is_private
     } = body;
 
-    // 로그: 들어온 페이로드
-    console.log('[challenge/edit] PATCH payload:', { challengeId, userId, body });
+      // 로그: 들어온 페이로드
+      console.log('[challenge/edit] PATCH payload:', { challengeId, userId });
+      // Log bind parameters explicitly
+      console.log('[challenge/edit] Bind params:', { title: body.title, description: body.description, goal: body.goal, end_date: body.end_date, max_members: body.max_members, is_private: body.is_private, challengeId });
 
-    try {
-      const result = await db
+      try {
+        // run update
+        const result = await db
         .prepare(`
           UPDATE challenges
           SET
@@ -105,10 +116,8 @@ export default async function handler(
           challengeId
         )
         .run();
-
-      console.log('[challenge/edit] Update result:', result);
-      // Return minimal success response to avoid JSON serialization issues
-      return Response.json({ ok: true });
+        console.log('[challenge/edit] Update result:', result);
+        return new Response(JSON.stringify({ ok: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });
     } catch (err) {
         console.error('[challenge/edit] Update failed:', err);
         try {
@@ -121,6 +130,11 @@ export default async function handler(
         return new Response(JSON.stringify({ ok: false, error: errMsg }), { status: 500, headers: { 'Content-Type': 'application/json' } });
     }
   }
-
-  return new Response("Method Not Allowed", { status: 405 });
+    return new Response("Method Not Allowed", { status: 405 });
+  } catch (err) {
+    console.error('[challenge/edit] Uncaught handler error:', err);
+    try { console.error(err?.stack || JSON.stringify(err)); } catch (e) { console.error('failed to log uncaught stack', e); }
+    const errMsg = err instanceof Error ? err.message : String(err);
+    return new Response(JSON.stringify({ ok: false, error: errMsg }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+  }
 }
