@@ -93,6 +93,18 @@ export default async function handler(
       console.log('[challenge/edit] Bind params:', { title: body.title, description: body.description, goal: body.goal, end_date: body.end_date, max_members: body.max_members, is_private: body.is_private, challengeId });
 
       try {
+        // If test-only flag present, run a minimal update to isolate DB errors
+        if (body && body.__test_only) {
+          console.log('[challenge/edit] Test-only update requested');
+          try {
+            const r = await db.prepare(`UPDATE challenges SET title = ? WHERE challenge_id = ?`).bind(body.title || 'test', challengeId).run();
+            console.log('[challenge/edit] Test update result:', r);
+            return new Response(JSON.stringify({ ok: true, testResult: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+          } catch (e) {
+            console.error('[challenge/edit] Test update failed:', e);
+            return new Response(JSON.stringify({ ok: false, error: String(e) }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+          }
+        }
         // run update
         const result = await db
         .prepare(`
