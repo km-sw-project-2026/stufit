@@ -40,13 +40,19 @@ function ChallengeDetailView({ challenge, onClose }) {
     }, [isTimerRunning, timerSeconds]);
 
     const getTotalDays = () => {
-        if (!challenge?.category) return null;
-        const categoryDays = {
-            DAILY: 30,
-            SHORT: 20
-        };
-
-        return categoryDays[challenge.category] || 30;
+        if (!challenge?.end_date || !challenge?.created_at) return 30;
+        
+        try {
+            const startDate = new Date(challenge.created_at);
+            const endDate = new Date(challenge.end_date);
+            const diffTime = endDate - startDate;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            return diffDays > 0 ? diffDays : 30;
+        } catch (error) {
+            console.error('[getTotalDays] 날짜 계산 오류:', error);
+            return 30;
+        }
     };
 
     const loadProgress = async () => {
