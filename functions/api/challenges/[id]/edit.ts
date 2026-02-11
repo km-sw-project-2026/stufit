@@ -107,10 +107,18 @@ export default async function handler(
         .run();
 
       console.log('[challenge/edit] Update result:', result);
-      return Response.json({ ok: true, result });
+      // Return minimal success response to avoid JSON serialization issues
+      return Response.json({ ok: true });
     } catch (err) {
-      console.error('[challenge/edit] Update failed:', err);
-      return new Response(JSON.stringify({ ok: false, error: String(err) }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+        console.error('[challenge/edit] Update failed:', err);
+        try {
+          console.error('[challenge/edit] Update failed stack:', err?.stack || JSON.stringify(err));
+        } catch (ee) {
+          console.error('[challenge/edit] failed to log stack:', ee);
+        }
+        // Return error details temporarily to help debugging in preview
+        const errMsg = err instanceof Error ? `${err.message}` : String(err);
+        return new Response(JSON.stringify({ ok: false, error: errMsg }), { status: 500, headers: { 'Content-Type': 'application/json' } });
     }
   }
 
