@@ -85,31 +85,47 @@ export default async function handler(
         
         // 날짜를 다 채우지 않았으면 100점 차감
         if ((progressCount?.count || 0) < totalDays) {
-          console.log("📝 Reducing score (incomplete challenge)");
+          console.log("📝 Reducing score (incomplete challenge) for userId:", userId);
           
-          // user_profiles 레코드가 없으면 생성
-          await env.D1_DB.prepare(
-            "INSERT OR IGNORE INTO user_profiles (user_id, score, points) VALUES (?, 0, 0)"
-          ).bind(userId).run();
-          
-          // 현재 점수 확인
-          const currentProfile = await env.D1_DB.prepare(
+          // user_profiles 레코드 확인
+          let currentProfile = await env.D1_DB.prepare(
             "SELECT score FROM user_profiles WHERE user_id = ?"
           ).bind(userId).first();
           
-          const newScore = Math.max(0, (currentProfile?.score || 0) - 100);
+          console.log("📝 Current profile before insert:", currentProfile);
+          
+          // user_profiles 레코드가 없으면 생성
+          if (!currentProfile) {
+            await env.D1_DB.prepare(
+              "INSERT INTO user_profiles (user_id, tier, score, points) VALUES (?, 'bronze', 0, 0)"
+            ).bind(userId).run();
+            
+            console.log("📝 Profile created for userId:", userId);
+            
+            // 다시 조회
+            currentProfile = await env.D1_DB.prepare(
+              "SELECT score FROM user_profiles WHERE user_id = ?"
+            ).bind(userId).first();
+          }
+          
+          const oldScore = currentProfile?.score || 0;
+          const newScore = Math.max(0, oldScore - 100);
+          
+          console.log("📝 Score change:", oldScore, "->", newScore);
           
           // 점수 차감
-          await env.D1_DB.prepare(
+          const updateResult = await env.D1_DB.prepare(
             "UPDATE user_profiles SET score = ? WHERE user_id = ?"
           ).bind(newScore, userId).run();
           
-          console.log("📝 Score updated from", currentProfile?.score, "to", newScore);
+          console.log("📝 Update result:", updateResult);
           
           // 포인트 로그 기록
-          await env.D1_DB.prepare(
+          const logResult = await env.D1_DB.prepare(
             "INSERT INTO point_logs (user_id, point, reason) VALUES (?, ?, ?)"
           ).bind(userId, -100, "챌린지 중도 포기").run();
+          
+          console.log("📝 Point log result:", logResult);
         }
       } else {
         console.log("📝 No other members - deleting challenge");
@@ -133,33 +149,50 @@ export default async function handler(
         console.log("⚠️ Member delete failed:", deleteErr?.message);
       }
 
-      console.log("📝 Reducing score (100 points)");
+      console.log("📝 Reducing score (100 points) for userId:", userId);
       try {
-        // user_profiles 레코드가 없으면 생성
-        await env.D1_DB.prepare(
-          "INSERT OR IGNORE INTO user_profiles (user_id, score, points) VALUES (?, 0, 0)"
-        ).bind(userId).run();
-        
-        // 현재 점수 확인
-        const currentProfile = await env.D1_DB.prepare(
+        // user_profiles 레코드 확인
+        let currentProfile = await env.D1_DB.prepare(
           "SELECT score FROM user_profiles WHERE user_id = ?"
         ).bind(userId).first();
         
-        const newScore = Math.max(0, (currentProfile?.score || 0) - 100);
+        console.log("📝 Current profile before insert:", currentProfile);
+        
+        // user_profiles 레코드가 없으면 생성
+        if (!currentProfile) {
+          await env.D1_DB.prepare(
+            "INSERT INTO user_profiles (user_id, tier, score, points) VALUES (?, 'bronze', 0, 0)"
+          ).bind(userId).run();
+          
+          console.log("📝 Profile created for userId:", userId);
+          
+          // 다시 조회
+          currentProfile = await env.D1_DB.prepare(
+            "SELECT score FROM user_profiles WHERE user_id = ?"
+          ).bind(userId).first();
+        }
+        
+        const oldScore = currentProfile?.score || 0;
+        const newScore = Math.max(0, oldScore - 100);
+        
+        console.log("📝 Score change:", oldScore, "->", newScore);
         
         // 점수 차감
-        await env.D1_DB.prepare(
+        const updateResult = await env.D1_DB.prepare(
           "UPDATE user_profiles SET score = ? WHERE user_id = ?"
         ).bind(newScore, userId).run();
         
-        console.log("📝 Score updated from", currentProfile?.score, "to", newScore);
+        console.log("📝 Update result:", updateResult);
         
         // 포인트 로그 기록
-        await env.D1_DB.prepare(
+        const logResult = await env.D1_DB.prepare(
           "INSERT INTO point_logs (user_id, point, reason) VALUES (?, ?, ?)"
         ).bind(userId, -100, "챌린지 포기").run();
+        
+        console.log("📝 Point log result:", logResult);
       } catch (scoreErr) {
-        console.log("⚠️ Score update failed (continuing anyway):", scoreErr?.message);
+        console.log("⚠️ Score update failed:", scoreErr?.message);
+        console.error("⚠️ Full error:", scoreErr);
       }
     }
 
