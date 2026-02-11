@@ -48,6 +48,9 @@ export async function onRequestDelete({ env, params, userId }) {
       return Response.json({ success: false, message: '권한 없음' }, { status: 403 });
     }
 
+    // 좋아요 먼저 삭제 (FK 제약조건 해결)
+    await env.D1_DB.prepare('DELETE FROM comment_likes WHERE comment_id = ?').bind(commentId).run();
+    // 댓글 삭제
     await env.D1_DB.prepare('DELETE FROM comments WHERE comment_id = ?').bind(commentId).run();
 
     return Response.json({ success: true, data: { commentId } });
