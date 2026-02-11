@@ -164,11 +164,11 @@ function ChallengeDetailView({ challenge, onClose }) {
                 const headers = {};
                 if (username) headers['X-Username'] = username;
 
-<<<<<<< HEAD
+
                 console.debug('loadMembers: fetching members for', challenge.challenge_id, 'with headers', headers);
-=======
+
                 // Prefer fetching challenge detail which includes members + isJoined
->>>>>>> 70d0714b05c9e7a9e5a4529a6b6cf145e774f14a
+
                 const res = await fetch(`/api/challenges/${challenge.challenge_id}`, { headers });
                 console.debug('loadMembers: response status', res.status);
                 if (!res.ok) {
@@ -176,11 +176,11 @@ function ChallengeDetailView({ challenge, onClose }) {
                     return;
                 }
                 const payload = await res.json();
-<<<<<<< HEAD
+
                 console.debug('loadMembers: payload', payload);
                 const data = payload?.data || {};
                 setMembers(Array.isArray(data.members) ? data.members : []);
-=======
+
                 const list = (payload?.data && payload.data.members) ? payload.data.members : (payload?.members || []);
 
                 // If members list empty but server marks user as joined, show current user as member
@@ -189,7 +189,7 @@ function ChallengeDetailView({ challenge, onClose }) {
                 }
 
                 if (mounted) setMembers(list || []);
->>>>>>> 70d0714b05c9e7a9e5a4529a6b6cf145e774f14a
+
             } catch (e) {
                 console.error('멤버 목록 로드 실패:', e);
             }
@@ -205,7 +205,7 @@ function ChallengeDetailView({ challenge, onClose }) {
             try {
                 console.debug('challenge-joined event received:', e?.detail);
                 if (e?.detail?.challengeId === challenge?.challenge_id) {
-<<<<<<< HEAD
+
                     if (Array.isArray(e.detail.members)) {
                         console.debug('challenge-joined: updating members from event', e.detail.members);
                         setMembers(e.detail.members);
@@ -214,10 +214,10 @@ function ChallengeDetailView({ challenge, onClose }) {
                         // if members not provided, reload from server
                         loadMembers();
                     }
-=======
+
                     const list = Array.isArray(e.detail.members) ? e.detail.members : [];
                     setMembers(list);
->>>>>>> 70d0714b05c9e7a9e5a4529a6b6cf145e774f14a
+
                 }
             } catch (err) { console.error('challenge-joined handler error', err); }
         };
