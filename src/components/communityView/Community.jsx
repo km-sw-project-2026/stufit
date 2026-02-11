@@ -256,18 +256,18 @@
 //         if (!username) {
 //             alert('로그인이 필요합니다.');
 //             return;
-            console.log('[Community] Deleting post', postId, 'as', username);
-            const response = await fetch(`/api/post/${postId}`, {
-                method: 'DELETE',
-                headers: { 'X-Username': username }
-            });
+            // console.log('[Community] Deleting post', postId, 'as', username);
+            // const response = await fetch(`/api/post/${postId}`, {
+            //     method: 'DELETE',
+            //     headers: { 'X-Username': username }
+            // });
 
-            console.log('[Community] delete response status', response.status);
+            // console.log('[Community] delete response status', response.status);
 //                 method: 'DELETE',
 //                 headers: { 'X-Username': username }
-                const payload = await response.json().catch(() => ({}));
-                console.warn('[Community] delete payload', payload);
-                return alert(payload.message || '게시글 삭제에 실패했습니다.');
+                // const payload = await response.json().catch(() => ({}));
+                // console.warn('[Community] delete payload', payload);
+                // return alert(payload.message || '게시글 삭제에 실패했습니다.');
 //             if (!response.ok) {
 //                 const payload = await response.json().catch(() => ({}));
 //                 alert(payload.message || '게시글 삭제에 실패했습니다.');
