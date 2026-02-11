@@ -184,6 +184,7 @@ function MyPage({ isOpen, onClose }) {
     window.addEventListener('pointsUpdated', handlePointsUpdated);
     const handleUserStatsChanged = (event) => {
       const detail = event?.detail || {};
+      console.log('[MyPage] user-stats-changed received:', detail);
       const parseCount = (s) => {
         try { return Number(String(s).replace(/\D/g, '')) || 0; } catch { return 0; }
       };
@@ -193,7 +194,9 @@ function MyPage({ isOpen, onClose }) {
         const prevComments = parseCount(prev.comments);
         const postsDelta = Number(detail.postsDelta || 0);
         const commentsDelta = Number(detail.commentsDelta || 0);
-        return { ...prev, posts: `${Math.max(0, prevPosts + postsDelta)}개`, comments: `${Math.max(0, prevComments + commentsDelta)}개` };
+        const next = { ...prev, posts: `${Math.max(0, prevPosts + postsDelta)}개`, comments: `${Math.max(0, prevComments + commentsDelta)}개` };
+        console.log('[MyPage] updated counts ->', next.posts, next.comments);
+        return next;
       });
     };
 

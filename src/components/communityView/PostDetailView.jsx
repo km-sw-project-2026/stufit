@@ -88,6 +88,7 @@ function PostDetailView({ post, onClose, onDeletePost, onEditPost, onUpdatePostS
                 setComments((s) => [...s, created]);
                 // Notify other UI (MyPage) that user's comment count increased
                 try {
+                    console.log('[PostDetailView] dispatching user-stats-changed +1 comment');
                     window.dispatchEvent(new CustomEvent('user-stats-changed', { detail: { postsDelta: 0, commentsDelta: 1 } }));
                 } catch (e) {
                     console.warn('Event dispatch failed:', e);
@@ -222,6 +223,7 @@ function PostDetailView({ post, onClose, onDeletePost, onEditPost, onUpdatePostS
                         if (onUpdatePostState) onUpdatePostState(updated);
                         // Notify other UI (MyPage) that user's comment count decreased
                         try {
+                            console.log('[PostDetailView] dispatching user-stats-changed -1 comment');
                             window.dispatchEvent(new CustomEvent('user-stats-changed', { detail: { postsDelta: 0, commentsDelta: -1 } }));
                         } catch (e) {
                             console.warn('Event dispatch failed:', e);

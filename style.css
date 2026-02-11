@@ -3554,6 +3554,9 @@ body.modal-open {
 
 .comm-content-wrapper {
     flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center; /* ensure vertical centering of comment text and meta */
 }
 
 .comm-top {
