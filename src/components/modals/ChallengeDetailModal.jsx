@@ -100,7 +100,16 @@ function ChallengeDetailModal({ onClose, challenge }) {
             {members.length === 0 ? (
               <div className="member-item empty">참여자가 없습니다.</div>
             ) : (
-              members.map((m) => (
+              members
+                .sort((a, b) => {
+                  // 방장을 맨 위로
+                  const aIsHost = challenge?.created_by_user_id === a.user_id;
+                  const bIsHost = challenge?.created_by_user_id === b.user_id;
+                  if (aIsHost && !bIsHost) return -1;
+                  if (!aIsHost && bIsHost) return 1;
+                  return 0;
+                })
+                .map((m) => (
                 <div key={m.user_id} className="member-item">
                   <div className="member-avatar">
                     <img src="/img/Profile.png" alt="Profile" />
