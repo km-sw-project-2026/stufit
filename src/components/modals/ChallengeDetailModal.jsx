@@ -24,7 +24,106 @@ function ChallengeDetailModal({ onClose, challenge }) {
     return `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')}`;
   };
 
+  const getTotalDays = () => {
+    if (!challenge?.end_date || !challenge?.created_at) return 30;
+    
+    try {
+      const startDate = new Date(challenge.created_at);
+      const endDate = new Date(challenge.end_date);
+      const diffTime = endDate - startDate;
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      return diffDays > 0 ? diffDays : 30;
+    } catch (error) {
+      console.error('[getTotalDays] 날짜 계산 오류:', error);
+      return 30;
+    }
+  };
+
   const [members, setMembers] = React.useState([]);
+  const [progressPercent, setProgressPercent] = React.useState(0);
+  const [elapsedDays, setElapsedDays] = React.useState(0);
+  const [remainingDays, setRemainingDays] = React.useState(0);
+  const [submittedToday, setSubmittedToday] = React.useState(false);
+  const [submitLoading, setSubmitLoading] = React.useState(false);
+
+  const loadProgress = async () => {
+    const username = localStorage.getItem('username');
+    if (!username || !challenge?.challenge_id) {
+      setProgressPercent(0);
+      setSubmittedToday(false);
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/challenges/${challenge.challenge_id}/progress`, {
+        headers: { 'X-Username': username }
+      });
+
+      if (!response.ok) return;
+
+      const result = await response.json();
+      const rows = Array.isArray(result?.data) ? result.data : [];
+      const userRows = rows.filter(row => row.username === username);
+      const count = userRows.length;
+      const today = new Date().toISOString().slice(0, 10);
+      
+      const totalDays = getTotalDays();
+      const total = totalDays || 0;
+      const elapsed = Math.min(count, total);
+
+      if (total <= 0) {
+        setProgressPercent(0);
+        setElapsedDays(0);
+        setRemainingDays(0);
+      } else {
+        setProgressPercent(Math.min((elapsed / total) * 100, 100));
+        setElapsedDays(elapsed);
+        setRemainingDays(Math.max(total - elapsed, 0));
+      }
+
+      const hasToday = userRows.some(row => row.date === today);
+      setSubmittedToday(hasToday);
+    } catch (error) {
+      console.error('진행도 조회 오류:', error);
+    }
+  };
+
+  const handleSubmitProgress = async () => {
+    if (submitLoading || submittedToday) {
+      if (submittedToday) alert('오늘은 이미 제출했습니다.');
+      return;
+    }
+
+    setSubmitLoading(true);
+    const username = localStorage.getItem('username');
+
+    try {
+      const response = await fetch(`/api/challenges/${challenge.challenge_id}/verify`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Username': username
+        },
+        body: JSON.stringify({})
+      });
+
+      if (response.ok) {
+        setSubmittedToday(true);
+        await loadProgress();
+        setSubmittedToday(true);
+        alert('제출이 완료되었습니다!');
+      } else {
+        const error = await response.json();
+        alert(error.message || '제출 실패');
+      }
+    } catch (error) {
+      console.error('제출 오류:', error);
+      alert('제출 중 오류가 발생했습니다.');
+    } finally {
+      setSubmitLoading(false);
+    }
+  };
 
   React.useEffect(() => {
     const load = async () => {
@@ -43,6 +142,7 @@ function ChallengeDetailModal({ onClose, challenge }) {
       }
     };
     load();
+    loadProgress();
     // polling
     let mounted = true;
     let intervalId = 0;
@@ -100,7 +200,16 @@ function ChallengeDetailModal({ onClose, challenge }) {
             {members.length === 0 ? (
               <div className="member-item empty">참여자가 없습니다.</div>
             ) : (
-              members.map((m) => (
+              members
+                .sort((a, b) => {
+                  // 방장을 맨 위로
+                  const aIsHost = challenge?.created_by_user_id === a.user_id;
+                  const bIsHost = challenge?.created_by_user_id === b.user_id;
+                  if (aIsHost && !bIsHost) return -1;
+                  if (!aIsHost && bIsHost) return 1;
+                  return 0;
+                })
+                .map((m) => (
                 <div key={m.user_id} className="member-item">
                   <div className="member-avatar">
                     <img src="/img/Profile.png" alt="Profile" />
@@ -145,12 +254,12 @@ function ChallengeDetailModal({ onClose, challenge }) {
             <h3>챌린지 진행도</h3>
             <div className="progress-area">
               <div className="progress-info">
-                <span className="days-elapsed">0일 경과</span>
-                <span className="percentage">50%</span>
-                <span className="days-left">30일 남음</span>
+                <span className="days-elapsed">{elapsedDays}일 경과</span>
+                <span className="percentage">{Math.round(progressPercent)}%</span>
+                <span className="days-left">{remainingDays}일 남음</span>
               </div>
               <div className="progress-bar-bg">
-                <div className="progress-bar-fill" style={{ width: '50%' }}></div>
+                <div className="progress-bar-fill" style={{ width: `${progressPercent}%` }}></div>
               </div>
             </div>
           </div>
@@ -158,7 +267,13 @@ function ChallengeDetailModal({ onClose, challenge }) {
           <div className="detail-card">
             <h3>챌린지 목표</h3>
             <div className="goal-box">{goal}</div>
-            <button className="submit-btn">제출하기</button>
+            <button 
+              className="submit-btn" 
+              onClick={handleSubmitProgress}
+              disabled={submitLoading || submittedToday}
+            >
+              {submittedToday ? '제출이 완료되었습니다' : '제출하기'}
+            </button>
           </div>
 
           <div className="detail-card status-card">

@@ -1,17 +1,79 @@
 import { useState } from "react";
+import CustomAlertModal from "./CustomAlertModal";
 
-function HostGiveUpModal({ setModalOpen, setFinalModalOpen, challenge }) {
+function HostGiveUpModal({ setModalOpen, setFinalModalOpen, challenge, onLeave }) {
     const [selectedOption, setSelectedOption] = useState('leave'); // 'leave' 또는 'delete'
+    const [loading, setLoading] = useState(false);
+    const [alertOpen, setAlertOpen] = useState(false);
+    const [alertMessage, setAlertMessage] = useState('');
 
-    const handleConfirm = () => {
+    const handleConfirm = async () => {
+        if (loading) return;
+        
+        const username = localStorage.getItem('username');
+        if (!username || !challenge?.challenge_id) {
+            alert('로그인 정보가 없습니다.');
+            return;
+        }
+
+        setLoading(true);
+
+        try {
+            if (selectedOption === 'leave') {
+                // 챌린지 나가기 - 방장 권한 이전
+                const response = await fetch(`/api/challenges/${challenge.challenge_id}/leave`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-Username': username
+                    }
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    // 챌린지 업데이트 이벤트 발생
+                    if (result.challenge && result.members) {
+                        const event = new CustomEvent('challenge-updated', {
+                            detail: {
+                                challengeId: challenge.challenge_id,
+                                challenge: result.challenge,
+                                members: result.members
+                            }
+                        });
+                        window.dispatchEvent(event);
+                    }
+                    
+                    setAlertMessage('챌린지를 나갔습니다. 방장 권한이 다른 멤버에게 이전되었습니다.');
+                    setAlertOpen(true);
+                } else {
+                    setAlertMessage(result.message || '나가기에 실패했습니다.');
+                    setAlertOpen(true);
+                }
+            } else if (selectedOption === 'delete') {
+                // 챌린지 삭제 - 기존 FinalGiveUpModal 사용
+                setModalOpen(false);
+                setFinalModalOpen(true);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            setAlertMessage('오류가 발생했습니다.');
+            setAlertOpen(true);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleAlertClose = () => {
+        setAlertOpen(false);
         setModalOpen(false);
-        setFinalModalOpen(true);
+        if (onLeave) onLeave();
     };
 
     return (
-        <div id="host-give-up-modal" className="popup-modal">
-            <div className="popup-overlay"></div>
-            <div className="popup-content host-giveup-modal-content">
+        <>
+            <div id="host-give-up-modal" className="popup-modal">
+                <div className="popup-overlay"></div>
+                <div className="popup-content host-giveup-modal-content">
                 <button className="modal-close-btn" onClick={() => setModalOpen(false)}>
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -37,8 +99,8 @@ function HostGiveUpModal({ setModalOpen, setFinalModalOpen, challenge }) {
                             </div>
                         </div>
                         <p className="option-description">
-                            나홀로 이어가 불가능 합니다.<br />
-                            초도 포기시에는 준수가 100점을 차감됩니다
+                            나중에 이어서 불가능 합니다.<br />
+                            초도 포기시에는 포인트가 100P 차감됩니다
                         </p>
                     </div>
 
@@ -62,11 +124,18 @@ function HostGiveUpModal({ setModalOpen, setFinalModalOpen, challenge }) {
                     </div>
                 </div>
 
-                <button className="host-confirm-btn" onClick={handleConfirm}>
-                    나가기
+                <button className="host-confirm-btn" onClick={handleConfirm} disabled={loading}>
+                    {loading ? '처리 중...' : '나가기'}
                 </button>
             </div>
         </div>
+            {alertOpen && (
+                <CustomAlertModal
+                    message={alertMessage}
+                    onClose={handleAlertClose}
+                />
+            )}
+        </>
     );
 }
 

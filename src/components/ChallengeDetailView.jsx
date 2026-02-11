@@ -4,7 +4,8 @@ import HostGiveUpModal from "./modal/HostGiveUpModal";
 import FinalGiveUpModal from "./modal/FinalGiveUpModal";
 import CustomAlertModal from "./modal/CustomAlertModal";
 
-function ChallengeDetailView({ challenge, onClose }) {
+function ChallengeDetailView({ challenge: initialChallenge, onClose }) {
+    const [challenge, setChallenge] = useState(initialChallenge);
     const [modalOpen, setModalOpen] = useState(false);
     const [hostModalOpen, setHostModalOpen] = useState(false);
     const [finalModalOpen, setFinalModalOpen] = useState(false);
@@ -16,6 +17,11 @@ function ChallengeDetailView({ challenge, onClose }) {
     const [submitLoading, setSubmitLoading] = useState(false);
     const [elapsedDays, setElapsedDays] = useState(0);
     const [remainingDays, setRemainingDays] = useState(0);
+
+    // props로 받은 challenge가 변경되면 state 업데이트
+    useEffect(() => {
+        setChallenge(initialChallenge);
+    }, [initialChallenge]);
 
     useEffect(() => {
         document.body.classList.add('modal-open');
@@ -42,13 +48,56 @@ function ChallengeDetailView({ challenge, onClose }) {
     }, [isTimerRunning, timerSeconds]);
 
     const getTotalDays = () => {
-        if (!challenge?.category) return null;
+
+        // Prefer an explicit `duration` property if present (some clients store it locally)
+        if (typeof challenge?.duration !== 'undefined' && challenge?.duration !== null) {
+            const d = Number(challenge.duration);
+            if (!Number.isNaN(d) && d > 0) return d;
+        }
+
+        // If we have both a start (created_at/start_date) and end_date, compute day difference.
+        // Use exclusive difference (end - start) so storage styles like end = start + duration
+        // don't cause an extra +1 when displayed.
+        if (challenge?.end_date) {
+            try {
+                const startRaw = challenge.created_at || challenge.start_date || null;
+                if (startRaw) {
+                    const start = new Date(startRaw);
+                    const end = new Date(challenge.end_date);
+                    const msPerDay = 24 * 60 * 60 * 1000;
+                    const sd = Date.UTC(start.getFullYear(), start.getMonth(), start.getDate());
+                    const ed = Date.UTC(end.getFullYear(), end.getMonth(), end.getDate());
+                    // Use floor on UTC-normalized dates and compute inclusive days
+                    const diffInclusive = Math.floor((ed - sd) / msPerDay) + 1;
+                    if (diffInclusive >= 1) return diffInclusive;
+                }
+            } catch (err) {
+                console.error('getTotalDays 계산 오류', err);
+            }
+        }
+
+        // Fallback to category defaults
         const categoryDays = {
             DAILY: 30,
             SHORT: 20
         };
 
-        return categoryDays[challenge.category] || 30;
+        return categoryDays[challenge?.category] || 30;
+
+        if (!challenge?.end_date || !challenge?.created_at) return 30;
+        
+        try {
+            const startDate = new Date(challenge.created_at);
+            const endDate = new Date(challenge.end_date);
+            const diffTime = endDate - startDate;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            return diffDays > 0 ? diffDays : 30;
+        } catch (error) {
+            console.error('[getTotalDays] 날짜 계산 오류:', error);
+            return 30;
+        }
+
     };
 
     const loadProgress = async () => {
@@ -91,7 +140,11 @@ function ChallengeDetailView({ challenge, onClose }) {
                     setRemainingDays(Math.max(total - elapsed, 0));
                 }
 
-                const hasToday = userRows.some(row => row.date === today);
+                // compute local YYYY-MM-DD for today's comparison to avoid TZ shifts
+                const d = new Date();
+                const pad = (n) => String(n).padStart(2, '0');
+                const todayLocal = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+                const hasToday = userRows.some(row => row.date === todayLocal);
                 console.log('[loadProgress] hasToday:', hasToday, '각 row의 date:', userRows.map(r => r.date));
                 setSubmittedToday(hasToday);
         } catch (error) {
@@ -187,8 +240,14 @@ function ChallengeDetailView({ challenge, onClose }) {
 
     // 챌린지 나가기 성공 시 호출
     const handleLeaveSuccess = () => {
+        // 멤버 목록 즉시 갱신
+        fetchMembers();
         setFinalModalOpen(false);
         setAlertOpen(true);
+        // 자세히보기도 닫기
+        setTimeout(() => {
+            if (onClose) onClose();
+        }, 1500);
     };
 
     // Props 기본값 설정
@@ -198,35 +257,50 @@ function ChallengeDetailView({ challenge, onClose }) {
 
     const [members, setMembers] = useState([]);
 
-    // 챌린지 멤버 목록 로드 함수
+    // 챌린지 멤버 목록 로드 함수 (초기 전체 상세 조회)
     const fetchMembers = async () => {
         if (!challenge?.challenge_id) return;
-        
         try {
             const username = localStorage.getItem('username');
             const headers = {};
             if (username) headers['X-Username'] = username;
-
-            // Prefer fetching challenge detail which includes members + isJoined
+            // fetch full challenge detail once (includes members + isJoined)
             const res = await fetch(`/api/challenges/${challenge.challenge_id}`, { headers });
-            console.log('[fetchMembers] response status:', res.status);
+            if (res.status === 404) {
+                console.warn('[fetchMembers] challenge not found (404):', challenge.challenge_id);
+                setMembers([]);
+                return;
+            }
             if (!res.ok) {
-                console.warn('loadMembers: non-ok response', res.status);
+                console.warn('[fetchMembers] non-ok response', res.status);
                 return;
             }
             const payload = await res.json();
-            console.log('[fetchMembers] payload:', payload);
             const list = (payload?.data && payload.data.members) ? payload.data.members : (payload?.members || []);
-            console.log('[fetchMembers] members list:', list);
-
             // If members list empty but server marks user as joined, show current user as member
             if ((list.length === 0) && payload?.data?.isJoined && username) {
-              list.push({ user_id: null, username, status: 'not_submitted' });
+                list.push({ user_id: null, username, status: 'not_submitted' });
             }
-
             setMembers(list || []);
         } catch (e) {
             console.error('멤버 목록 로드 실패:', e);
+        }
+    };
+
+    // Polling helper: only fetch members list (lighter) on interval
+    const pollMembers = async () => {
+        if (!challenge?.challenge_id) return;
+        try {
+            const username = localStorage.getItem('username');
+            const headers = {};
+            if (username) headers['X-Username'] = username;
+            const res = await fetch(`/api/challenges/${challenge.challenge_id}/members`, { headers });
+            if (!res.ok) return;
+            const payload = await res.json();
+            const list = payload?.members || [];
+            setMembers(list || []);
+        } catch (e) {
+            console.error('pollMembers 실패:', e);
         }
     };
 
@@ -236,11 +310,11 @@ function ChallengeDetailView({ challenge, onClose }) {
 
         let intervalId = 0;
 
-        // initial fetch
+        // initial full detail fetch
         fetchMembers();
 
-        // poll every 3s
-        intervalId = window.setInterval(fetchMembers, 3000);
+        // lightweight members polling every 3s
+        intervalId = window.setInterval(pollMembers, 3000);
 
         const handler = (e) => {
             try {
@@ -257,10 +331,29 @@ function ChallengeDetailView({ challenge, onClose }) {
                 }
             } catch (err) { console.error('challenge-joined handler error', err); }
         };
+        
+        const updateHandler = (e) => {
+            try {
+                console.debug('challenge-updated event received:', e?.detail);
+                if (e?.detail?.challengeId === challenge?.challenge_id) {
+                    if (e.detail.challenge) {
+                        console.debug('challenge-updated: updating challenge', e.detail.challenge);
+                        setChallenge(e.detail.challenge);
+                    }
+                    if (Array.isArray(e.detail.members)) {
+                        console.debug('challenge-updated: updating members', e.detail.members);
+                        setMembers(e.detail.members);
+                    }
+                }
+            } catch (err) { console.error('challenge-updated handler error', err); }
+        };
+        
         window.addEventListener('challenge-joined', handler);
+        window.addEventListener('challenge-updated', updateHandler);
 
         return () => {
             window.removeEventListener('challenge-joined', handler);
+            window.removeEventListener('challenge-updated', updateHandler);
             clearInterval(intervalId);
         };
     }, [challenge]);
@@ -300,7 +393,16 @@ function ChallengeDetailView({ challenge, onClose }) {
                             {members.length === 0 ? (
                                 <div className="member-item empty">참여자가 없습니다.</div>
                             ) : (
-                                members.map((m) => (
+                                members
+                                    .sort((a, b) => {
+                                        // 방장을 맨 위로
+                                        const aIsHost = challenge?.created_by_user_id === a.user_id;
+                                        const bIsHost = challenge?.created_by_user_id === b.user_id;
+                                        if (aIsHost && !bIsHost) return -1;
+                                        if (!aIsHost && bIsHost) return 1;
+                                        return 0;
+                                    })
+                                    .map((m) => (
                                     <div key={m.user_id} className="member-item">
                                         <div className="member-avatar">
                                             <img src="/img/Profile.png" alt="Profile" />
@@ -448,7 +550,7 @@ function ChallengeDetailView({ challenge, onClose }) {
             </div>
 
             {modalOpen && <GiveUpModal setModalOpen={setModalOpen} setFinalModalOpen={setFinalModalOpen} />}
-            {hostModalOpen && <HostGiveUpModal setModalOpen={setHostModalOpen} setFinalModalOpen={setFinalModalOpen} challenge={challenge} />}
+            {hostModalOpen && <HostGiveUpModal setModalOpen={setHostModalOpen} setFinalModalOpen={setFinalModalOpen} challenge={challenge} onLeave={handleLeaveSuccess} />}
             {finalModalOpen && (
                 <FinalGiveUpModal
                     setModalOpen={setFinalModalOpen}

@@ -305,9 +305,8 @@
 
 
 
+
 // ----------------------------------------------------------------
-
-
 
 import React, { useState, useEffect } from 'react';
 import CreateChallengeModal from '../modal/CreateChallengeModal';

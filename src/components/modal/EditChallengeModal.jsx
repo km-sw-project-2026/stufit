@@ -249,8 +249,26 @@ function EditChallengeModal({ challenge, onClose, onSuccess }) {
                 goal: goal || challenge?.goal || ''
             };
 
-            // Only include optional fields when they exist to avoid sending explicit nulls
-            if (challenge?.end_date) payload.end_date = challenge.end_date;
+            // Duration -> end_date: use duration-1 semantics so N일 표시가 N일로 보이도록 보정
+                const durationNum = Number(duration);
+                if (!Number.isNaN(durationNum) && durationNum > 0) {
+                const today = new Date();
+                const pad = (n) => String(n).padStart(2, '0');
+                const defaultStart = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
+                const startStr = challenge?.start_date || challenge?.created_at || defaultStart;
+                const startDate = new Date(startStr);
+                const daysToAdd = Math.max(0, durationNum - 1);
+                const endDateObj = new Date(startDate);
+                endDateObj.setDate(startDate.getDate() + daysToAdd);
+                payload.end_date = `${endDateObj.getFullYear()}-${pad(endDateObj.getMonth() + 1)}-${pad(endDateObj.getDate())}`;
+                payload.duration = durationNum;
+            } else if (challenge?.end_date) {
+                payload.end_date = challenge.end_date;
+            }
+
+            // Include category if changed / present
+            if (category) payload.category = category;
+
             if (typeof challenge?.max_members !== 'undefined' && challenge?.max_members !== null) payload.max_members = challenge.max_members;
             payload.is_private = challenge?.is_private ?? false;
 

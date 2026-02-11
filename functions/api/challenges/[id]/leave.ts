@@ -47,16 +47,82 @@ export default async function handler(
     console.log("Is owner:", isOwner);
 
     if (isOwner) {
-      console.log("📝 Deleting challenge (owner) - cascade delete");
-      // 관련된 모든 데이터 먼저 삭제
-      await env.D1_DB.prepare("DELETE FROM challenge_results WHERE challenge_id = ?")
-        .bind(challengeId).run();
-      await env.D1_DB.prepare("DELETE FROM challenge_daily_progress WHERE challenge_id = ?")
-        .bind(challengeId).run();
-      await env.D1_DB.prepare("DELETE FROM challenge_members WHERE challenge_id = ?")
-        .bind(challengeId).run();
-      await env.D1_DB.prepare("DELETE FROM challenges WHERE challenge_id = ?")
-        .bind(challengeId).run();
+      console.log("📝 Host leaving - transferring ownership");
+      
+      // 다른 멤버 찾기 (방장 제외)
+      const nextOwner = await env.D1_DB.prepare(
+        "SELECT user_id FROM challenge_members WHERE challenge_id = ? AND user_id != ? LIMIT 1"
+      ).bind(challengeId, userId).first();
+
+      if (nextOwner) {
+        console.log("📝 Transferring ownership to user:", nextOwner.user_id);
+        // 방장 권한 이전
+        await env.D1_DB.prepare(
+          "UPDATE challenges SET created_by_user_id = ? WHERE challenge_id = ?"
+        ).bind(nextOwner.user_id, challengeId).run();
+        
+        // 현재 방장 멤버 목록에서 제거
+        await env.D1_DB.prepare(
+          "DELETE FROM challenge_members WHERE challenge_id = ? AND user_id = ?"
+        ).bind(challengeId, userId).run();
+        
+        // 진행도 확인 (날짜를 다 채웠는지)
+        const progressCount = await env.D1_DB.prepare(
+          "SELECT COUNT(*) as count FROM challenge_daily_progress WHERE challenge_id = ? AND user_id = ?"
+        ).bind(challengeId, userId).first();
+        
+        // 챌린지 총 기간 계산
+        const challengeInfo = await env.D1_DB.prepare(
+          "SELECT created_at, end_date FROM challenges WHERE challenge_id = ?"
+        ).bind(challengeId).first();
+        
+        const totalDays = Math.ceil(
+          (new Date(challengeInfo.end_date).getTime() - new Date(challengeInfo.created_at).getTime()) 
+          / (1000 * 60 * 60 * 24)
+        );
+        
+        console.log("Progress:", progressCount?.count, "Total days:", totalDays);
+        
+        // 날짜를 다 채우지 않았으면 100점 차감
+        if ((progressCount?.count || 0) < totalDays) {
+          console.log("📝 Reducing points (incomplete challenge)");
+          
+          // user_profiles 레코드가 없으면 생성
+          await env.D1_DB.prepare(
+            "INSERT OR IGNORE INTO user_profiles (user_id, score, points) VALUES (?, 0, 0)"
+          ).bind(userId).run();
+          
+          // 현재 상태 확인
+          const currentProfile = await env.D1_DB.prepare(
+            "SELECT points FROM user_profiles WHERE user_id = ?"
+          ).bind(userId).first();
+          
+          const newPoints = Math.max(0, (currentProfile?.points || 0) - 100);
+          
+          // 포인트 차감
+          await env.D1_DB.prepare(
+            "UPDATE user_profiles SET points = ? WHERE user_id = ?"
+          ).bind(newPoints, userId).run();
+          
+          console.log(`📝 Updated: Points ${currentProfile?.points}->${newPoints}`);
+          
+          // 포인트 로그 기록
+          await env.D1_DB.prepare(
+            "INSERT INTO point_logs (user_id, point, reason) VALUES (?, ?, ?)"
+          ).bind(userId, -100, "챌린지 중도 포기").run();
+        }
+      } else {
+        console.log("📝 No other members - deleting challenge");
+        // 멤버가 없으면 챌린지 삭제
+        await env.D1_DB.prepare("DELETE FROM challenge_results WHERE challenge_id = ?")
+          .bind(challengeId).run();
+        await env.D1_DB.prepare("DELETE FROM challenge_daily_progress WHERE challenge_id = ?")
+          .bind(challengeId).run();
+        await env.D1_DB.prepare("DELETE FROM challenge_members WHERE challenge_id = ?")
+          .bind(challengeId).run();
+        await env.D1_DB.prepare("DELETE FROM challenges WHERE challenge_id = ?")
+          .bind(challengeId).run();
+      }
     } else {
       console.log("📝 Removing member from challenge");
       try {
@@ -67,18 +133,38 @@ export default async function handler(
         console.log("⚠️ Member delete failed:", deleteErr?.message);
       }
 
-      console.log("📝 Reducing score");
+      console.log("📝 Reducing points (100 points)");
       try {
+        // user_profiles 레코드가 없으면 생성
         await env.D1_DB.prepare(
-          "UPDATE user_profiles SET score = score - 100 WHERE user_id = ?"
+          "INSERT OR IGNORE INTO user_profiles (user_id, score, points) VALUES (?, 0, 0)"
         ).bind(userId).run();
+        
+        // 현재 상태 확인
+        const currentProfile = await env.D1_DB.prepare(
+          "SELECT points FROM user_profiles WHERE user_id = ?"
+        ).bind(userId).first();
+        
+        const newPoints = Math.max(0, (currentProfile?.points || 0) - 100);
+        
+        // 포인트 차감
+        await env.D1_DB.prepare(
+          "UPDATE user_profiles SET points = ? WHERE user_id = ?"
+        ).bind(newPoints, userId).run();
+        
+        console.log(`📝 Updated: Points ${currentProfile?.points}->${newPoints}`);
+        
+        // 포인트 로그 기록
+        await env.D1_DB.prepare(
+          "INSERT INTO point_logs (user_id, point, reason) VALUES (?, ?, ?)"
+        ).bind(userId, -100, "챌린지 포기").run();
       } catch (scoreErr) {
-        console.log("⚠️ Score update failed (continuing anyway):", scoreErr?.message);
+        console.log("⚠️ Deduction failed (continuing anyway):", scoreErr?.message);
       }
     }
 
     console.log("✅ Success");
-    // return updated members list as well (handle DBs without status column)
+    // return updated members list and challenge info
     const pragma = await env.D1_DB.prepare("PRAGMA table_info('challenge_members')").all();
     const hasStatus = (pragma.results || []).some((c: any) => c.name === 'status');
     let members;
@@ -95,8 +181,18 @@ export default async function handler(
       members.results = (members.results || []).map((r: any) => ({ ...r, status: 'not_submitted' }));
     }
 
+    // 업데이트된 챌린지 정보 가져오기
+    const updatedChallenge = await env.D1_DB.prepare(
+      'SELECT * FROM challenges WHERE challenge_id = ?'
+    ).bind(challengeId).first();
+
     return new Response(
-      JSON.stringify({ success: true, message: 'Successfully left challenge', members: members.results || [] }),
+      JSON.stringify({ 
+        success: true, 
+        message: 'Successfully left challenge', 
+        members: members.results || [],
+        challenge: updatedChallenge
+      }),
       { status: 200, headers: { 'Content-Type': 'application/json' } }
     );
   } catch (err) {
