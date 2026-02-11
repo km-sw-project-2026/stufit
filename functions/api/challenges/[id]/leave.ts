@@ -86,9 +86,21 @@ export default async function handler(
         // 날짜를 다 채우지 않았으면 100점 차감
         if ((progressCount?.count || 0) < totalDays) {
           console.log("📝 Reducing score (incomplete challenge)");
+          
+          // user_profiles 레코드가 없으면 생성
           await env.D1_DB.prepare(
-            "UPDATE user_profiles SET score = COALESCE(score, 0) - 100 WHERE user_id = ?"
+            "INSERT OR IGNORE INTO user_profiles (user_id, score) VALUES (?, 0)"
           ).bind(userId).run();
+          
+          // 점수 차감
+          await env.D1_DB.prepare(
+            "UPDATE user_profiles SET score = MAX(0, score - 100) WHERE user_id = ?"
+          ).bind(userId).run();
+          
+          // 포인트 로그 기록
+          await env.D1_DB.prepare(
+            "INSERT INTO point_logs (user_id, point, reason) VALUES (?, ?, ?)"
+          ).bind(userId, -100, "챌린지 중도 포기").run();
         }
       } else {
         console.log("📝 No other members - deleting challenge");
@@ -114,16 +126,27 @@ export default async function handler(
 
       console.log("📝 Reducing score (100 points)");
       try {
+        // user_profiles 레코드가 없으면 생성
         await env.D1_DB.prepare(
-          "UPDATE user_profiles SET score = COALESCE(score, 0) - 100 WHERE user_id = ?"
+          "INSERT OR IGNORE INTO user_profiles (user_id, score) VALUES (?, 0)"
         ).bind(userId).run();
+        
+        // 점수 차감
+        await env.D1_DB.prepare(
+          "UPDATE user_profiles SET score = MAX(0, score - 100) WHERE user_id = ?"
+        ).bind(userId).run();
+        
+        // 포인트 로그 기록
+        await env.D1_DB.prepare(
+          "INSERT INTO point_logs (user_id, point, reason) VALUES (?, ?, ?)"
+        ).bind(userId, -100, "챌린지 포기").run();
       } catch (scoreErr) {
         console.log("⚠️ Score update failed (continuing anyway):", scoreErr?.message);
       }
     }
 
     console.log("✅ Success");
-    // return updated members list as well (handle DBs without status column)
+    // return updated members list and challenge info
     const pragma = await env.D1_DB.prepare("PRAGMA table_info('challenge_members')").all();
     const hasStatus = (pragma.results || []).some((c: any) => c.name === 'status');
     let members;
@@ -140,8 +163,18 @@ export default async function handler(
       members.results = (members.results || []).map((r: any) => ({ ...r, status: 'not_submitted' }));
     }
 
+    // 업데이트된 챌린지 정보 가져오기
+    const updatedChallenge = await env.D1_DB.prepare(
+      'SELECT * FROM challenges WHERE challenge_id = ?'
+    ).bind(challengeId).first();
+
     return new Response(
-      JSON.stringify({ success: true, message: 'Successfully left challenge', members: members.results || [] }),
+      JSON.stringify({ 
+        success: true, 
+        message: 'Successfully left challenge', 
+        members: members.results || [],
+        challenge: updatedChallenge
+      }),
       { status: 200, headers: { 'Content-Type': 'application/json' } }
     );
   } catch (err) {

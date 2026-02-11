@@ -1,8 +1,11 @@
 import { useState } from "react";
+import CustomAlertModal from "./CustomAlertModal";
 
 function HostGiveUpModal({ setModalOpen, setFinalModalOpen, challenge, onLeave }) {
     const [selectedOption, setSelectedOption] = useState('leave'); // 'leave' 또는 'delete'
     const [loading, setLoading] = useState(false);
+    const [alertOpen, setAlertOpen] = useState(false);
+    const [alertMessage, setAlertMessage] = useState('');
 
     const handleConfirm = async () => {
         if (loading) return;
@@ -28,11 +31,23 @@ function HostGiveUpModal({ setModalOpen, setFinalModalOpen, challenge, onLeave }
                 const result = await response.json();
 
                 if (response.ok) {
-                    alert('챌린지를 나갔습니다. 방장 권한이 다른 멤버에게 이전되었습니다.');
-                    setModalOpen(false);
-                    if (onLeave) onLeave();
+                    // 챌린지 업데이트 이벤트 발생
+                    if (result.challenge && result.members) {
+                        const event = new CustomEvent('challenge-updated', {
+                            detail: {
+                                challengeId: challenge.challenge_id,
+                                challenge: result.challenge,
+                                members: result.members
+                            }
+                        });
+                        window.dispatchEvent(event);
+                    }
+                    
+                    setAlertMessage('챌린지를 나갔습니다. 방장 권한이 다른 멤버에게 이전되었습니다.');
+                    setAlertOpen(true);
                 } else {
-                    alert(result.message || '나가기에 실패했습니다.');
+                    setAlertMessage(result.message || '나가기에 실패했습니다.');
+                    setAlertOpen(true);
                 }
             } else if (selectedOption === 'delete') {
                 // 챌린지 삭제 - 기존 FinalGiveUpModal 사용
@@ -41,10 +56,17 @@ function HostGiveUpModal({ setModalOpen, setFinalModalOpen, challenge, onLeave }
             }
         } catch (error) {
             console.error('Error:', error);
-            alert('오류가 발생했습니다.');
+            setAlertMessage('오류가 발생했습니다.');
+            setAlertOpen(true);
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleAlertClose = () => {
+        setAlertOpen(false);
+        setModalOpen(false);
+        if (onLeave) onLeave();
     };
 
     return (
@@ -101,10 +123,16 @@ function HostGiveUpModal({ setModalOpen, setFinalModalOpen, challenge, onLeave }
                     </div>
                 </div>
 
-                <button className="host-confirm-btn" onClick={handleConfirm}>
-                    나가기
+                <button className="host-confirm-btn" onClick={handleConfirm} disabled={loading}>
+                    {loading ? '처리 중...' : '나가기'}
                 </button>
             </div>
+            {alertOpen && (
+                <CustomAlertModal
+                    message={alertMessage}
+                    onClose={handleAlertClose}
+                />
+            )}
         </div>
     );
 }

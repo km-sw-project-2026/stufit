@@ -4,7 +4,8 @@ import HostGiveUpModal from "./modal/HostGiveUpModal";
 import FinalGiveUpModal from "./modal/FinalGiveUpModal";
 import CustomAlertModal from "./modal/CustomAlertModal";
 
-function ChallengeDetailView({ challenge, onClose }) {
+function ChallengeDetailView({ challenge: initialChallenge, onClose }) {
+    const [challenge, setChallenge] = useState(initialChallenge);
     const [modalOpen, setModalOpen] = useState(false);
     const [hostModalOpen, setHostModalOpen] = useState(false);
     const [finalModalOpen, setFinalModalOpen] = useState(false);
@@ -16,6 +17,11 @@ function ChallengeDetailView({ challenge, onClose }) {
     const [submitLoading, setSubmitLoading] = useState(false);
     const [elapsedDays, setElapsedDays] = useState(0);
     const [remainingDays, setRemainingDays] = useState(0);
+
+    // props로 받은 challenge가 변경되면 state 업데이트
+    useEffect(() => {
+        setChallenge(initialChallenge);
+    }, [initialChallenge]);
 
     useEffect(() => {
         document.body.classList.add('modal-open');
@@ -193,6 +199,8 @@ function ChallengeDetailView({ challenge, onClose }) {
 
     // 챌린지 나가기 성공 시 호출
     const handleLeaveSuccess = () => {
+        // 멤버 목록 즉시 갱신
+        fetchMembers();
         setFinalModalOpen(false);
         setAlertOpen(true);
     };
@@ -263,10 +271,29 @@ function ChallengeDetailView({ challenge, onClose }) {
                 }
             } catch (err) { console.error('challenge-joined handler error', err); }
         };
+        
+        const updateHandler = (e) => {
+            try {
+                console.debug('challenge-updated event received:', e?.detail);
+                if (e?.detail?.challengeId === challenge?.challenge_id) {
+                    if (e.detail.challenge) {
+                        console.debug('challenge-updated: updating challenge', e.detail.challenge);
+                        setChallenge(e.detail.challenge);
+                    }
+                    if (Array.isArray(e.detail.members)) {
+                        console.debug('challenge-updated: updating members', e.detail.members);
+                        setMembers(e.detail.members);
+                    }
+                }
+            } catch (err) { console.error('challenge-updated handler error', err); }
+        };
+        
         window.addEventListener('challenge-joined', handler);
+        window.addEventListener('challenge-updated', updateHandler);
 
         return () => {
             window.removeEventListener('challenge-joined', handler);
+            window.removeEventListener('challenge-updated', updateHandler);
             clearInterval(intervalId);
         };
     }, [challenge]);
