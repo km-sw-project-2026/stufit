@@ -71,7 +71,6 @@ function ShopQuicklink () {
                 <div className="shop-item-info">
                     <div className="shop-badge">프로필 액자</div>
                     <div className="shop-name">아이템 미리보기</div>
-                    <div className="shop-price" aria-hidden="true"></div>
                 </div>
 
                 <div className="shop-pagination" style={{ display: 'flex', gap: 8, justifyContent: 'center', marginTop: 12, flexWrap: 'wrap' }}>
