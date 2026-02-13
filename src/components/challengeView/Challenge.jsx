@@ -395,10 +395,8 @@ function Challenge({ closeChallengeModal, onCreateSuccess }) {
         </div>
     );
 
-   // ... 상단 import 및 로직 생략
-
 return (
-    
+    <>
         <div id="challenge-modal" style={{ backgroundColor: '#eeeeee', minHeight: '100vh', display: 'none', flexDirection: 'column', position: 'relative', zIndex: 1 }}>
             <div className="modal-content" style={{ maxWidth: '1300px', margin: '0 auto', width: '100%', flex: 1, display: 'flex', flexDirection: 'column', padding: '38px 40px', position: 'relative' }}>
             
@@ -410,8 +408,7 @@ return (
                 marginBottom: '50px', 
                 gap: '30px',
                 position: 'relative',
-                zIndex: 9999,
-                pointerEvents: 'none'
+                zIndex: 100
             }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '30px', pointerEvents: 'auto' }}>
                     <h2 style={{ fontSize: '2rem', margin: 0, fontWeight: 'bold' }}>전체 챌린지</h2>
@@ -425,42 +422,50 @@ return (
                         </button>
                     </div>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', marginRight: '145px', pointerEvents: 'auto' }}>
-                    <button
-                        type="button"
-                        style={{ 
-                            background: 'none',
-                            border: 'none',
-                            color: '#666', 
-                            fontSize: '0.9rem', 
-                            textDecoration: 'none',
-                            cursor: 'pointer',
-                            padding: '5px',
-                            pointerEvents: 'auto'
-                        }}
-                        onClick={() => {
-                            console.log('=== 진행중인 챌린지 클릭됨 ===');
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', marginRight: '145px', pointerEvents: 'auto', position: 'relative', zIndex: 101 }}>
+                    <span
+                        onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            alert('클릭됨!');
+                            console.log('=== 진행중인 챌린지 텍스트 클릭됨 ===');
                             const challengeModal = document.getElementById('challenge-modal');
                             const ongoingModal = document.getElementById('ongoing-challenge-modal');
+                            
                             console.log('challengeModal:', challengeModal);
                             console.log('ongoingModal:', ongoingModal);
                             
                             if (challengeModal) {
-                                console.log('Challenge 모달 숨김');
+                                console.log('Challenge 모달 숨김 처리');
                                 challengeModal.style.display = 'none';
-                            }
-                            if (ongoingModal) {
-                                console.log('OngoingChallenge 모달 표시');
-                                ongoingModal.style.display = 'block';
-                                console.log('ongoingModal.style.display:', ongoingModal.style.display);
                             } else {
-                                console.error('OngoingChallenge 모달을 찾을 수 없습니다!');
+                                console.error('challenge-modal을 찾을 수 없습니다!');
                             }
+                            
+                            if (ongoingModal) {
+                                console.log('OngoingChallenge 모달 표시 처리');
+                                ongoingModal.style.display = 'block';
+                                console.log('표시 후 display:', ongoingModal.style.display);
+                            } else {
+                                console.error('ongoing-challenge-modal을 찾을 수 없습니다!');
+                            }
+                            
                             window.scrollTo(0, 0);
+                        }}
+                        style={{ 
+                            color: '#666', 
+                            fontSize: '0.9rem', 
+                            cursor: 'pointer',
+                            padding: '5px',
+                            userSelect: 'none',
+                            zIndex: 999,
+                            position: 'relative',
+                            display: 'inline-block',
+                            backgroundColor: 'rgba(255,255,255,0.01)'
                         }}
                     >
                         진행중인 챌린지 보러가기 →
-                    </button>
+                    </span>
                     <button 
                         type="button"
                         style={{ 
@@ -514,6 +519,7 @@ return (
                     </p>
                 )}
             </div>
+        </div>
         </div>
         
         {createChallengeModalOpen && (
