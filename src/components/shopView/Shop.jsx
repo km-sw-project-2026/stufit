@@ -12,19 +12,7 @@ import '../shopView/Shop.css';
 function Shop() {
     const [activeCategory, setActiveCategory] = useState('all');
     const [wishlistItemsByKey, setWishlistItemsByKey] = useState({});
-    const [purchasedItemsByKey, setPurchasedItemsByKey] = useState(() => {
-        const stored = localStorage.getItem('purchasedItems');
-        if (!stored) {
-            return {};
-        }
-
-        try {
-            const parsed = JSON.parse(stored);
-            return parsed && typeof parsed === 'object' ? parsed : {};
-        } catch {
-            return {};
-        }
-    });
+    const [purchasedItemsByKey, setPurchasedItemsByKey] = useState({});
     const [points, setPoints] = useState(null);
     const [pointsError, setPointsError] = useState('');
     const [alertModal, setAlertModal] = useState({ show: false, message: '' });
@@ -96,23 +84,6 @@ function Shop() {
         setAlertModal({ show: true, message });
     };
 
-    const markPurchased = (itemKey) => {
-        if (!itemKey) {
-            return;
-        }
-
-        setPurchasedItemsByKey((prev) => {
-            const next = { ...prev, [itemKey]: true };
-            localStorage.setItem('purchasedItems', JSON.stringify(next));
-            try {
-                window.dispatchEvent(new CustomEvent('purchasedItemsUpdated', { detail: { key: itemKey } }));
-            } catch (e) {
-                // ignore
-            }
-            return next;
-        });
-    };
-
     const handlePurchase = async (scope, item) => {
         const currentUsername = localStorage.getItem('username');
         const currentUserId = localStorage.getItem('userId');
@@ -165,7 +136,7 @@ function Shop() {
                         'Content-Type': 'application/json',
                         'X-Username': currentUsername || '',
                     },
-                body: JSON.stringify({ userId: Number(resolvedUserId), price, itemName: item?.name }),
+                body: JSON.stringify({ userId: Number(resolvedUserId), price, itemName: item?.name, itemId: item?.id }),
             });
 
             const data = await response.json();
@@ -182,11 +153,8 @@ function Shop() {
                 window.dispatchEvent(new CustomEvent('pointsUpdated', { detail: { points: nextPoints } }));
             }
 
-            const purchaseKey = item?._wishlistKey
-                ?? (scope
-                    ? buildWishlistKey(scope, item?.id)
-                    : buildWishlistKey(item?.type || 'item', item?.id));
-            markPurchased(purchaseKey);
+            // 구매 성공 이벤트 발생 (다른 컴포넌트에서 재로드)
+            window.dispatchEvent(new CustomEvent('purchasedItemsUpdated'));
 
             const wishlistKey = item?._wishlistKey ?? buildWishlistKey(scope, item?.id);
             removeFromWishlist(wishlistKey);
@@ -242,6 +210,53 @@ function Shop() {
         };
 
         fetchPoints();
+    }, [isLoggedIn, userId]);
+
+    useEffect(() => {
+        const fetchPurchasedItems = async () => {
+            if (!isLoggedIn || !userId) {
+                setPurchasedItemsByKey({});
+                return;
+            }
+
+            try {
+                const currentUsername = localStorage.getItem('username');
+                const response = await fetch(`/api/user/items?userId=${userId}`, {
+                    headers: { 'X-Username': currentUsername || '' },
+                });
+                const data = await response.json();
+
+                if (!response.ok) {
+                    console.error('Failed to fetch purchased items:', data?.message);
+                    return;
+                }
+
+                // purchasedItems는 itemId 배열로 받음
+                const itemIds = data?.purchasedItems || [];
+                const purchasedMap = {};
+                
+                itemIds.forEach(itemId => {
+                    // shopItems에서 해당 아이템 찾기
+                    const item = shopItems.find(it => it.id === itemId);
+                    if (item) {
+                        const key = buildWishlistKey(item.type, item.id);
+                        purchasedMap[key] = true;
+                    }
+                });
+
+                setPurchasedItemsByKey(purchasedMap);
+            } catch (err) {
+                console.error('Purchased items fetch error:', err);
+            }
+        };
+
+        fetchPurchasedItems();
+
+        // 구매 이벤트 리스너
+        window.addEventListener('purchasedItemsUpdated', fetchPurchasedItems);
+        return () => {
+            window.removeEventListener('purchasedItemsUpdated', fetchPurchasedItems);
+        };
     }, [isLoggedIn, userId]);
 
     useEffect(() => {
