@@ -1,15 +1,14 @@
 import { useNavigate } from 'react-router-dom';
+import { useState, useRef, useEffect } from 'react';
 
 function ShopQuicklink () {
     const navigate = useNavigate();
-<<<<<<< HEAD
-=======
     // Use Vite's import.meta.glob to reliably collect asset URLs from src/assets/shop-items
-        // Use only the user-selected images in the given order; fallback to placeholder if missing
-        const desiredFiles = ['bg-teeth.png', 'frame-chicken.png', 'frame-vip.png', 'jellyfish-green.png', 'bg-lemon.png'];
-        const modules = import.meta.glob('../../assets/shop-items/*.{png,jpg,jpeg,gif}', { eager: true, as: 'url' });
-        const fileMap = Object.fromEntries(Object.entries(modules || {}).map(([k, v]) => [k.split('/').pop(), v]));
-        const images = desiredFiles.map(name => fileMap[name] || '/img/Profile2.png');
+    // Use only the user-selected images in the given order; fallback to placeholder if missing
+    const desiredFiles = ['bg-teeth.png', 'frame-chicken.png', 'frame-vip.png', 'jellyfish-green.png', 'bg-lemon.png'];
+    const modules = import.meta.glob('../../assets/shop-items/*.{png,jpg,jpeg,gif}', { eager: true, as: 'url' });
+    const fileMap = Object.fromEntries(Object.entries(modules || {}).map(([k, v]) => [k.split('/').pop(), v]));
+    const images = desiredFiles.map(name => fileMap[name] || '/img/Profile2.png');
 
     const [index, setIndex] = useState(0);
     const wrapperRef = useRef(null);
@@ -27,11 +26,9 @@ function ShopQuicklink () {
         }
     }, [index]);
 
-        // Circular navigation
-        const prev = () => setIndex(i => (i - 1 + images.length) % images.length);
-        const next = () => setIndex(i => (i + 1) % images.length);
-
->>>>>>> 18e352e2ece97040d14260b1fb26918fbb7530f7
+    // Circular navigation
+    const prev = () => setIndex(i => (i - 1 + images.length) % images.length);
+    const next = () => setIndex(i => (i + 1) % images.length);
     return(
         <div className="shop-quicklink">
                     <div className="shop-header">
