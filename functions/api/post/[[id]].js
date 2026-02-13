@@ -1,12 +1,12 @@
 
-const DEPLOY_TAG = (new Date()).toISOString();
-
 function jsonResponse(obj, status = 200) {
+    const tag = (new Date()).toISOString();
     return new Response(JSON.stringify(obj), {
         status,
         headers: {
             'Content-Type': 'application/json',
-            'X-Deploy-Tag': DEPLOY_TAG
+            'X-Deploy-Tag': tag,
+            'X-Debug-Source': 'post-[[id]]-runtime'
         }
     });
 }
