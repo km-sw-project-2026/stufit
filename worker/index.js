@@ -365,7 +365,7 @@ export default {
             return challengeJoin(request, { env, params: { id }, userId });
 
           default:
-            return new Response('Not Found', { status: 404 });
+            return new Response(JSON.stringify({ message: 'Not Found' }), { status: 404, headers: { 'Content-Type': 'application/json' } });
         }
       }
 
@@ -375,7 +375,7 @@ export default {
         return postById.default(request, { env, params: { id: postMatchAuth[1] }, userId });
       }
 
-      return new Response('Not Found', { status: 404 });
+      return new Response(JSON.stringify({ message: 'Not Found' }), { status: 404, headers: { 'Content-Type': 'application/json' } });
     } catch (err) {
       console.error("❌ WORKER ERROR: - index.js:323", err?.message || String(err));
       return new Response(
