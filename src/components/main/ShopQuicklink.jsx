@@ -50,7 +50,7 @@ function ShopQuicklink () {
                         <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#222" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
                     </button>
 
-                    <div className="shop-items-wrapper" ref={wrapperRef} style={{ overflowX: 'auto', display: 'flex', gap: 12, scrollSnapType: 'x mandatory' }}>
+                    <div className="shop-items-wrapper" ref={wrapperRef}>
                         {images.map((src, i) => (
                             <div
                                 key={src}
@@ -58,7 +58,7 @@ function ShopQuicklink () {
                                 ref={el => itemRefs.current[i] = el}
                                 style={{ flex: '0 0 auto', scrollSnapAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                             >
-                                <img src={src} alt={`item-${i}`} style={{ width: i === index ? 120 : 80, height: i === index ? 120 : 80, objectFit: 'contain', borderRadius: 12 }} />
+                                <img src={src} alt={`item-${i}`} className="shop-item-img" />
                             </div>
                         ))}
                     </div>
