@@ -153,12 +153,6 @@ function MyItems() {
           ))}
         </div>
 
-        {/* 페이지네이션 */}
-        <div className="pagination">
-          <button className="pagination-btn">&lt;</button>
-          <button className="pagination-btn active">1</button>
-          <button className="pagination-btn">&gt;</button>
-        </div>
       </div>
 
       <ItemDetailModal 
