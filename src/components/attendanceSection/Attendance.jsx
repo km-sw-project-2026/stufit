@@ -106,39 +106,75 @@ import CustomAlertModal from '../modal/CustomAlertModal';
 
 
 
+// ------------------위에 코드에서 또 수정
+
+
+import React, { useState, useEffect } from 'react';
+import CustomAlertModal from '../modal/CustomAlertModal';
+
 function Attendance() {
   const [checkedDays, setCheckedDays] = useState(Array(7).fill(false));
   const [lastCheckDate, setLastCheckDate] = useState(null);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
 
   const days = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
   const points = ["100P", "120P", "140P", "160P", "180P", "200P", "220P"];
 
   const todayIndex = new Date().getDay();
-  const todayDateString = new Date().toLocaleDateString();
+  const todayDateString = new Date().toISOString().split('T')[0];
 
+  // 🚀 1. 유저 변경 감지 및 데이터 동기화 로직
   useEffect(() => {
-    // 로컬스토리지에서 저장된 데이터 로드
-    const savedData = localStorage.getItem('stufit_attendance');
-    if (savedData) {
+    const fetchAttendance = async () => {
+      const userId = localStorage.getItem('userId');
+      
+      // 🧹 혼선을 주는 기존 로컬 저장소 데이터를 강제로 삭제합니다.
+      localStorage.removeItem('stufit_attendance'); 
+
+      if (!userId || userId === "null" || userId === "undefined") {
+        setCheckedDays(Array(7).fill(false));
+        return;
+      }
+
       try {
-        const parsed = JSON.parse(savedData);
-      showAlert("오늘 출석은 이미 완료되었습니다. 내일 다시 와주세요!");
-        </div>
+        // 캐시 방지를 위해 타임스탬프(t)를 추가하여 항상 최신 DB 값을 가져옵니다.
+        const response = await fetch(`/api/attendance?userId=${userId}&t=${new Date().getTime()}`);
+        
+        if (response.ok) {
+          const data = await response.json();
+          const newCheckedDays = Array(7).fill(false);
+          
+          const today = new Date();
+          const sunday = new Date(today);
+          sunday.setDate(today.getDate() - today.getDay());
+          sunday.setHours(0, 0, 0, 0); 
 
-        {isAlertOpen && (
-          <CustomAlertModal 
-            message={alertMessage} 
-            onClose={() => setIsAlertOpen(false)} 
-          />
-        )}
-      </div>
-    );
-  }
+          // 서버 DB에 기록된 날짜들로만 체크 표시를 생성합니다.
+          if (data.logs && Array.isArray(data.logs)) {
+            data.logs.forEach(log => {
+              const logDate = new Date(log.date);
+              if (logDate >= sunday) {
+                newCheckedDays[logDate.getDay()] = true;
+              }
+            });
+          }
 
-  export default Attendance;
+          setCheckedDays(newCheckedDays);
+          
+          if (data.logs && data.logs.some(log => log.date === todayDateString)) {
+            setLastCheckDate(todayDateString);
+          }
+        } else {
+          setCheckedDays(Array(7).fill(false));
+        }
+      } catch (error) {
+        console.error("출석 데이터 로딩 실패:", error);
+      }
+    };
+
+    fetchAttendance();
+  }, [todayDateString, localStorage.getItem('userId')]);
 
 //   useEffect(() => {
 //     const savedData = localStorage.getItem('stufit_attendance');
