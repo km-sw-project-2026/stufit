@@ -264,13 +264,26 @@ html, body {
   height: 120px;
   opacity: 0.95;
 }
-.shop-item.active img {
-  width: 220px;
-  height: 220px;
+.shop-item.active {
+  width: 260px;
+  height: 260px;
   box-shadow: 0 18px 40px rgba(0,0,0,0.14);
   transform: translateY(-6px);
   background: #fff;
+  border-radius: 50%;
   padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 6px dashed #176B5F;
+}
+
+.shop-item.active img {
+  width: calc(100% - 36px);
+  height: calc(100% - 36px);
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
 }
 .shop-item-info { text-align: center; margin-top: 14px; }
 .shop-pagination { margin-top: 12px; display:flex; justify-content:center; gap:10px; }
