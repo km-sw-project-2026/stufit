@@ -4,10 +4,11 @@ import { useRef, useState, useEffect } from 'react';
 function ShopQuicklink () {
     const navigate = useNavigate();
     // Use Vite's import.meta.glob to reliably collect asset URLs from src/assets/shop-items
-    const maxItems = 8; // change this number to show more/less items
-    const modules = import.meta.glob('../../assets/shop-items/*.{png,jpg,jpeg,gif}', { eager: true, as: 'url' });
-    const allImages = Object.values(modules || {});
-    const images = allImages.slice(0, maxItems);
+        // Use only the user-selected images in the given order; fallback to placeholder if missing
+        const desiredFiles = ['bg-teeth.png', 'frame-chicken.png', 'frame-vip.png', 'jellyfish-green.png', 'bg-lemon.png'];
+        const modules = import.meta.glob('../../assets/shop-items/*.{png,jpg,jpeg,gif}', { eager: true, as: 'url' });
+        const fileMap = Object.fromEntries(Object.entries(modules || {}).map(([k, v]) => [k.split('/').pop(), v]));
+        const images = desiredFiles.map(name => fileMap[name] || '/img/Profile2.png');
 
     const [index, setIndex] = useState(0);
     const wrapperRef = useRef(null);
@@ -25,8 +26,9 @@ function ShopQuicklink () {
         }
     }, [index]);
 
-    const prev = () => setIndex(i => Math.max(0, i - 1));
-    const next = () => setIndex(i => Math.min(images.length - 1, i + 1));
+        // Circular navigation
+        const prev = () => setIndex(i => (i - 1 + images.length) % images.length);
+        const next = () => setIndex(i => (i + 1) % images.length);
 
     return(
         <div className="shop-quicklink">
