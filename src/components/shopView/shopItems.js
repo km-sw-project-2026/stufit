@@ -31,15 +31,15 @@ import bgTiger from '../../assets/shop-items/bg-tiger.png';
 import frameDragon from '../../assets/shop-items/frame-dragon.png';
 
 export const shopItems = [
-    { id: 1, category: '프로필 테두리', name: '너는 못 사는 VIP 테두리', price: '999,999 P', color: '#fff', type: 'frame', image: frameVip, scale: 1.12 },
-    { id: 2, category: '프로필 테두리', name: '딸기 테두리', price: '3,000 P', color: '#fff', type: 'frame', image: frameStrawberry, scale: 1.06 },
-    { id: 3, category: '프로필 테두리', name: '레몬 테두리', price: '4,000 P', color: '#fff', type: 'frame', image: frameLemon, scale: 1.06 },
-    { id: 4, category: '프로필 테두리', name: '맥도날드 모자 테두리', price: '5,000 P', color: '#fff', type: 'frame', image: frameMcHat, scale: 1.1 },
-    { id: 5, category: '프로필 테두리', name: '맥도날드 햄버거 테두리', price: '5,000 P', color: '#fff', type: 'frame', image: frameMcBurger, scale: 1.1 },
-    { id: 6, category: '프로필 테두리', name: '벚꽃 테두리', price: '3,000 P', color: '#fff', type: 'frame', image: frameCherryBlossom, scale: 1.06 },
-    { id: 7, category: '프로필 테두리', name: '슈퍼스타 테두리', price: '300,000 P', color: '#fff', type: 'frame', image: frameSuperstar, scale: 1.15 },
-    { id: 8, category: '프로필 테두리', name: '아보카도 테두리', price: '3,000 P', color: '#fff', type: 'frame', image: frameAvocado, scale: 1.06 },
-    { id: 9, category: '프로필 테두리', name: '치킨 오돌뼈로 태어난 테두리', price: '10,000 P', color: '#fff', type: 'frame', image: frameChicken, scale: 1.07 },
+    { id: 1, category: '프로필 테두리', name: '너는 못 사는 VIP 테두리', price: '999,999 P', color: '#fff', type: 'frame', image: frameVip, scale: 1.12, myPageScale: 2.8 },
+    { id: 2, category: '프로필 테두리', name: '딸기 테두리', price: '3,000 P', color: '#fff', type: 'frame', image: frameStrawberry, scale: 1.06, myPageScale: 2.75 },
+    { id: 3, category: '프로필 테두리', name: '레몬 테두리', price: '4,000 P', color: '#fff', type: 'frame', image: frameLemon, scale: 1.06, myPageScale: 2.65 },
+    { id: 4, category: '프로필 테두리', name: '맥도날드 모자 테두리', price: '5,000 P', color: '#fff', type: 'frame', image: frameMcHat, scale: 1.1, myPageScale: 2.75 },
+    { id: 5, category: '프로필 테두리', name: '맥도날드 햄버거 테두리', price: '5,000 P', color: '#fff', type: 'frame', image: frameMcBurger, scale: 1.1, myPageScale: 2.75 },
+    { id: 6, category: '프로필 테두리', name: '벚꽃 테두리', price: '3,000 P', color: '#fff', type: 'frame', image: frameCherryBlossom, scale: 1.06, myPageScale: 2.65 },
+    { id: 7, category: '프로필 테두리', name: '슈퍼스타 테두리', price: '300,000 P', color: '#fff', type: 'frame', image: frameSuperstar, scale: 1.15, myPageScale: 2.88 },
+    { id: 8, category: '프로필 테두리', name: '아보카도 테두리', price: '3,000 P', color: '#fff', type: 'frame', image: frameAvocado, scale: 1.06, myPageScale: 2.65 },
+    { id: 9, category: '프로필 테두리', name: '치킨 오돌뼈로 태어난 테두리', price: '10,000 P', color: '#fff', type: 'frame', image: frameChicken, scale: 1.07, myPageScale: 2.68 },
     { id: 10, category: '프로필 배경', name: '구름 배경', price: '3,000 P', color: '#fff', type: 'bg', image: bgCloud },
     { id: 11, category: '프로필 배경', name: '라이트블루 커튼 배경', price: '3,000 P', color: '#fff', type: 'bg', image: bgCurtain },
     { id: 12, category: '프로필 배경', name: '레몬 배경', price: '3,000 P', color: '#fff', type: 'bg', image: bgLemon },
@@ -47,11 +47,11 @@ export const shopItems = [
     { id: 14, category: '프로필 배경', name: '빨간별 배경', price: '3,000 P', color: '#fff', type: 'bg', image: bgRedStar },
     { id: 15, category: '프로필 배경', name: '아보카도 배경', price: '3,000 P', color: '#fff', type: 'bg', image: bgAvocado },
     { id: 16, category: '프로필 배경', name: '연두 배경', price: '3,000 P', color: '#fff', type: 'bg', image: bgLightGreen },
-    { id: 17, category: '프로필 배경', name: '왕좌 배경', price: '99,999 P', color: '#fff', type: 'bg', image: bgThrone },
+    { id: 17, category: '프로필 배경', name: '왕좌 배경', price: '999,999 P', color: '#fff', type: 'bg', image: bgThrone },
     { id: 18, category: '프로필 배경', name: '이빨 배경', price: '10,150 P', color: '#fff', type: 'bg', image: bgTeeth, rare: true },
     { id: 19, category: '프로필 배경', name: '초승달 배경', price: '3,000 P', color: '#fff', type: 'bg', image: bgCrescent },
     { id: 20, category: '프로필 배경', name: '핑크 점박이 배경', price: '3,000 P', color: '#fff', type: 'bg', image: bgPinkDots },
-    { id: 21, category: '프로필 배경', name: '호랑이 배경', price: '99,999 P', color: '#fff', type: 'bg', image: bgTiger },
+    { id: 21, category: '프로필 배경', name: '호랑이 배경', price: '999,999 P', color: '#fff', type: 'bg', image: bgTiger },
     { id: 22, category: '프로필 이미지', name: '갈매기', price: '3,000 P', color: '#ff6347', type: 'image', image: seagullImg },
     { id: 23, category: '프로필 이미지', name: '앵무새', price: '3,000 P', color: '#4169e1', type: 'image', image: parrotImg },
     { id: 24, category: '프로필 이미지', name: '오리', price: '3,000 P', color: '#9370db', type: 'image', image: duckImg },
@@ -61,7 +61,7 @@ export const shopItems = [
     { id: 28, category: '프로필 이미지', name: '유령', price: '3,000 P', color: '#f2f2f2', type: 'image', image: ghostImg },
     { id: 29, category: '프로필 이미지', name: '유독성 슬러지', price: '10,150 P', color: '#a7d46f', type: 'image', image: toxicSludgeImg, rare: true },
     { id: 30, category: '프로필 이미지', name: '아귀', price: '3,000 P', color: '#a7d46f', type: 'image', image: anglerfishImg },
-    { id: 31, category: '프로필 테두리', name: '드래곤 테두리', price: '999,999 P', color: '#fff', type: 'frame', image: frameDragon, scale: 1.14 },
+    { id: 31, category: '프로필 테두리', name: '드래곤 테두리', price: '999,999 P', color: '#fff', type: 'frame', image: frameDragon, scale: 1.14, myPageScale: 2.85 },
 ];
 
 export const frameItems = shopItems.filter((item) => item.type === 'frame');

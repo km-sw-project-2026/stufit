@@ -5,6 +5,7 @@ import { shopItems } from '../shopView/shopItems';
 function MyPage({ isOpen, onClose }) {
   const [userData, setUserData] = useState(null);
   const navigate = useNavigate();
+  const useLocalPoints = true;
 
   const formatPoints = (value) => {
     const numeric = Number(value);
@@ -80,15 +81,17 @@ function MyPage({ isOpen, onClose }) {
         }
 
         if (data.success && data.stats) {
-          const nextPoints = Number(data.stats.points) || 0;
           const posts = data.stats.posts;
           const comments = data.stats.comments;
 
-          localStorage.setItem('points', String(nextPoints));
-          
-          setUserData((prev) => (prev ? { 
-            ...prev, 
-            points: nextPoints,
+          if (!useLocalPoints) {
+            const nextPoints = Number(data.stats.points) || 0;
+            localStorage.setItem('points', String(nextPoints));
+          }
+
+          setUserData((prev) => (prev ? {
+            ...prev,
+            ...(useLocalPoints ? {} : { points: Number(data.stats.points) || 0 }),
             posts: `${posts}개`,
             comments: `${comments}개`
           } : prev));
@@ -126,27 +129,18 @@ function MyPage({ isOpen, onClose }) {
       const headerBgEl = document.querySelector('.mypage-header .mypage-header-bg');
       if (headerBgEl) {
         if (bgItem && bgItem.image) {
- HEAD
           headerBgEl.style.backgroundImage = `url(${bgItem.image})`;
-          headerBgEl.style.backgroundSize = 'contain';
+          headerBgEl.style.backgroundSize = 'cover';
           headerBgEl.style.backgroundPosition = 'center';
           headerBgEl.style.backgroundRepeat = 'no-repeat';
           headerBgEl.style.display = 'block';
         } else {
           headerBgEl.style.backgroundImage = '';
           headerBgEl.style.display = 'none';
-          modalEl.style.backgroundImage = `url(${bgItem.image})`;
-          modalEl.style.backgroundSize = 'contain';
-          modalEl.style.backgroundPosition = 'center';
-          modalEl.style.backgroundRepeat = 'no-repeat';
-          modalEl.style.backgroundImage = '';
-          modalEl.style.backgroundSize = '';
-          modalEl.style.backgroundPosition = '';
-          modalEl.style.backgroundRepeat = '';
         }
       }
 
-      const profileImgEl = document.querySelector('.mypage-modal .profile-img img');
+      const profileImgEl = document.querySelector('.mypage-modal .profile-img img:not(.profile-frame-overlay)');
       if (profileImgEl) {
         if (imageItem && imageItem.image) profileImgEl.src = imageItem.image;
         else profileImgEl.src = '/img/Profile2.png';
@@ -163,48 +157,25 @@ function MyPage({ isOpen, onClose }) {
       const frameOverlay = document.querySelector('.mypage-modal .profile-frame-overlay');
       if (frameOverlay) {
         if (frameItem && frameItem.image) {
+          // myPageScale 우선 사용, 없으면 기본 2.2
+          const scale = frameItem.myPageScale || 2.2;
+          
           frameOverlay.src = frameItem.image;
           frameOverlay.style.display = 'block';
- HEAD
           frameOverlay.style.position = 'absolute';
           frameOverlay.style.top = '0';
           frameOverlay.style.left = '0';
-          // allow frame to be slightly larger than profile to appear as a border
-          const scale = typeof frameItem?.scale === 'number' ? frameItem.scale : 1.08;
           const widthPct = (scale * 100).toFixed(2) + '%';
-          const offsetPct = ((scale - 1) / 2 * 100).toFixed(2) + '%';
+          const offsetPct = (scale - 1) / 2 * 100;
+          const topOffset = offsetPct + 20; // 위로 5% 추가 이동
           frameOverlay.style.width = widthPct;
-          frameOverlay.style.height = widthPct; // keep square
-          frameOverlay.style.left = `-${offsetPct}`;
-          frameOverlay.style.top = `-${offsetPct}`;
+          frameOverlay.style.height = widthPct;
+          frameOverlay.style.left = `-${offsetPct.toFixed(2)}%`;
+          frameOverlay.style.top = `-${topOffset.toFixed(2)}%`;
           frameOverlay.style.objectFit = 'contain';
           frameOverlay.style.pointerEvents = 'none';
           frameOverlay.style.zIndex = '1015';
           frameOverlay.style.transformOrigin = 'center center';
-          // position overlay to exactly cover the profile image
-          try {
-            const imgRect = profileImgEl && profileImgEl.getBoundingClientRect && profileImgEl.getBoundingClientRect();
-            if (imgRect) {
-              frameOverlay.style.position = 'fixed';
-              frameOverlay.style.left = `${imgRect.left}px`;
-              frameOverlay.style.top = `${imgRect.top}px`;
-              frameOverlay.style.width = `${imgRect.width}px`;
-              frameOverlay.style.height = `${imgRect.height}px`;
-              frameOverlay.style.objectFit = 'contain';
-              frameOverlay.style.pointerEvents = 'none';
-              frameOverlay.style.zIndex = '1002';
-            } else {
-              // fallback to relative overlay inside container
-              frameOverlay.style.position = 'absolute';
-              frameOverlay.style.top = '0';
-              frameOverlay.style.left = '0';
-              frameOverlay.style.width = '100%';
-              frameOverlay.style.height = '100%';
-              frameOverlay.style.objectFit = 'contain';
-            }
-          } catch (err) {
-            console.error('frame overlay positioning failed', err);
-          }
         } else {
           frameOverlay.style.display = 'none';
           frameOverlay.style.position = '';
@@ -257,11 +228,11 @@ function MyPage({ isOpen, onClose }) {
 
     window.addEventListener('purchasedItemsUpdated', handlePurchasedUpdated);
     window.addEventListener('storage', handlePurchasedUpdated);
-    return () => window.removeEventListener('pointsUpdated', handlePointsUpdated);
-    // cleanup additional listeners
-    // (explicitly remove purchasedItemsUpdated and storage)
-    window.removeEventListener('purchasedItemsUpdated', handlePurchasedUpdated);
-    window.removeEventListener('storage', handlePurchasedUpdated);
+    return () => {
+      window.removeEventListener('pointsUpdated', handlePointsUpdated);
+      window.removeEventListener('purchasedItemsUpdated', handlePurchasedUpdated);
+      window.removeEventListener('storage', handlePurchasedUpdated);
+    };
   }, [isOpen]);
 
   const handleLogout = async () => {
@@ -296,6 +267,7 @@ function MyPage({ isOpen, onClose }) {
         
         <div className="mypage-header">
           <div className="mypage-header-bg" />
+          <div className="mypage-header-divider" />
           <div className="profile-img">
             <img src="/img/Profile2.png" alt="프로필" />
             <img src="" alt="frame" className="profile-frame-overlay" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'none', pointerEvents: 'none' }} />
