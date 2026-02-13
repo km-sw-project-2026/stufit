@@ -131,7 +131,6 @@ function MyPage({ isOpen, onClose }) {
       const headerBgEl = document.querySelector('.mypage-header .mypage-header-bg');
       if (headerBgEl) {
         if (bgItem && bgItem.image) {
- HEAD
           headerBgEl.style.backgroundImage = `url(${bgItem.image})`;
           headerBgEl.style.backgroundSize = 'contain';
           headerBgEl.style.backgroundPosition = 'center';
@@ -140,14 +139,6 @@ function MyPage({ isOpen, onClose }) {
         } else {
           headerBgEl.style.backgroundImage = '';
           headerBgEl.style.display = 'none';
-          modalEl.style.backgroundImage = `url(${bgItem.image})`;
-          modalEl.style.backgroundSize = 'contain';
-          modalEl.style.backgroundPosition = 'center';
-          modalEl.style.backgroundRepeat = 'no-repeat';
-          modalEl.style.backgroundImage = '';
-          modalEl.style.backgroundSize = '';
-          modalEl.style.backgroundPosition = '';
-          modalEl.style.backgroundRepeat = '';
         }
       }
 
@@ -170,7 +161,6 @@ function MyPage({ isOpen, onClose }) {
         if (frameItem && frameItem.image) {
           frameOverlay.src = frameItem.image;
           frameOverlay.style.display = 'block';
- HEAD
           frameOverlay.style.position = 'absolute';
           frameOverlay.style.top = '0';
           frameOverlay.style.left = '0';
