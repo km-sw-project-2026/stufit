@@ -33,11 +33,6 @@ function Shop() {
     const [isLoggedIn, setIsLoggedIn] = useState(
         Boolean(localStorage.getItem('username') || localStorage.getItem('userId'))
     );
-    const [isGrantingPoints, setIsGrantingPoints] = useState(false);
-
-    const showDevPointsButton = true;
-    const devPointsAmount = 100000;
-    const useLocalPoints = true;
 
     const buildWishlistKey = (scope, id) => `${scope}:${id}`;
     const isLoggedInMessage = isLoggedIn ? '' : '로그인 후 이용해주세요.';
@@ -163,31 +158,6 @@ function Shop() {
             return;
         }
 
-        if (useLocalPoints) {
-            const currentPoints = Number(localStorage.getItem('points')) || 0;
-            if (currentPoints < price) {
-                openAlert('포인트가 부족합니다.');
-                return;
-            }
-
-            const nextPoints = currentPoints - price;
-            setPoints(nextPoints);
-            localStorage.setItem('points', String(nextPoints));
-            window.dispatchEvent(new CustomEvent('pointsUpdated', { detail: { points: nextPoints } }));
-
-            const purchaseKey = item?._wishlistKey
-                ?? (scope
-                    ? buildWishlistKey(scope, item?.id)
-                    : buildWishlistKey(item?.type || 'item', item?.id));
-            markPurchased(purchaseKey);
-
-            const wishlistKey = item?._wishlistKey ?? buildWishlistKey(scope, item?.id);
-            removeFromWishlist(wishlistKey);
-
-            openAlert('구매가 완료되었습니다!');
-            return;
-        }
-
         try {
                 const response = await fetch('/api/shop/purchase', {
                 method: 'POST',
@@ -228,52 +198,6 @@ function Shop() {
         }
     };
 
-    const handleGrantPoints = async () => {
-        const currentUsername = localStorage.getItem('username');
-        const currentUserId = localStorage.getItem('userId');
-        const loggedInNow = Boolean(currentUsername || currentUserId);
-
-        if (!loggedInNow) {
-            openAlert('로그인 후 이용해주세요.');
-            return;
-        }
-
-        let resolvedUserId = currentUserId || userId;
-        if (!resolvedUserId && currentUsername) {
-            try {
-                const response = await fetch(`/api/user/resolve?username=${encodeURIComponent(currentUsername)}`);
-                const data = await response.json();
-
-                if (response.ok && data?.userId) {
-                    resolvedUserId = String(data.userId);
-                    localStorage.setItem('userId', resolvedUserId);
-                    setUserId(resolvedUserId);
-                }
-            } catch (err) {
-                console.error('Resolve userId error:', err);
-            }
-        }
-
-        if (!resolvedUserId) {
-            openAlert('로그인 정보를 확인 중입니다. 잠시 후 다시 시도해주세요.');
-            return;
-        }
-
-        setIsGrantingPoints(true);
-        try {
-            const currentPoints = Number(localStorage.getItem('points')) || 0;
-            const nextPoints = currentPoints + devPointsAmount;
-
-            setPoints(nextPoints);
-            localStorage.setItem('points', String(nextPoints));
-            window.dispatchEvent(new CustomEvent('pointsUpdated', { detail: { points: nextPoints } }));
-
-            openAlert(`포인트 ${devPointsAmount.toLocaleString('ko-KR')}P 지급 완료!`);
-        } finally {
-            setIsGrantingPoints(false);
-        }
-    };
-
     const itemCounts = {
         all: shopItems.length,
         frame: frameItems.length,
@@ -286,13 +210,6 @@ function Shop() {
         const fetchPoints = async () => {
             if (!isLoggedIn) {
                 setPoints(0);
-                return;
-            }
-
-            if (useLocalPoints) {
-                const storedPoints = Number(localStorage.getItem('points')) || 0;
-                setPoints(storedPoints);
-                setPointsError('');
                 return;
             }
 
@@ -452,19 +369,6 @@ function Shop() {
                     <div className="shop-points" title={pointsError || ''}>
                         <span className="shop-points-label">나의 보유 포인트</span>
                         <span className="shop-points-value">{formatPoints(points)}</span>
-                        {showDevPointsButton && (
-                            <div className="shop-points-actions">
-                                <button
-                                    type="button"
-                                    className="shop-dev-points-button"
-                                    onClick={handleGrantPoints}
-                                    disabled={isGrantingPoints}
-                                    title="상점 테스트용 임시 버튼"
-                                >
-                                    +{devPointsAmount.toLocaleString('ko-KR')}P
-                                </button>
-                            </div>
-                        )}
                     </div>
                 </div>
                 {renderContent()}

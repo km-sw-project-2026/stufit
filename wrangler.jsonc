@@ -3,10 +3,6 @@
   "name": "stufit",  // 프로젝트 이름
   "main": "worker/index.js",  // 메인 Worker 파일
   "compatibility_date": "2026-01-20",  // Worker의 호환성 날짜
-  "assets": {
-    "directory": "./dist",
-    "not_found_handling": "single-page-application"  // 자산 처리 방식
-  },
   "observability": {
     "enabled": true  // Observability 기능 활성화
   },

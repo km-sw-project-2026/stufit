@@ -1,98 +1,136 @@
 ﻿// Cloudflare Pages용 타입 정의
-// import type { D1Database } from "@cloudflare/workers-types";
+type PagesFunction<T = any> = (context: { request: Request, env: T }) => Promise<Response>;
 
+interface Env {
+  D1_DB: any;
+}
 
-// 원래 쓰던 코드
+// GET: 사용자의 출석 기록 조회 (로그인된 계정별 연속출석 확인)
+export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
+  try {
+    const url = new URL(request.url);
+    const userId = url.searchParams.get('userId');
 
-// type PagesFunction<T = any> = (context: { request: Request, env: T }) => Promise<Response>;
+    if (!userId) {
+      return new Response(JSON.stringify({ message: "userId가 필요합니다." }), { 
+        status: 400, 
+        headers: { "Content-Type": "application/json" } 
+      });
+    }
 
-// interface Env {
-//   D1_DB: any;
-// }
+    console.log(`[Attendance API GET] Fetching attendance for userId: ${userId}`);
 
-// export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
-//   console.log('[Attendance API] Started processing request');
-//   try {
-//     const bodyText = await request.text();
-//     console.log('[Attendance API] Raw body:', bodyText);
+    // 이번 주(일요일부터 시작) 이후의 출석 기록 조회
+    const today = new Date();
+    const sunday = new Date(today);
+    sunday.setDate(today.getDate() - today.getDay());
+    sunday.setHours(0, 0, 0, 0);
+    const sundayStr = sunday.toISOString().split('T')[0];
+
+    const logs = await env.D1_DB.prepare(
+      "SELECT date FROM attendance_logs WHERE user_id = ? AND date >= ? ORDER BY date ASC"
+    ).bind(userId, sundayStr).all();
+
+    return new Response(JSON.stringify({ 
+      success: true,
+      logs: logs.results || []
+    }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" }
+    });
+
+  } catch (e: any) {
+    console.error("Attendance GET Error:", e);
+    return new Response(JSON.stringify({ error: e.message }), { 
+      status: 500,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+};
+
+export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
+  console.log('[Attendance API] Started processing request');
+  try {
+    const bodyText = await request.text();
+    console.log('[Attendance API] Raw body:', bodyText);
     
-//     let body;
-//     try {
-//       body = JSON.parse(bodyText);
-//     } catch (e) {
-//        console.error('[Attendance API] JSON parse error:', e);
-//        return new Response(JSON.stringify({ message: "Invalid JSON" }), { status: 400 });
-//     }
+    let body;
+    try {
+      body = JSON.parse(bodyText);
+    } catch (e) {
+       console.error('[Attendance API] JSON parse error:', e);
+       return new Response(JSON.stringify({ message: "Invalid JSON" }), { status: 400 });
+    }
     
-//     const { userId, date } = body as { userId: string, date: string };
-//     console.log(`[Attendance API] Parsed data - UserId: ${userId}, Date: ${date}`);
+    const { userId, date } = body as { userId: string, date: string };
+    console.log(`[Attendance API] Parsed data - UserId: ${userId}, Date: ${date}`);
 
-//     if (!userId || !date) {
-//       return new Response(JSON.stringify({ message: "데이터가 부족합니다." }), { 
-//         status: 400, 
-//         headers: { "Content-Type": "application/json" } 
-//       });
-//     }
+    if (!userId || !date) {
+      return new Response(JSON.stringify({ message: "데이터가 부족합니다." }), { 
+        status: 400, 
+        headers: { "Content-Type": "application/json" } 
+      });
+    }
 
-//     // 2. 이미 오늘 출석했는지 확인 (중복 출석 방지) (테이블명: attendance_logs)
-//     const existing = await env.D1_DB.prepare(
-//       "SELECT * FROM attendance_logs WHERE user_id = ? AND date = ?"
-//     ).bind(userId, date).first();
+    // 2. 이미 오늘 출석했는지 확인 (중복 출석 방지) (테이블명: attendance_logs)
+    const existing = await env.D1_DB.prepare(
+      "SELECT * FROM attendance_logs WHERE user_id = ? AND date = ?"
+    ).bind(userId, date).first();
 
-//     if (existing) {
-//       return new Response(JSON.stringify({ message: "이미 오늘 출석하셨습니다." }), { 
-//         status: 409,
-//         headers: { "Content-Type": "application/json" }
-//       });
-//     }
+    if (existing) {
+      return new Response(JSON.stringify({ message: "이미 오늘 출석하셨습니다." }), { 
+        status: 409,
+        headers: { "Content-Type": "application/json" }
+      });
+    }
 
-//     // 3. 요일별 포인트 계산 (0: 일요일 ~ 6: 토요일)
-//     // Cloudflare Workers 시간은 UTC.
-//     const now = new Date();
-//     // KST 변환 (UTC+9)
-//     const kstOffset = 9 * 60 * 60 * 1000;
-//     const kstDate = new Date(now.getTime() + kstOffset);
-//     const dayOfWeek = kstDate.getUTCDay(); // 0(Sun) ~ 6(Sat)
+    // 3. 요일별 포인트 계산 (0: 일요일 ~ 6: 토요일)
+    // Cloudflare Workers 시간은 UTC.
+    const now = new Date();
+    // KST 변환 (UTC+9)
+    const kstOffset = 9 * 60 * 60 * 1000;
+    const kstDate = new Date(now.getTime() + kstOffset);
+    const dayOfWeek = kstDate.getUTCDay(); // 0(Sun) ~ 6(Sat)
 
-//     const rewardPoints = 100 + (dayOfWeek * 20);
+    const rewardPoints = 100 + (dayOfWeek * 20);
 
-//     // 4. DB 트랜잭션 처리 (출석 기록 + 포인트 로그 + 유저 포인트 업데이트)
-//     const stmts = [
-//       // 4-1. 출석 기록 추가
-//       env.D1_DB.prepare(
-//         "INSERT INTO attendance_logs (user_id, date) VALUES (?, ?)"
-//       ).bind(userId, date),
+    // 4. DB 트랜잭션 처리 (출석 기록 + 포인트 로그 + 유저 포인트 업데이트)
+    const stmts = [
+      // 4-1. 출석 기록 추가
+      env.D1_DB.prepare(
+        "INSERT INTO attendance_logs (user_id, date) VALUES (?, ?)"
+      ).bind(userId, date),
 
-//       // 4-2. 포인트 로그 추가 (테이블명: point_logs, 컬럼: point)
-//       env.D1_DB.prepare(
-//         "INSERT INTO point_logs (user_id, reason, point, created_at) VALUES (?, ?, ?, ?)"
-//       ).bind(userId, '출석체크 ( ' + date + ' )', rewardPoints, kstDate.toISOString()),
+      // 4-2. 포인트 로그 추가 (테이블명: point_logs, 컬럼: point)
+      env.D1_DB.prepare(
+        "INSERT INTO point_logs (user_id, reason, point, created_at) VALUES (?, ?, ?, ?)"
+      ).bind(userId, '출석체크 ( ' + date + ' )', rewardPoints, kstDate.toISOString()),
 
-//       // 4-3. 유저 프로필 포인트 업데이트 (테이블명: user_profiles, 컬럼: points)
-//       env.D1_DB.prepare(
-//         "UPDATE user_profiles SET points = points + ? WHERE user_id = ?"
-//       ).bind(rewardPoints, userId)
-//     ];
+      // 4-3. 유저 프로필 포인트 업데이트 (테이블명: user_profiles, 컬럼: points)
+      env.D1_DB.prepare(
+        "UPDATE user_profiles SET points = points + ? WHERE user_id = ?"
+      ).bind(rewardPoints, userId)
+    ];
 
-//     await env.D1_DB.batch(stmts);
+    await env.D1_DB.batch(stmts);
 
-//     return new Response(JSON.stringify({ 
-//       success: true, 
-//       message: '출석 완료! ' + rewardPoints + 'P가 지급되었습니다.',
-//       rewardPoints 
-//     }), {
-//       status: 200,
-//       headers: { "Content-Type": "application/json" }
-//     });
+    return new Response(JSON.stringify({ 
+      success: true, 
+      message: '출석 완료! ' + rewardPoints + 'P가 지급되었습니다.',
+      rewardPoints 
+    }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" }
+    });
 
-//   } catch (e: any) {
-//     console.error("Attendance Server Error:", e);
-//     return new Response(JSON.stringify({ error: e.message, stack: e.stack }), { 
-//       status: 500,
-//       headers: { "Content-Type": "application/json" }
-//     });
-//   }
-// };
+  } catch (e: any) {
+    console.error("Attendance Server Error:", e);
+    return new Response(JSON.stringify({ error: e.message, stack: e.stack }), { 
+      status: 500,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+};
 
 
 

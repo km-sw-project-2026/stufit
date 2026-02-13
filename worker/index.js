@@ -67,6 +67,21 @@ export default {
            });
         }
         
+        if (request.method === 'GET') {
+          console.log('[Worker] Routing to attendance.onRequestGet');
+          const response = await attendance.onRequestGet({ request, env });
+          
+          // Ensure response has CORS headers
+          const newHeaders = new Headers(response.headers);
+          newHeaders.set('Access-Control-Allow-Origin', '*');
+          
+          return new Response(response.body, {
+            status: response.status,
+            statusText: response.statusText,
+            headers: newHeaders
+          });
+        }
+        
         if (request.method === 'POST') {
           console.log('[Worker] Routing to attendance.onRequestPost');
           const response = await attendance.onRequestPost({ request, env });
