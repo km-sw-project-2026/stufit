@@ -422,21 +422,21 @@ function Attendance() {
   const todayIndex = new Date().getDay();
   const todayDateString = new Date().toISOString().split('T')[0];
 
-  // 🚀 1. 페이지 로드 및 계정 변경 시 데이터 동기화
+  // 🚀 1. 유저 변경 감지 및 데이터 동기화 로직
   useEffect(() => {
     const fetchAttendance = async () => {
       const userId = localStorage.getItem('userId');
       
-      // 계정 변경 시 혼선을 주는 기존 로컬 데이터를 삭제합니다
+      // 🧹 혼선을 주는 기존 로컬 저장소 데이터를 강제로 삭제합니다.
       localStorage.removeItem('stufit_attendance'); 
 
-      if (!userId || userId === "null") {
+      if (!userId || userId === "null" || userId === "undefined") {
         setCheckedDays(Array(7).fill(false));
         return;
       }
 
       try {
-        // 캐시 방지를 위해 타임스탬프(t)를 추가하여 항상 최신 DB 값을 가져옵니다
+        // 캐시 방지를 위해 타임스탬프(t)를 추가하여 항상 최신 DB 값을 가져옵니다.
         const response = await fetch(`/api/attendance?userId=${userId}&t=${new Date().getTime()}`);
         
         if (response.ok) {
@@ -448,21 +448,22 @@ function Attendance() {
           sunday.setDate(today.getDate() - today.getDay());
           sunday.setHours(0, 0, 0, 0); 
 
-          // 서버 DB에 기록된 날짜들로만 체크 표시를 생성합니다
-          data.logs.forEach(log => {
-            const logDate = new Date(log.date);
-            if (logDate >= sunday) {
-              newCheckedDays[logDate.getDay()] = true;
-            }
-          });
+          // 서버 DB에 기록된 날짜들로만 체크 표시를 생성합니다.
+          if (data.logs && Array.isArray(data.logs)) {
+            data.logs.forEach(log => {
+              const logDate = new Date(log.date);
+              if (logDate >= sunday) {
+                newCheckedDays[logDate.getDay()] = true;
+              }
+            });
+          }
 
           setCheckedDays(newCheckedDays);
           
-          if (data.logs.some(log => log.date === todayDateString)) {
+          if (data.logs && data.logs.some(log => log.date === todayDateString)) {
             setLastCheckDate(todayDateString);
           }
         } else {
-          // 인증 실패 시 초기화
           setCheckedDays(Array(7).fill(false));
         }
       } catch (error) {
@@ -471,7 +472,7 @@ function Attendance() {
     };
 
     fetchAttendance();
-  }, [todayDateString, localStorage.getItem('userId')]); // userId 변경 감지 추가
+  }, [todayDateString, localStorage.getItem('userId')]); // userId 변경 시마다 다시 실행
 
   const showAlert = (msg) => {
     setAlertMessage(msg);
@@ -519,7 +520,7 @@ function Attendance() {
     }
   };
 
-  // 디자인 요소는 절대 수정하지 않았습니다 [cite: 2026-02-13]
+  // 기존 디자인 코드는 그대로 유지합니다. [cite: 2026-02-13]
   return (
     <div className="attendance-section">
       <div className="attendance-header">
