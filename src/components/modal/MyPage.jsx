@@ -78,11 +78,13 @@ function MyPage({ isOpen, onClose }) {
             'Expires': '0'
           },
         });
-        const data = await response.json();
-
         if (!response.ok) {
+          const text = await response.text().catch(() => '');
+          console.error('Stats fetch failed:', response.status, text);
           return;
         }
+
+        const data = await response.json();
 
         if (data.success && data.stats) {
           const nextPoints = Number(data.stats.points) || 0;
