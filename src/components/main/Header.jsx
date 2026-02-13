@@ -41,7 +41,28 @@ function Header() {
                 {/* 메인 네비게이션 메뉴: 출석체크, 챌린지, 랭킹 등 */}
                 <div className="nav">
                     <Link to="/attendance" id="attendance-link">출석체크</Link>
-                    <Link to="/challenge" id="challenge-link">챌린지</Link>
+                    <a 
+                        href="#" 
+                        id="challenge-link" 
+                        onClick={(e) => {
+                            e.preventDefault();
+                            const challengeModal = document.getElementById('challenge-modal');
+                            const ongoingModal = document.getElementById('ongoing-challenge-modal');
+                            
+                            if (ongoingModal) ongoingModal.style.display = 'none';
+                            if (challengeModal) challengeModal.style.display = 'flex';
+                            
+                            const hideSelectors = ['.wrap', '.main', '.challenge-quicklink', '.ranking-quicklink', '.shop-quicklink', '.community-quicklink', '.footer', '.attendance'];
+                            hideSelectors.forEach(selector => {
+                                const element = document.querySelector(selector);
+                                if (element) element.style.display = 'none';
+                            });
+                            
+                            window.scrollTo(0, 0);
+                        }}
+                    >
+                        챌린지
+                    </a>
                     <Link to="/ranking" id="ranking-link">랭킹</Link>
                     <Link to="/community" id="community-link">커뮤니티</Link>
                     <Link to="/shop" id="shop-link">상점</Link>

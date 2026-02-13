@@ -23,7 +23,26 @@ function ChallengeQuicklink() {
     }, [fullText]);
 
     const handleNavigate = () => {
-        navigate('/challenge');
+        const challengeModal = document.getElementById('challenge-modal');
+        const ongoingModal = document.getElementById('ongoing-challenge-modal');
+        
+        // Hide ongoing modal if visible
+        if (ongoingModal) ongoingModal.style.display = 'none';
+        
+        // Show challenge modal
+        if (challengeModal) {
+            challengeModal.style.display = 'flex';
+        }
+        
+        // Hide other sections
+        const hideSelectors = ['.main', '.challenge-quicklink', '.ranking-quicklink', '.shop-quicklink', '.community-quicklink', '.footer', '.attendance'];
+        hideSelectors.forEach(selector => {
+            const element = document.querySelector(selector);
+            if (element) element.style.display = 'none';
+        });
+        
+        // Scroll to top
+        window.scrollTo(0, 0);
     };
 
     return (
