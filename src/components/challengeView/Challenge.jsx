@@ -309,6 +309,7 @@
 // ----------------------------------------------------------------
 
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import CreateChallengeModal from '../modal/CreateChallengeModal';
 import CustomAlertModal from '../modals/CustomAlertModal';
 
@@ -316,43 +317,8 @@ function Challenge({ closeChallengeModal, onCreateSuccess }) {
     const [createChallengeModalOpen, setCreateChallengeModalOpen] = useState(false);
     const [challenges, setChallenges] = useState([]);
     const [loading, setLoading] = useState(false);
-    const [searchCode, setSearchCode] = useState('');
     const [globalAlertOpen, setGlobalAlertOpen] = useState(false);
     const [globalAlertMessage, setGlobalAlertMessage] = useState('');
-
-    const joinByCode = async (codeParam) => {
-        const code = (codeParam || searchCode || '').trim();
-        if (!code) return alert('코드를 입력해주세요.');
-        const username = localStorage.getItem('username');
-        if (!username) {
-            if (confirm('로그인이 필요합니다. 로그인 페이지로 이동하시겠습니까?')) {
-                window.location.href = '/login';
-            }
-            return;
-        }
-        try {
-            const headersForGet = {};
-            const headerUser = localStorage.getItem('username');
-            if (headerUser) headersForGet['X-Username'] = encodeURIComponent(headerUser);
-            const res = await fetch(`/api/challenges?code=${encodeURIComponent(code)}`, { headers: headersForGet });
-            if (!res.ok) {
-                const e = await res.json().catch(() => ({}));
-                return alert(e?.message || '챌린지를 찾을 수 없습니다.');
-            }
-            const payload = await res.json();
-            const challenge = payload.challenge;
-            if (!challenge) return alert('챌린지를 불러오지 못했습니다.');
-            const headers = { 'Content-Type': 'application/json', 'X-Username': encodeURIComponent(username) };
-            const joinRes = await fetch(`/api/challenges/${challenge.challenge_id}/join`, { method: 'POST', headers });
-            const joinPayload = await joinRes.json().catch(() => ({}));
-            if (!joinRes.ok) return alert(joinPayload?.message || '참가에 실패했습니다.');
-            alert('참가되었습니다! 페이지를 새로고침합니다.');
-            window.location.reload();
-        } catch (err) {
-            console.error('code join error', err);
-            alert('참가 중 오류가 발생했습니다.');
-        }
-    };
 
     const fetchChallenges = async () => {
         setLoading(true);
@@ -395,29 +361,55 @@ function Challenge({ closeChallengeModal, onCreateSuccess }) {
         </div>
     );
 
-   // ... 상단 import 및 로직 생략
-
 return (
-    <div id="challenge-modal" style={{ backgroundColor: '#eeeeee', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-        <div className="modal-content" style={{ maxWidth: '1300px', margin: '0 auto', width: '100%', flex: 1, display: 'flex', flexDirection: 'column', padding: '38px 40px' }}>
+    <>
+        <div id="challenge-modal" style={{ backgroundColor: '#eeeeee', minHeight: '100vh', display: 'flex', flexDirection: 'column', position: 'relative', zIndex: 30001 }}>
+            <div className="modal-content" style={{ maxWidth: '1300px', margin: '0 auto', width: '100%', flex: 1, display: 'flex', flexDirection: 'column', padding: '38px 40px', position: 'relative' }}>
             
             {/* 1. 상단 헤더 영역 (위치 고정) */}
-            <div className="modal-header-top" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '50px', gap: '30px' }}>
+            <div className="modal-header-top" style={{ 
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                alignItems: 'flex-start', 
+                marginBottom: '50px', 
+                gap: '30px',
+                position: 'relative',
+                zIndex: 10,
+                pointerEvents: 'auto'
+            }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '30px' }}>
-                    <h2 style={{ fontSize: '2rem', margin: 0, fontWeight: 'bold' }}>전체 챌린지</h2>
-                    <div className="search-bar" style={{ display: 'flex', alignItems: 'center', backgroundColor: 'white', borderRadius: '25px', padding: '8px 20px', border: '1px solid #ccc' }}>
-                        <input type="text" placeholder="Enter code" value={searchCode} onChange={(e) => setSearchCode(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') joinByCode(); }} style={{ border: 'none', outline: 'none', width: '180px' }} />
-                        <button onClick={() => joinByCode()} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
-                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <circle cx="11" cy="11" r="8"></circle>
-                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                            </svg>
-                        </button>
-                    </div>
+                    <h2 style={{ fontSize: '2rem', margin: 0, fontWeight: 'bold' }}>전체 챌린지</h2> 
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', marginRight: '145px' }}>
-                    <a href="#" style={{ color: '#666', fontSize: '0.9rem', textDecoration: 'none' }}>진행중인 챌린지 보러가기 →</a>
-                    <button style={{ backgroundColor: 'white', border: '1px solid #70c1b3', borderRadius: '25px', padding: '10px 25px', cursor: 'pointer', color: '#247b7b', fontWeight: 'bold' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', marginRight: '145px', position: 'relative', zIndex: 20000, pointerEvents: 'auto' }}>
+                    <a
+                        href="/ongoing-challenges"
+                        style={{ 
+                            color: '#666', 
+                            fontSize: '0.9rem', 
+                            textDecoration: 'none',
+                            cursor: 'pointer',
+                            padding: '5px',
+                            display: 'inline-block',
+                            position: 'relative',
+                            zIndex: 20001,
+                            pointerEvents: 'auto'
+                        }}
+                    >
+                        진행중인 챌린지 보러가기 →
+                    </a>
+                    <button 
+                        type="button"
+                        style={{ 
+                            backgroundColor: 'white', 
+                            border: '1px solid #70c1b3', 
+                            borderRadius: '25px', 
+                            padding: '10px 25px', 
+                            cursor: 'pointer', 
+                            color: '#247b7b', 
+                            fontWeight: 'bold'
+                        }}
+                        onClick={handleCreateChallenge}
+                    >
                         챌린지 만들기
                     </button>
                 </div>
@@ -430,7 +422,9 @@ return (
                 flexDirection: 'column',
                 justifyContent: loading || challenges.length === 0 ? 'center' : 'flex-start', /* 내용 없을 때 세로 중앙 */
                 alignItems: 'center', /* 가로 중앙 */
-                width: '100%'
+                width: '100%',
+                position: 'relative',
+                zIndex: 1
             }}>
                 {loading ? (
                     <p style={{ color: '#888', fontSize: '1.1rem' }}>챌린지를 불러오는 중...</p>
@@ -458,9 +452,22 @@ return (
                 )}
             </div>
         </div>
-
-        {/* ... 모달 로직 생략 */}
-    </div>
+        </div>
+        
+        {createChallengeModalOpen && (
+            <CreateChallengeModal 
+                setCreateChallengeOpen={setCreateChallengeModalOpen} 
+                closeCreateChallengeModal={() => setCreateChallengeModalOpen(false)}
+                onCreateSuccess={onCreateSuccess}
+            />
+        )}
+        {globalAlertOpen && (
+            <CustomAlertModal 
+                onClose={() => setGlobalAlertOpen(false)} 
+                message={globalAlertMessage} 
+            />
+        )}
+    </>
 );
 }
 
