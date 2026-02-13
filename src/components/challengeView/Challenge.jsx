@@ -309,12 +309,11 @@
 // ----------------------------------------------------------------
 
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import CreateChallengeModal from '../modal/CreateChallengeModal';
 import CustomAlertModal from '../modals/CustomAlertModal';
 
 function Challenge({ closeChallengeModal, onCreateSuccess }) {
-    const navigate = useNavigate();
     const [createChallengeModalOpen, setCreateChallengeModalOpen] = useState(false);
     const [challenges, setChallenges] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -428,10 +427,6 @@ return (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', marginRight: '145px', position: 'relative', zIndex: 20000, pointerEvents: 'auto' }}>
                     <a
                         href="/ongoing-challenges"
-                        onClick={(e) => {
-                            e.preventDefault();
-                            navigate('/ongoing-challenges');
-                        }}
                         style={{ 
                             color: '#666', 
                             fontSize: '0.9rem', 
