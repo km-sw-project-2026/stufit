@@ -17,6 +17,16 @@ export default async function onRequest(request, { env, params, userId }) {
         const id = Number(params.id);
         if (Number.isNaN(id)) return new Response('Invalid post id', { status: 400 });
 
+        // 디버그: 요청 헤더에서 X-Username / X-User-Id 확인 (배포 로그에서 확인하세요)
+        try {
+            const rawUsername = request.headers.get('X-Username');
+            const decodedUsername = rawUsername ? decodeURIComponent(rawUsername) : null;
+            const headerUserId = request.headers.get('X-User-Id') || request.headers.get('X-UserId');
+            console.debug('[post/[[id]]] request debug', { method: request.method, paramsId: params.id, rawUsername, decodedUsername, headerUserId, contextUserId: userId });
+        } catch (e) {
+            console.warn('[post/[[id]]] header debug failed', e?.message || e);
+        }
+
         // fetch post
         const post = await env.D1_DB.prepare('SELECT * FROM posts WHERE post_id = ?').bind(id).first();
         if (!post) return Response.json({ success: false, message: '게시글 없음' }, { status: 404 });

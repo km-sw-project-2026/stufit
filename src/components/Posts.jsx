@@ -10,6 +10,7 @@ import CommunityQuicklink from './main/CommunityQuicklink';
 import MainHero from './main/MainHero';
 import Attendance from './attendanceSection/Attendance';
 import Challenge from './challengeView/Challenge';
+import OngoingChallenge from './challengeView/OngoingChallenge';
 import Community from './communityView/Community';
 import Shop from './shopView/Shop';
 import Ranking from './rankingView/Ranking';

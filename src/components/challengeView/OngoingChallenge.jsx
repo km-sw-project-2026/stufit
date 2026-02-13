@@ -671,7 +671,23 @@ function OngoingChallenge() {
     };
 
     const CreateChallengeHandler = () => setCreateChallengeOpen(true);
-    const allChallenge = () => setIsChallengeModalVisible(true);
+    const allChallenge = (e) => {
+        if (e) e.preventDefault();
+        console.log('챌린지 전체보기 클릭됨');
+        const ongoingModal = document.getElementById('ongoing-challenge-modal');
+        const challengeModal = document.getElementById('challenge-modal');
+        console.log('ongoingModal:', ongoingModal);
+        console.log('challengeModal:', challengeModal);
+        if (ongoingModal) {
+            ongoingModal.style.display = 'none';
+            console.log('OngoingChallenge 모달 숨김');
+        }
+        if (challengeModal) {
+            challengeModal.style.display = 'flex';
+            console.log('Challenge 모달 표시');
+        }
+        window.scrollTo(0, 0);
+    };
     const closeCreateChallengeModal = () => {
         setCreateChallengeOpen(false);
         fetchChallenges(); // 챌린지 생성 후 목록 새로고침
@@ -811,9 +827,9 @@ function OngoingChallenge() {
     };
 
     return (
-        <div style={{ backgroundColor: '#eeeeee', minHeight: '100vh', padding: '38px 40px' }}>
+        <div id="ongoing-challenge-modal" style={{ backgroundColor: '#eeeeee', minHeight: '100vh', padding: '38px 40px', display: 'none' }}>
             {!isChallengeModalVisible && (
-                <div id="ongoing-challenge-modal" style={{ maxWidth: '1300px', margin: '0 auto' }}>
+                <div style={{ maxWidth: '1300px', margin: '0 auto' }}>
                     <div className="modal-content">
                         <div className="modal-header-top" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '50px', gap: '30px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '30px' }}>

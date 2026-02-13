@@ -395,15 +395,22 @@ function Challenge({ closeChallengeModal, onCreateSuccess }) {
         </div>
     );
 
-   // ... 상단 import 및 로직 생략
-
 return (
-    <div id="challenge-modal" style={{ backgroundColor: '#eeeeee', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-        <div className="modal-content" style={{ maxWidth: '1300px', margin: '0 auto', width: '100%', flex: 1, display: 'flex', flexDirection: 'column', padding: '38px 40px' }}>
+    <>
+        <div id="challenge-modal" style={{ backgroundColor: '#eeeeee', minHeight: '100vh', display: 'none', flexDirection: 'column', position: 'relative', zIndex: 1 }}>
+            <div className="modal-content" style={{ maxWidth: '1300px', margin: '0 auto', width: '100%', flex: 1, display: 'flex', flexDirection: 'column', padding: '38px 40px', position: 'relative' }}>
             
             {/* 1. 상단 헤더 영역 (위치 고정) */}
-            <div className="modal-header-top" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '50px', gap: '30px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '30px' }}>
+            <div className="modal-header-top" style={{ 
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                alignItems: 'flex-start', 
+                marginBottom: '50px', 
+                gap: '30px',
+                position: 'relative',
+                zIndex: 100
+            }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '30px', pointerEvents: 'auto' }}>
                     <h2 style={{ fontSize: '2rem', margin: 0, fontWeight: 'bold' }}>전체 챌린지</h2>
                     <div className="search-bar" style={{ display: 'flex', alignItems: 'center', backgroundColor: 'white', borderRadius: '25px', padding: '8px 20px', border: '1px solid #ccc' }}>
                         <input type="text" placeholder="Enter code" value={searchCode} onChange={(e) => setSearchCode(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') joinByCode(); }} style={{ border: 'none', outline: 'none', width: '180px' }} />
@@ -415,9 +422,64 @@ return (
                         </button>
                     </div>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', marginRight: '145px' }}>
-                    <a href="#" style={{ color: '#666', fontSize: '0.9rem', textDecoration: 'none' }}>진행중인 챌린지 보러가기 →</a>
-                    <button style={{ backgroundColor: 'white', border: '1px solid #70c1b3', borderRadius: '25px', padding: '10px 25px', cursor: 'pointer', color: '#247b7b', fontWeight: 'bold' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', marginRight: '145px', pointerEvents: 'auto', position: 'relative', zIndex: 101 }}>
+                    <span
+                        onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            alert('클릭됨!');
+                            console.log('=== 진행중인 챌린지 텍스트 클릭됨 ===');
+                            const challengeModal = document.getElementById('challenge-modal');
+                            const ongoingModal = document.getElementById('ongoing-challenge-modal');
+                            
+                            console.log('challengeModal:', challengeModal);
+                            console.log('ongoingModal:', ongoingModal);
+                            
+                            if (challengeModal) {
+                                console.log('Challenge 모달 숨김 처리');
+                                challengeModal.style.display = 'none';
+                            } else {
+                                console.error('challenge-modal을 찾을 수 없습니다!');
+                            }
+                            
+                            if (ongoingModal) {
+                                console.log('OngoingChallenge 모달 표시 처리');
+                                ongoingModal.style.display = 'block';
+                                console.log('표시 후 display:', ongoingModal.style.display);
+                            } else {
+                                console.error('ongoing-challenge-modal을 찾을 수 없습니다!');
+                            }
+                            
+                            window.scrollTo(0, 0);
+                        }}
+                        style={{ 
+                            color: '#666', 
+                            fontSize: '0.9rem', 
+                            cursor: 'pointer',
+                            padding: '5px',
+                            userSelect: 'none',
+                            zIndex: 999,
+                            position: 'relative',
+                            display: 'inline-block',
+                            backgroundColor: 'rgba(255,255,255,0.01)'
+                        }}
+                    >
+                        진행중인 챌린지 보러가기 →
+                    </span>
+                    <button 
+                        type="button"
+                        style={{ 
+                            backgroundColor: 'white', 
+                            border: '1px solid #70c1b3', 
+                            borderRadius: '25px', 
+                            padding: '10px 25px', 
+                            cursor: 'pointer', 
+                            color: '#247b7b', 
+                            fontWeight: 'bold',
+                            pointerEvents: 'auto'
+                        }}
+                        onClick={handleCreateChallenge}
+                    >
                         챌린지 만들기
                     </button>
                 </div>
@@ -458,9 +520,22 @@ return (
                 )}
             </div>
         </div>
-
-        {/* ... 모달 로직 생략 */}
-    </div>
+        </div>
+        
+        {createChallengeModalOpen && (
+            <CreateChallengeModal 
+                setCreateChallengeOpen={setCreateChallengeModalOpen} 
+                closeCreateChallengeModal={() => setCreateChallengeModalOpen(false)}
+                onCreateSuccess={onCreateSuccess}
+            />
+        )}
+        {globalAlertOpen && (
+            <CustomAlertModal 
+                onClose={() => setGlobalAlertOpen(false)} 
+                message={globalAlertMessage} 
+            />
+        )}
+    </>
 );
 }
 
