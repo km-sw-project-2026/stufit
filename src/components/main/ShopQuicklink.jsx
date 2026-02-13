@@ -3,14 +3,11 @@ import { useRef, useState, useEffect } from 'react';
 
 function ShopQuicklink () {
     const navigate = useNavigate();
-    // list of asset file names in src/assets/shop-items
-    const assetFiles = [
-        'anglerfish.png','bg-avocado.png','bg-cloud.png','bg-crescent.png','bg-curtain.png','bg-lemon.png','bg-lightgreen.png','bg-pinkdots.png','bg-redstar.png','bg-stage.png','bg-teeth.png','bg-throne.png','bg-tiger.png','duck.png','frame-avocado.png','frame-cherryblossom.png','frame-chicken.png','frame-dragon.png','frame-lemon.png','frame-mcburger.png','frame-mchat.png','frame-strawberry.png','frame-superstar.png','frame-vip.png','ghost.png','jellyfish-green.png','parrot.png','pumpkin.png','seagull.png','toxic-sludge.gif','umbrella-slime.png'
-    ];
-
-    // Limit number of items shown in the quicklink to avoid horizontal scrolling overload
+    // Use Vite's import.meta.glob to reliably collect asset URLs from src/assets/shop-items
     const maxItems = 8; // change this number to show more/less items
-    const images = assetFiles.slice(0, maxItems).map(name => new URL(`../../assets/shop-items/${name}`, import.meta.url).href);
+    const modules = import.meta.glob('../../assets/shop-items/*.{png,jpg,jpeg,gif}', { eager: true, as: 'url' });
+    const allImages = Object.values(modules || {});
+    const images = allImages.slice(0, maxItems);
 
     const [index, setIndex] = useState(0);
     const wrapperRef = useRef(null);
