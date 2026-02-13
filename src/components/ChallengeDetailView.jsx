@@ -25,6 +25,12 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose }) {
 
     useEffect(() => {
         document.body.classList.add('modal-open');
+        // Ensure header is visible when opening the detail view by scrolling to top
+        try {
+            window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+        } catch (e) {
+            // ignore in non-browser environments
+        }
         return () => document.body.classList.remove('modal-open');
     }, []);
 
