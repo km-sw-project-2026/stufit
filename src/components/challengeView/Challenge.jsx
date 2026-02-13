@@ -309,10 +309,12 @@
 // ----------------------------------------------------------------
 
 import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import CreateChallengeModal from '../modal/CreateChallengeModal';
 import CustomAlertModal from '../modals/CustomAlertModal';
 
 function Challenge({ closeChallengeModal, onCreateSuccess }) {
+    const navigate = useNavigate();
     const [createChallengeModalOpen, setCreateChallengeModalOpen] = useState(false);
     const [challenges, setChallenges] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -397,7 +399,7 @@ function Challenge({ closeChallengeModal, onCreateSuccess }) {
 
 return (
     <>
-        <div id="challenge-modal" style={{ backgroundColor: '#eeeeee', minHeight: '100vh', display: 'none', flexDirection: 'column', position: 'relative', zIndex: 1 }}>
+        <div id="challenge-modal" style={{ backgroundColor: '#eeeeee', minHeight: '100vh', display: 'flex', flexDirection: 'column', position: 'relative', zIndex: 30001 }}>
             <div className="modal-content" style={{ maxWidth: '1300px', margin: '0 auto', width: '100%', flex: 1, display: 'flex', flexDirection: 'column', padding: '38px 40px', position: 'relative' }}>
             
             {/* 1. 상단 헤더 영역 (위치 고정) */}
@@ -408,9 +410,10 @@ return (
                 marginBottom: '50px', 
                 gap: '30px',
                 position: 'relative',
-                zIndex: 100
+                zIndex: 10,
+                pointerEvents: 'auto'
             }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '30px', pointerEvents: 'auto' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '30px' }}>
                     <h2 style={{ fontSize: '2rem', margin: 0, fontWeight: 'bold' }}>전체 챌린지</h2>
                     <div className="search-bar" style={{ display: 'flex', alignItems: 'center', backgroundColor: 'white', borderRadius: '25px', padding: '8px 20px', border: '1px solid #ccc' }}>
                         <input type="text" placeholder="Enter code" value={searchCode} onChange={(e) => setSearchCode(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') joinByCode(); }} style={{ border: 'none', outline: 'none', width: '180px' }} />
@@ -422,50 +425,27 @@ return (
                         </button>
                     </div>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', marginRight: '145px', pointerEvents: 'auto', position: 'relative', zIndex: 101 }}>
-                    <span
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', marginRight: '145px', position: 'relative', zIndex: 20000, pointerEvents: 'auto' }}>
+                    <a
+                        href="/ongoing-challenges"
                         onClick={(e) => {
                             e.preventDefault();
-                            e.stopPropagation();
-                            alert('클릭됨!');
-                            console.log('=== 진행중인 챌린지 텍스트 클릭됨 ===');
-                            const challengeModal = document.getElementById('challenge-modal');
-                            const ongoingModal = document.getElementById('ongoing-challenge-modal');
-                            
-                            console.log('challengeModal:', challengeModal);
-                            console.log('ongoingModal:', ongoingModal);
-                            
-                            if (challengeModal) {
-                                console.log('Challenge 모달 숨김 처리');
-                                challengeModal.style.display = 'none';
-                            } else {
-                                console.error('challenge-modal을 찾을 수 없습니다!');
-                            }
-                            
-                            if (ongoingModal) {
-                                console.log('OngoingChallenge 모달 표시 처리');
-                                ongoingModal.style.display = 'block';
-                                console.log('표시 후 display:', ongoingModal.style.display);
-                            } else {
-                                console.error('ongoing-challenge-modal을 찾을 수 없습니다!');
-                            }
-                            
-                            window.scrollTo(0, 0);
+                            navigate('/ongoing-challenges');
                         }}
                         style={{ 
                             color: '#666', 
                             fontSize: '0.9rem', 
+                            textDecoration: 'none',
                             cursor: 'pointer',
                             padding: '5px',
-                            userSelect: 'none',
-                            zIndex: 999,
-                            position: 'relative',
                             display: 'inline-block',
-                            backgroundColor: 'rgba(255,255,255,0.01)'
+                            position: 'relative',
+                            zIndex: 20001,
+                            pointerEvents: 'auto'
                         }}
                     >
                         진행중인 챌린지 보러가기 →
-                    </span>
+                    </a>
                     <button 
                         type="button"
                         style={{ 
@@ -475,8 +455,7 @@ return (
                             padding: '10px 25px', 
                             cursor: 'pointer', 
                             color: '#247b7b', 
-                            fontWeight: 'bold',
-                            pointerEvents: 'auto'
+                            fontWeight: 'bold'
                         }}
                         onClick={handleCreateChallenge}
                     >
@@ -492,7 +471,9 @@ return (
                 flexDirection: 'column',
                 justifyContent: loading || challenges.length === 0 ? 'center' : 'flex-start', /* 내용 없을 때 세로 중앙 */
                 alignItems: 'center', /* 가로 중앙 */
-                width: '100%'
+                width: '100%',
+                position: 'relative',
+                zIndex: 1
             }}>
                 {loading ? (
                     <p style={{ color: '#888', fontSize: '1.1rem' }}>챌린지를 불러오는 중...</p>

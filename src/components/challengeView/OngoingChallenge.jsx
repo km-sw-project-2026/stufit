@@ -604,12 +604,14 @@
 
 
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import CreateChallengeModal from '../modal/CreateChallengeModal';
 import EditChallengeModal from '../modal/EditChallengeModal'; 
 import Challenge from './Challenge';
 import ChallengeDetailView from '../ChallengeDetailView';
 
 function OngoingChallenge() {
+    const navigate = useNavigate();
     const [createChallengeModalOpen, setCreateChallengeOpen] = useState(false);
     const [isChallengeModalVisible, setIsChallengeModalVisible] = useState(false);
     const [selectedChallenge, setSelectedChallenge] = useState(null);
@@ -673,19 +675,7 @@ function OngoingChallenge() {
     const CreateChallengeHandler = () => setCreateChallengeOpen(true);
     const allChallenge = (e) => {
         if (e) e.preventDefault();
-        console.log('챌린지 전체보기 클릭됨');
-        const ongoingModal = document.getElementById('ongoing-challenge-modal');
-        const challengeModal = document.getElementById('challenge-modal');
-        console.log('ongoingModal:', ongoingModal);
-        console.log('challengeModal:', challengeModal);
-        if (ongoingModal) {
-            ongoingModal.style.display = 'none';
-            console.log('OngoingChallenge 모달 숨김');
-        }
-        if (challengeModal) {
-            challengeModal.style.display = 'flex';
-            console.log('Challenge 모달 표시');
-        }
+        navigate('/challenge');
         window.scrollTo(0, 0);
     };
     const closeCreateChallengeModal = () => {
@@ -827,7 +817,7 @@ function OngoingChallenge() {
     };
 
     return (
-        <div id="ongoing-challenge-modal" style={{ backgroundColor: '#eeeeee', minHeight: '100vh', padding: '38px 40px', display: 'none' }}>
+        <div id="ongoing-challenge-modal" style={{ backgroundColor: '#eeeeee', minHeight: '100vh', padding: '38px 40px', display: 'block' }}>
             {!isChallengeModalVisible && (
                 <div style={{ maxWidth: '1300px', margin: '0 auto' }}>
                     <div className="modal-content">
