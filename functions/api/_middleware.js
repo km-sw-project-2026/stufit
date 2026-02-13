@@ -24,6 +24,24 @@ export async function onRequest(context) {
       console.warn('Failed to resolve username to userId:', err);
     }
   }
+
+  // Fallback: allow clients to send userId directly (useful for dev or when username lookup fails)
+  if (!userId) {
+    const headerUserId = request.headers.get('X-User-Id') || request.headers.get('X-UserId');
+    if (headerUserId) {
+      const parsed = Number(headerUserId);
+      if (!Number.isNaN(parsed)) {
+        userId = parsed;
+      }
+    }
+  }
+
+  if (!userId) {
+    // Add a helpful debug note; avoid leaking sensitive data in production logs.
+    console.debug('[middleware] userId not resolved from X-Username or X-User-Id');
+  } else {
+    console.debug('[middleware] resolved userId:', userId);
+  }
   
   // userId를 context에 추가
   context.userId = userId;
