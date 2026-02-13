@@ -99,6 +99,7 @@
 // --------------------------------------- 수정 코드( 밑에)
 
 
+
 interface Env {
   // ⚠️ 중요: 만약 wrangler.json의 binding이 'D1_DB'라면 아래 DB를 D1_DB로 수정하세요.
   DB: any; 
