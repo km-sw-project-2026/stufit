@@ -25,6 +25,7 @@ import * as commentLike from '../functions/api/comment/[id]/like';
 import * as shopPurchase from '../functions/api/shop/purchase';
 import * as userPoints from '../functions/api/user/points';
 import * as userResolve from '../functions/api/user/resolve';
+import * as userStats from '../functions/api/user/stats';
 
 // challenges extra
 import * as progress from '../functions/api/challenges/[id]/progress';
@@ -222,6 +223,10 @@ export default {
       if (pathname === '/api/user/points' || pathname.startsWith('/api/user/points/')) {
         return userPoints.onRequestGet({ request, env, userId });
       }
+      if (pathname === '/api/user/stats' || pathname.startsWith('/api/user/stats/')) {
+        // stats handler reads userId from query or X-Username header itself
+        return userStats.onRequestGet({ request, env });
+      }
 
       if (pathname === '/api/shop/purchase' || pathname.startsWith('/api/shop/purchase/')) {
         return shopPurchase.onRequestPost({ request, env, userId });
@@ -360,7 +365,7 @@ export default {
             return challengeJoin(request, { env, params: { id }, userId });
 
           default:
-            return new Response('Not Found', { status: 404 });
+            return new Response(JSON.stringify({ message: 'Not Found' }), { status: 404, headers: { 'Content-Type': 'application/json' } });
         }
       }
 
@@ -370,7 +375,7 @@ export default {
         return postById.default(request, { env, params: { id: postMatchAuth[1] }, userId });
       }
 
-      return new Response('Not Found', { status: 404 });
+      return new Response(JSON.stringify({ message: 'Not Found' }), { status: 404, headers: { 'Content-Type': 'application/json' } });
     } catch (err) {
       console.error("❌ WORKER ERROR: - index.js:323", err?.message || String(err));
       return new Response(

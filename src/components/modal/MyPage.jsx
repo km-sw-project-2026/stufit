@@ -71,14 +71,21 @@ function MyPage({ isOpen, onClose }) {
       }
 
       try {
-        const response = await fetch(`/api/user/stats?userId=${userId}`, {
-          headers: { 'X-Username': username || '' },
+        const response = await fetch(`/api/user/stats?userId=${userId}&t=${Date.now()}`, {
+          headers: { 
+            'X-Username': username || '',
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+          },
         });
-        const data = await response.json();
-
         if (!response.ok) {
+          const text = await response.text().catch(() => '');
+          console.error('Stats fetch failed:', response.status, text);
           return;
         }
+
+        const data = await response.json();
 
         if (data.success && data.stats) {
           const posts = data.stats.posts;
@@ -167,10 +174,13 @@ function MyPage({ isOpen, onClose }) {
           frameOverlay.style.left = '0';
           const widthPct = (scale * 100).toFixed(2) + '%';
           const offsetPct = (scale - 1) / 2 * 100;
-          const topOffset = offsetPct + 20; // 위로 5% 추가 이동
+          const additionalOffsetY = frameItem.myPageOffsetY ?? 20;
+          const additionalOffsetX = frameItem.myPageOffsetX ?? 0;
+          const topOffset = offsetPct + additionalOffsetY;
+          const leftOffset = offsetPct + additionalOffsetX;
           frameOverlay.style.width = widthPct;
           frameOverlay.style.height = widthPct;
-          frameOverlay.style.left = `-${offsetPct.toFixed(2)}%`;
+          frameOverlay.style.left = `-${leftOffset.toFixed(2)}%`;
           frameOverlay.style.top = `-${topOffset.toFixed(2)}%`;
           frameOverlay.style.objectFit = 'contain';
           frameOverlay.style.pointerEvents = 'none';
@@ -213,6 +223,24 @@ function MyPage({ isOpen, onClose }) {
     };
 
     window.addEventListener('pointsUpdated', handlePointsUpdated);
+    const handleUserStatsChanged = (event) => {
+      const detail = event?.detail || {};
+      console.log('[MyPage] user-stats-changed received:', detail);
+      const parseCount = (s) => {
+        try { return Number(String(s).replace(/\D/g, '')) || 0; } catch { return 0; }
+      };
+      setUserData((prev) => {
+        if (!prev) return prev;
+        const prevPosts = parseCount(prev.posts);
+        const prevComments = parseCount(prev.comments);
+        const postsDelta = Number(detail.postsDelta || 0);
+        const commentsDelta = Number(detail.commentsDelta || 0);
+        const next = { ...prev, posts: `${Math.max(0, prevPosts + postsDelta)}개`, comments: `${Math.max(0, prevComments + commentsDelta)}개` };
+        console.log('[MyPage] updated counts ->', next.posts, next.comments);
+        return next;
+      });
+    };
+
     const handlePurchasedUpdated = () => {
       const stored = localStorage.getItem('purchasedItems');
       let count = 0;
@@ -225,13 +253,28 @@ function MyPage({ isOpen, onClose }) {
 
       setUserData((prev) => (prev ? { ...prev, items: `${count}개` } : prev));
     };
-
+    const handleStorageEventForStats = (e) => {
+      try {
+        if (!e || !e.key) return;
+        if (e.key === 'mypage_posts_count' || e.key === 'mypage_comments_count') {
+          const posts = Number(localStorage.getItem('mypage_posts_count') || '0');
+          const comments = Number(localStorage.getItem('mypage_comments_count') || '0');
+          setUserData((prev) => prev ? { ...prev, posts: `${posts}개`, comments: `${comments}개` } : prev);
+        }
+      } catch (err) {
+        console.warn('storage handler error', err);
+      }
+    };
     window.addEventListener('purchasedItemsUpdated', handlePurchasedUpdated);
     window.addEventListener('storage', handlePurchasedUpdated);
+    window.addEventListener('user-stats-changed', handleUserStatsChanged);
+    window.addEventListener('storage', handleStorageEventForStats);
     return () => {
       window.removeEventListener('pointsUpdated', handlePointsUpdated);
       window.removeEventListener('purchasedItemsUpdated', handlePurchasedUpdated);
       window.removeEventListener('storage', handlePurchasedUpdated);
+      window.removeEventListener('user-stats-changed', handleUserStatsChanged);
+      window.removeEventListener('storage', handleStorageEventForStats);
     };
   }, [isOpen]);
 

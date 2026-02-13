@@ -1,8 +1,6 @@
 
-
-
-// import React, { useState, useEffect } from 'react';
-// import CustomAlertModal from '../modal/CustomAlertModal';
+import React, { useState, useEffect } from 'react';
+import CustomAlertModal from '../modal/CustomAlertModal';
 
 // function Attendance() {
 //   const [checkedDays, setCheckedDays] = useState(Array(7).fill(false));
@@ -108,24 +106,39 @@
 
 
 
-// ----------------------   원래 쓰던거
+function Attendance() {
+  const [checkedDays, setCheckedDays] = useState(Array(7).fill(false));
+  const [lastCheckDate, setLastCheckDate] = useState(null);
+  const [isAlertOpen, setIsAlertOpen] = useState(false);
+  const [alertMessage, setAlertMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
+  const days = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+  const points = ["100P", "120P", "140P", "160P", "180P", "200P", "220P"];
 
+  const todayIndex = new Date().getDay();
+  const todayDateString = new Date().toLocaleDateString();
 
-// import React, { useState, useEffect } from 'react';
-// import CustomAlertModal from '../modal/CustomAlertModal';
+  useEffect(() => {
+    // 로컬스토리지에서 저장된 데이터 로드
+    const savedData = localStorage.getItem('stufit_attendance');
+    if (savedData) {
+      try {
+        const parsed = JSON.parse(savedData);
+      showAlert("오늘 출석은 이미 완료되었습니다. 내일 다시 와주세요!");
+        </div>
 
-// function Attendance() {
-//   const [checkedDays, setCheckedDays] = useState(Array(7).fill(false));
-//   const [lastCheckDate, setLastCheckDate] = useState(null);
-//   const [isAlertOpen, setIsAlertOpen] = useState(false);
-//   const [alertMessage, setAlertMessage] = useState("");
+        {isAlertOpen && (
+          <CustomAlertModal 
+            message={alertMessage} 
+            onClose={() => setIsAlertOpen(false)} 
+          />
+        )}
+      </div>
+    );
+  }
 
-//   const days = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
-//   const points = ["100P", "120P", "140P", "160P", "180P", "200P", "220P"];
-
-//   const todayIndex = new Date().getDay();
-//   const todayDateString = new Date().toLocaleDateString();
+  export default Attendance;
 
 //   useEffect(() => {
 //     const savedData = localStorage.getItem('stufit_attendance');
