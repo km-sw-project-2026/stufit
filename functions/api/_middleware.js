@@ -4,8 +4,9 @@
 export async function onRequest(context) {
   const { request, env, next } = context;
   
-  // X-Username 헤더 확인
-  const username = request.headers.get('X-Username');
+  // X-Username 헤더 확인 (인코딩된 값도 처리할 수 있도록 디코드)
+  const rawUsername = request.headers.get('X-Username');
+  const username = rawUsername ? decodeURIComponent(rawUsername) : null;
   
   let userId;
   

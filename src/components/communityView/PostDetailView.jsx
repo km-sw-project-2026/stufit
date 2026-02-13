@@ -86,6 +86,22 @@ function PostDetailView({ post, onClose, onDeletePost, onEditPost, onUpdatePostS
             const created = payload.data ? mapComment(payload.data) : null;
             if (created) {
                 setComments((s) => [...s, created]);
+                // Notify other UI (MyPage) that user's comment count increased
+                try {
+                    console.log('[PostDetailView] dispatching user-stats-changed +1 comment');
+                    window.dispatchEvent(new CustomEvent('user-stats-changed', { detail: { postsDelta: 0, commentsDelta: 1 } }));
+                } catch (e) {
+                    console.warn('Event dispatch failed:', e);
+                }
+                try {
+                    const key = 'mypage_comments_count';
+                    const prev = Number(localStorage.getItem(key) || '0');
+                    localStorage.setItem(key, String(prev + 1));
+                    // also trigger storage event for same-window listeners
+                    window.dispatchEvent(new StorageEvent('storage', { key, newValue: String(prev + 1), oldValue: String(prev) }));
+                } catch (e) {
+                    console.warn('localStorage update failed:', e);
+                }
             }
             setNewComment('');
 
@@ -214,11 +230,27 @@ function PostDetailView({ post, onClose, onDeletePost, onEditPost, onUpdatePostS
                         const updated = { ...postState, comments: (postState?.comments || 1) - 1 };
                         setPostState(updated);
                         if (onUpdatePostState) onUpdatePostState(updated);
+                        // Notify other UI (MyPage) that user's comment count decreased
+                        try {
+                            console.log('[PostDetailView] dispatching user-stats-changed -1 comment');
+                            window.dispatchEvent(new CustomEvent('user-stats-changed', { detail: { postsDelta: 0, commentsDelta: -1 } }));
+                        } catch (e) {
+                            console.warn('Event dispatch failed:', e);
+                        }
                         setConfirmModal({ show: false, message: '', onConfirm: null });
                         setAlertModal({ show: true, message: '댓글이 삭제되었습니다.' });
                     } catch (error) {
                         console.error('댓글 삭제 실패:', error);
                         alert('댓글 삭제에 실패했습니다.');
+                    }
+                    try {
+                        const key = 'mypage_comments_count';
+                        const prev = Number(localStorage.getItem(key) || '0');
+                        const next = Math.max(0, prev - 1);
+                        localStorage.setItem(key, String(next));
+                        window.dispatchEvent(new StorageEvent('storage', { key, newValue: String(next), oldValue: String(prev) }));
+                    } catch (e) {
+                        console.warn('localStorage update failed:', e);
                     }
                 })();
             }
