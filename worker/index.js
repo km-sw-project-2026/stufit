@@ -139,7 +139,7 @@ export default {
       }
 
       const postMatch = pathname.match(/^\/api\/post\/(\d+)$/);
-      if (postMatch) {
+      if (postMatch && request.method === 'GET') {
         return postById.onRequestGet({ env, params: { id: postMatch[1] } });
       }
 
