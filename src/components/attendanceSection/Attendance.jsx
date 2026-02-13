@@ -203,6 +203,8 @@ function Attendance() {
       setIsLoading(false);
     }
 
+  };
+
   return (
     <div className="attendance-section">
       <div className="attendance-header">
