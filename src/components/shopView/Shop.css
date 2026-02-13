@@ -706,7 +706,7 @@
 
 @media (max-width: 480px) {
     .shop-container {
-        min-height: auto;
+        min-height: unset;
     }
 
     .sidebar-menu {

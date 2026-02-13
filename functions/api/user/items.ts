@@ -50,8 +50,8 @@ export async function onRequestGet(context: { request: Request; env: any; userId
             }),
             { status: 200, headers: { 'Content-Type': 'application/json' } }
         );
-    } catch (err) {
-        console.error('❌ USER ITEMS GET ERROR:', err?.message);
+    } catch (err: any) {
+        console.error('❌ USER ITEMS GET ERROR:', err?.message || String(err));
         return new Response(
             JSON.stringify({ message: '아이템 정보를 불러올 수 없습니다.' }),
             { status: 500, headers: { 'Content-Type': 'application/json' } }
@@ -135,8 +135,8 @@ export async function onRequestPut(context: { request: Request; env: any; userId
             JSON.stringify({ success: true, message: '아이템이 적용되었습니다.' }),
             { status: 200, headers: { 'Content-Type': 'application/json' } }
         );
-    } catch (err) {
-        console.error('❌ USER ITEMS PUT ERROR:', err?.message);
+    } catch (err: any) {
+        console.error('❌ USER ITEMS PUT ERROR:', err?.message || String(err));
         return new Response(
             JSON.stringify({ message: '아이템 적용에 실패했습니다.' }),
             { status: 500, headers: { 'Content-Type': 'application/json' } }
