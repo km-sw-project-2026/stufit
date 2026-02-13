@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 
 
 
@@ -253,8 +253,7 @@
 // ------------------위에 코드에서 또 수정
 
 
-=======
->>>>>>> 18e352e2ece97040d14260b1fb26918fbb7530f7
+
 import React, { useState, useEffect } from 'react';
 import CustomAlertModal from '../modal/CustomAlertModal';
 
