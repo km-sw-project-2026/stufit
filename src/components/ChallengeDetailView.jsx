@@ -289,17 +289,24 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose }) {
         }
     };
 
-    // Polling helper: only fetch members list (lighter) on interval
+    // Polling helper: fetch full detail instead of members-only endpoint
     const pollMembers = async () => {
         if (!challenge?.challenge_id) return;
         try {
             const username = localStorage.getItem('username');
             const headers = {};
             if (username) headers['X-Username'] = username;
-            const res = await fetch(`/api/challenges/${challenge.challenge_id}/members`, { headers });
+            const res = await fetch(`/api/challenges/${challenge.challenge_id}`, { headers });
+            if (res.status === 404) {
+                console.warn('[pollMembers] challenge not found (404)');
+                return;
+            }
             if (!res.ok) return;
             const payload = await res.json();
-            const list = payload?.members || [];
+            const list = (payload?.data && payload.data.members) ? payload.data.members : (payload?.members || []);
+            if ((list.length === 0) && payload?.data?.isJoined && username) {
+                list.push({ user_id: null, username, status: 'not_submitted' });
+            }
             setMembers(list || []);
         } catch (e) {
             console.error('pollMembers 실패:', e);
