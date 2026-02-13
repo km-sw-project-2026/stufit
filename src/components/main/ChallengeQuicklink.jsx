@@ -24,6 +24,7 @@ function ChallengeQuicklink() {
 
     const handleNavigate = () => {
         navigate('/challenge');
+        window.scrollTo(0, 0);
     };
 
     return (

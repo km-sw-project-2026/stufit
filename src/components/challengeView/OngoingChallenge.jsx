@@ -604,12 +604,14 @@
 
 
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import CreateChallengeModal from '../modal/CreateChallengeModal';
 import EditChallengeModal from '../modal/EditChallengeModal'; 
 import Challenge from './Challenge';
 import ChallengeDetailView from '../ChallengeDetailView';
 
 function OngoingChallenge() {
+    const navigate = useNavigate();
     const [createChallengeModalOpen, setCreateChallengeOpen] = useState(false);
     const [isChallengeModalVisible, setIsChallengeModalVisible] = useState(false);
     const [selectedChallenge, setSelectedChallenge] = useState(null);
@@ -671,7 +673,11 @@ function OngoingChallenge() {
     };
 
     const CreateChallengeHandler = () => setCreateChallengeOpen(true);
-    const allChallenge = () => setIsChallengeModalVisible(true);
+    const allChallenge = (e) => {
+        if (e) e.preventDefault();
+        navigate('/challenge');
+        window.scrollTo(0, 0);
+    };
     const closeCreateChallengeModal = () => {
         setCreateChallengeOpen(false);
         fetchChallenges(); // 챌린지 생성 후 목록 새로고침
@@ -811,9 +817,9 @@ function OngoingChallenge() {
     };
 
     return (
-        <div style={{ backgroundColor: '#eeeeee', minHeight: '100vh', padding: '38px 40px' }}>
+        <div id="ongoing-challenge-modal" style={{ backgroundColor: '#eeeeee', minHeight: '100vh', padding: '38px 40px', display: 'block' }}>
             {!isChallengeModalVisible && (
-                <div id="ongoing-challenge-modal" style={{ maxWidth: '1300px', margin: '0 auto' }}>
+                <div style={{ maxWidth: '1300px', margin: '0 auto' }}>
                     <div className="modal-content">
                         <div className="modal-header-top" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '50px', gap: '30px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '30px' }}>

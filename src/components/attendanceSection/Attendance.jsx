@@ -107,6 +107,11 @@
 // --------------------------------------------------------------
 
 
+
+// ----------------------   원래 쓰던거
+
+
+
 import React, { useState, useEffect } from 'react';
 import CustomAlertModal from '../modal/CustomAlertModal';
 
@@ -236,7 +241,15 @@ export default Attendance;
 
 
 
-// ------------------------------------------------
+// -----------------------------------------------------------
+
+
+
+
+
+
+
+// ------------------위에 코드에서 또 수정
 
 
 // import React, { useState, useEffect } from 'react';
@@ -252,23 +265,65 @@ export default Attendance;
 //   const points = ["100P", "120P", "140P", "160P", "180P", "200P", "220P"];
 
 //   const todayIndex = new Date().getDay();
-//   const todayDateString = new Date().toLocaleDateString();
+//   const todayDateString = new Date().toISOString().split('T')[0];
 
+//   // 🚀 1. 유저 변경 감지 및 데이터 동기화 로직
 //   useEffect(() => {
-//     const savedData = localStorage.getItem('stufit_attendance');
-//     if (savedData) {
-//       const { days, date } = JSON.parse(savedData);
-//       setCheckedDays(days);
-//       setLastCheckDate(date);
-//     }
-//   }, []);
+//     const fetchAttendance = async () => {
+//       const userId = localStorage.getItem('userId');
+      
+//       // 🧹 혼선을 주는 기존 로컬 저장소 데이터를 강제로 삭제합니다.
+//       localStorage.removeItem('stufit_attendance'); 
+
+//       if (!userId || userId === "null" || userId === "undefined") {
+//         setCheckedDays(Array(7).fill(false));
+//         return;
+//       }
+
+//       try {
+//         // 캐시 방지를 위해 타임스탬프(t)를 추가하여 항상 최신 DB 값을 가져옵니다.
+//         const response = await fetch(`/api/attendance?userId=${userId}&t=${new Date().getTime()}`);
+        
+//         if (response.ok) {
+//           const data = await response.json();
+//           const newCheckedDays = Array(7).fill(false);
+          
+//           const today = new Date();
+//           const sunday = new Date(today);
+//           sunday.setDate(today.getDate() - today.getDay());
+//           sunday.setHours(0, 0, 0, 0); 
+
+//           // 서버 DB에 기록된 날짜들로만 체크 표시를 생성합니다.
+//           if (data.logs && Array.isArray(data.logs)) {
+//             data.logs.forEach(log => {
+//               const logDate = new Date(log.date);
+//               if (logDate >= sunday) {
+//                 newCheckedDays[logDate.getDay()] = true;
+//               }
+//             });
+//           }
+
+//           setCheckedDays(newCheckedDays);
+          
+//           if (data.logs && data.logs.some(log => log.date === todayDateString)) {
+//             setLastCheckDate(todayDateString);
+//           }
+//         } else {
+//           setCheckedDays(Array(7).fill(false));
+//         }
+//       } catch (error) {
+//         console.error("출석 데이터 로딩 실패:", error);
+//       }
+//     };
+
+//     fetchAttendance();
+//   }, [todayDateString, localStorage.getItem('userId')]); // userId 변경 시마다 다시 실행
 
 //   const showAlert = (msg) => {
 //     setAlertMessage(msg);
 //     setIsAlertOpen(true);
 //   };
 
-//   // 🚀 서버 연동을 위해 async 함수로 변경
 //   const handleCardClick = async (index) => {
 //     if (index !== todayIndex) {
 //       showAlert(`오늘은 ${days[todayIndex]}요일입니다. 해당 요일에만 출석 가능해요!`);
@@ -279,43 +334,30 @@ export default Attendance;
 //       return;
 //     }
 
-//     // 1. 유저 정보 및 인증 토큰 가져오기
 //     const userId = localStorage.getItem('userId');
-//     const token = localStorage.getItem('token'); // 👈 401 에러 방지를 위해 토큰 확인
-
-//     if (!userId || !token) {
+//     if (!userId || userId === "null") {
 //       showAlert("로그인이 필요한 서비스입니다.");
 //       return;
 //     }
 
 //     try {
-//       // 2. 서버 DB에 출석 정보 전송
+//       // 🚀 2. 서버(D1 DB)에 출석 기록 저장 요청
 //       const response = await fetch('/api/attendance', {
 //         method: 'POST',
-//         headers: { 
-//           'Content-Type': 'application/json',
-//           'Authorization': `Bearer ${token}` // 👈 인증 헤더 추가
-//         },
+//         headers: { 'Content-Type': 'application/json' },
 //         body: JSON.stringify({ userId, date: todayDateString })
 //       });
 
 //       if (response.ok) {
-//         // 3. 서버 저장 성공 시 화면 UI 업데이트
 //         const newCheckedDays = [...checkedDays];
 //         newCheckedDays[index] = true;
 //         setCheckedDays(newCheckedDays);
 //         setLastCheckDate(todayDateString);
         
-//         localStorage.setItem('stufit_attendance', JSON.stringify({
-//           days: newCheckedDays,
-//           date: todayDateString
-//         }));
-        
 //         showAlert(`${days[index]}요일 출석 완료! 랭킹 포인트가 반영되었습니다.`);
-//       } else if (response.status === 401) {
-//         showAlert("인증이 만료되었습니다. 다시 로그인해주세요.");
 //       } else {
-//         showAlert("출석 처리 중 오류가 발생했습니다.");
+//         const errorData = await response.json();
+//         showAlert(errorData.message || "출석 처리 중 오류가 발생했습니다.");
 //       }
 //     } catch (error) {
 //       console.error("Attendance error:", error);
@@ -323,6 +365,7 @@ export default Attendance;
 //     }
 //   };
 
+//   // 기존 디자인 코드는 그대로 유지합니다. [cite: 2026-02-13]
 //   return (
 //     <div className="attendance-section">
 //       <div className="attendance-header">
@@ -372,11 +415,3 @@ export default Attendance;
 // }
 
 // export default Attendance;
-
-
-
-
-
-
-
-

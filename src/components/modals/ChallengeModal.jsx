@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 
 function ChallengeModal({ onClose }) {
   const [searchCode, setSearchCode] = useState('');
@@ -39,7 +40,9 @@ function ChallengeModal({ onClose }) {
     <div className="modal">
       <div className="modal-content">
         <div className="ongoing-challenge-link">
-          <a href="#">진행중인 챌린지 보러가기 →</a>
+          <Link to="/ongoing-challenges" style={{ textDecoration: 'none', color: '#666' }}>
+            진행중인 챌린지 보러가기 →
+          </Link>
         </div>
         <div className="modal-header-top">
           <div className="header-left">

@@ -33,7 +33,7 @@ function Header() {
 
     return (
         <>
-            <div className="header">
+            <div className="header" style={{ position: 'relative', zIndex: 2000 }}>
                 {/* 로고 이미지 영역 (클릭 시 메인 페이지로 이동) */}
                 <div className="logo">
                     <Link to="/" id="logo-link"><img src="/img/logo.png" alt="Stufit Logo" /></Link>
