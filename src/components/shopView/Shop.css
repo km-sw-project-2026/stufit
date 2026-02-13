@@ -100,36 +100,6 @@
     white-space: nowrap;
 }
 
-.shop-points-actions {
-    display: flex;
-    align-items: center;
-}
-
-.shop-dev-points-button {
-    border: 1px solid rgba(18, 153, 144, 0.35);
-    background: rgba(18, 153, 144, 0.08);
-    color: #0f7f77;
-    font-size: 11px;
-    font-weight: 600;
-    padding: 4px 8px;
-    border-radius: 999px;
-    cursor: pointer;
-    transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.2s ease;
-}
-
-.shop-dev-points-button:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 10px rgba(18, 153, 144, 0.18);
-    background: rgba(18, 153, 144, 0.16);
-}
-
-.shop-dev-points-button:disabled {
-    cursor: not-allowed;
-    opacity: 0.6;
-    box-shadow: none;
-    transform: none;
-}
-
 .shop-points-label {
     color: #777;
     font-weight: 500;

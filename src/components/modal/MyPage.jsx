@@ -174,10 +174,13 @@ function MyPage({ isOpen, onClose }) {
           frameOverlay.style.left = '0';
           const widthPct = (scale * 100).toFixed(2) + '%';
           const offsetPct = (scale - 1) / 2 * 100;
-          const topOffset = offsetPct + 20; // 위로 5% 추가 이동
+          const additionalOffsetY = frameItem.myPageOffsetY ?? 20;
+          const additionalOffsetX = frameItem.myPageOffsetX ?? 0;
+          const topOffset = offsetPct + additionalOffsetY;
+          const leftOffset = offsetPct + additionalOffsetX;
           frameOverlay.style.width = widthPct;
           frameOverlay.style.height = widthPct;
-          frameOverlay.style.left = `-${offsetPct.toFixed(2)}%`;
+          frameOverlay.style.left = `-${leftOffset.toFixed(2)}%`;
           frameOverlay.style.top = `-${topOffset.toFixed(2)}%`;
           frameOverlay.style.objectFit = 'contain';
           frameOverlay.style.pointerEvents = 'none';
