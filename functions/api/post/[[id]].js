@@ -1,27 +1,39 @@
 
+const DEPLOY_TAG = (new Date()).toISOString();
+
+function jsonResponse(obj, status = 200) {
+    return new Response(JSON.stringify(obj), {
+        status,
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Deploy-Tag': DEPLOY_TAG
+        }
+    });
+}
+
 export async function onRequestGet({ env, params }) {
     const { id } = params;
 
     const result = await env.D1_DB.prepare('SELECT p.*, u.username FROM posts p LEFT JOIN users u ON p.user_id = u.user_id WHERE post_id = ?').bind(id).first();
 
     if (!result) {
-        return new Response('Post not found', { status: 404 });
+        return jsonResponse({ message: 'Post not found' }, 404);
     }
 
-    return Response.json(result);
+    return jsonResponse(result, 200);
 }
 
 // Authenticated handler for methods that require a logged-in user (DELETE / PUT)
 export default async function onRequest(request, { env, params, userId }) {
     try {
         const id = Number(params.id);
-        if (Number.isNaN(id)) return new Response('Invalid post id', { status: 400 });
+        if (Number.isNaN(id)) return jsonResponse({ message: 'Invalid post id' }, 400);
 
         console.log('[post/[[id]]] handler', request.method, 'postId:', id, 'userId:', userId);
 
         // fetch post
         const post = await env.D1_DB.prepare('SELECT * FROM posts WHERE post_id = ?').bind(id).first();
-        if (!post) return Response.json({ success: false, message: '게시글 없음' }, { status: 404 });
+        if (!post) return jsonResponse({ success: false, message: '게시글 없음' }, 404);
 
         // only owner can modify/delete
         if (post.user_id !== userId) {
@@ -48,25 +60,25 @@ export default async function onRequest(request, { env, params, userId }) {
             const delRes = await env.D1_DB.prepare('DELETE FROM posts WHERE post_id = ?').bind(id).run();
             console.log('[post/[[id]]] delete result meta:', delRes?.meta || delRes);
 
-            return Response.json({ success: true, data: { postId: id }, message: '게시글 삭제 완료' });
+            return jsonResponse({ success: true, data: { postId: id }, message: '게시글 삭제 완료' }, 200);
         }
 
         if (request.method === 'PUT' || request.method === 'PATCH') {
             const body = await request.json().catch(() => null) || {};
             const { title, content } = body;
-            if (!title && !content) return Response.json({ success: false, message: '변경할 내용이 없습니다.' }, { status: 400 });
+            if (!title && !content) return jsonResponse({ success: false, message: '변경할 내용이 없습니다.' }, 400);
 
             const now = new Date().toISOString();
             await env.D1_DB.prepare('UPDATE posts SET title = COALESCE(?, title), content = COALESCE(?, content), updated_at = ? WHERE post_id = ?')
                 .bind(title, content, now, id).run();
 
             const updated = await env.D1_DB.prepare('SELECT * FROM posts WHERE post_id = ?').bind(id).first();
-            return Response.json({ success: true, data: updated, message: '게시글 수정 완료' });
+            return jsonResponse({ success: true, data: updated, message: '게시글 수정 완료' }, 200);
         }
 
-        return new Response('Method not allowed', { status: 405 });
+        return jsonResponse({ message: 'Method not allowed' }, 405);
     } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
-        return Response.json({ success: false, message: 'DB 오류 발생', error: message }, { status: 500 });
+        return jsonResponse({ success: false, message: 'DB 오류 발생', error: message }, 500);
     }
 }
