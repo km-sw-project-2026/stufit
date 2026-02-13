@@ -378,7 +378,7 @@ return (
                 pointerEvents: 'auto'
             }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '30px' }}>
-                    <h2 style={{ fontSize: '2rem', margin: 0, fontWeight: 'bold' }}>전체 챌린지</h2>
+                    <h2 style={{ fontSize: '2rem', margin: 0, fontWeight: 'bold' }}>전체 챌린지</h2> 
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', marginRight: '145px', position: 'relative', zIndex: 20000, pointerEvents: 'auto' }}>
                     <a
