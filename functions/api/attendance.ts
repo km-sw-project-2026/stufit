@@ -5,6 +5,49 @@ interface Env {
   D1_DB: any;
 }
 
+// GET: 사용자의 출석 기록 조회 (로그인된 계정별 연속출석 확인)
+export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
+  try {
+    const url = new URL(request.url);
+    const userId = url.searchParams.get('userId');
+
+    if (!userId) {
+      return new Response(JSON.stringify({ message: "userId가 필요합니다." }), { 
+        status: 400, 
+        headers: { "Content-Type": "application/json" } 
+      });
+    }
+
+    console.log(`[Attendance API GET] Fetching attendance for userId: ${userId}`);
+
+    // 이번 주(일요일부터 시작) 이후의 출석 기록 조회
+    const today = new Date();
+    const sunday = new Date(today);
+    sunday.setDate(today.getDate() - today.getDay());
+    sunday.setHours(0, 0, 0, 0);
+    const sundayStr = sunday.toISOString().split('T')[0];
+
+    const logs = await env.D1_DB.prepare(
+      "SELECT date FROM attendance_logs WHERE user_id = ? AND date >= ? ORDER BY date ASC"
+    ).bind(userId, sundayStr).all();
+
+    return new Response(JSON.stringify({ 
+      success: true,
+      logs: logs.results || []
+    }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" }
+    });
+
+  } catch (e: any) {
+    console.error("Attendance GET Error:", e);
+    return new Response(JSON.stringify({ error: e.message }), { 
+      status: 500,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+};
+
 export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   console.log('[Attendance API] Started processing request');
   try {
