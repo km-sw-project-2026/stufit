@@ -95,71 +95,96 @@ function ShopQuicklink() {
           </button>
 
           <div className="shop-items-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 700, height: 240, overflow: 'hidden' }}>
-            {images.map((src, i) => {
-              const n = images.length;
-              let pos = ((i - index) + n) % n; // circular relative position (0..n-1)
-              if (pos > n / 2) pos -= n; // convert to negative side for left
-              const absPos = Math.abs(pos);
+            {
+              (() => {
+                const containerWidth = 700;
+                const base = 100;
+                const gap = 20; // left+right margins total
+                const slot = base + gap;
+                const translateX = Math.round(containerWidth / 2 - (index * slot + base / 2));
 
-              const base = 100;
-              let scale = 0.65;
-              let zIndex = 1;
-              let opacity = 0;
-              let display = 'block';
+                return (
+                  <div
+                    className="shop-items-row"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      transition: 'transform 300ms ease',
+                      transform: `translateX(${translateX}px)`,
+                      willChange: 'transform'
+                    }}
+                  >
+                    {images.map((src, i) => {
+                      const n = images.length;
+                      let pos = ((i - index) + n) % n;
+                      if (pos > n / 2) pos -= n;
+                      const absPos = Math.abs(pos);
 
-              if (absPos === 0) {
-                scale = scaleActive ? 1.5 : 1.0;
-                zIndex = 6;
-                opacity = 1;
-              } else if (absPos === 1) {
-                scale = 1.05;
-                zIndex = 4;
-                opacity = 0.95;
-              } else if (absPos === 2) {
-                scale = 0.9;
-                zIndex = 3;
-                opacity = 0.6;
-              } else if (absPos <= 3) {
-                scale = 0.75;
-                zIndex = 2;
-                opacity = 0.35;
-              } else {
-                // hide distant items so they don't clutter view
-                display = 'none';
-              }
+                      let scale = 0.65;
+                      let zIndex = 1;
+                      let opacity = 0;
+                      let pointerEvents = 'auto';
 
-              return (
-                <div
-                  key={i}
-                  onClick={() => jumpTo(i)}
-                  style={{
-                    display,
-                    width: base,
-                    height: base,
-                    flex: `0 0 ${base}px`,
-                    borderRadius: '50%',
-                    overflow: 'hidden',
-                    display: display === 'none' ? 'none' : 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    transition: `${absPos === 0 ? 'transform 300ms ease, box-shadow 300ms ease, opacity 300ms ease' : 'transform 0ms, opacity 200ms'}`,
-                    transform: `scale(${scale})`,
-                    transformOrigin: 'center center',
-                    boxShadow: absPos === 0 ? '0 10px 30px rgba(0,0,0,0.12)' : 'none',
-                    zIndex,
-                    opacity,
-                    margin: '0 10px',
-                    background: '#fff',
-                    position: 'relative',
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
-                    backgroundImage: `url(${src})`,
-                    cursor: 'pointer',
-                    willChange: 'transform'
-                  }}
-                />
-              );
-            })}
+                      if (absPos === 0) {
+                        scale = scaleActive ? 1.5 : 1.0;
+                        zIndex = 6;
+                        opacity = 1;
+                      } else if (absPos === 1) {
+                        scale = 1.05;
+                        zIndex = 4;
+                        opacity = 0.95;
+                      } else if (absPos === 2) {
+                        scale = 0.9;
+                        zIndex = 3;
+                        opacity = 0.6;
+                      } else if (absPos <= 3) {
+                        scale = 0.75;
+                        zIndex = 2;
+                        opacity = 0.35;
+                      } else {
+                        // keep space but invisible and non-interactive
+                        scale = 0.6;
+                        zIndex = 1;
+                        opacity = 0;
+                        pointerEvents = 'none';
+                      }
+
+                      return (
+                        <div
+                          key={i}
+                          onClick={() => jumpTo(i)}
+                          style={{
+                            width: base,
+                            height: base,
+                            flex: `0 0 ${base}px`,
+                            borderRadius: '50%',
+                            overflow: 'hidden',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            transition: `${absPos === 0 ? 'transform 300ms ease, box-shadow 300ms ease, opacity 300ms ease' : 'transform 0ms, opacity 200ms'}`,
+                            transform: `scale(${scale})`,
+                            transformOrigin: 'center center',
+                            boxShadow: absPos === 0 ? '0 10px 30px rgba(0,0,0,0.12)' : 'none',
+                            zIndex,
+                            opacity,
+                            margin: '0 10px',
+                            background: '#fff',
+                            position: 'relative',
+                            backgroundSize: 'cover',
+                            backgroundPosition: 'center',
+                            backgroundImage: `url(${src})`,
+                            cursor: pointerEvents === 'none' ? 'default' : 'pointer',
+                            pointerEvents,
+                            willChange: 'transform'
+                          }}
+                        />
+                      );
+                    })}
+                  </div>
+                );
+              })()
+            }
           </div>
 
           <button
