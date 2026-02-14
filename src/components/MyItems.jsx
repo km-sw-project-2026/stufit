@@ -8,65 +8,63 @@ function MyItems() {
   const [isItemDetailOpen, setIsItemDetailOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState('all');
 
-  const [purchasedItemsByKey, setPurchasedItemsByKey] = useState(() => {
-    const stored = localStorage.getItem('purchasedItems');
-    if (!stored) return {};
+  const [purchasedItemsByKey, setPurchasedItemsByKey] = useState({});
 
-    try {
-      const parsed = JSON.parse(stored);
-      return parsed && typeof parsed === 'object' ? parsed : {};
-    } catch {
-      return {};
-    }
-  });
-
-  const [activeItems, setActiveItems] = useState(() => {
-    try {
-      const stored = localStorage.getItem('activeItems');
-      return stored ? JSON.parse(stored) : {};
-    } catch {
-      return {};
-    }
-  });
+  const [activeItems, setActiveItems] = useState({});
 
   useEffect(() => {
-    const onStorage = (e) => {
-      if (e.key === 'purchasedItems') {
-        try {
-          const parsed = JSON.parse(e.newValue || '{}');
-          setPurchasedItemsByKey(parsed && typeof parsed === 'object' ? parsed : {});
-        } catch {
-          setPurchasedItemsByKey({});
+    const fetchUserItems = async () => {
+      const userId = localStorage.getItem('userId');
+      const username = localStorage.getItem('username');
+
+      if (!userId) {
+        setPurchasedItemsByKey({});
+        setActiveItems({});
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/user/items?userId=${userId}`, {
+          headers: { 'X-Username': username || '' },
+        });
+        const data = await response.json();
+
+        if (!response.ok) {
+          console.error('Failed to fetch user items:', data?.message);
+          return;
         }
+
+        // purchasedItems는 itemId 배열
+        const itemIds = data?.purchasedItems || [];
+        const purchasedMap = {};
+        
+        itemIds.forEach(itemId => {
+          const item = shopItems.find(it => it.id === itemId);
+          if (item) {
+            const key = `${item.type}:${item.id}`;
+            purchasedMap[key] = true;
+          }
+        });
+
+        setPurchasedItemsByKey(purchasedMap);
+
+        // activeItems는 { image: itemId, frame: itemId, bg: itemId }
+        setActiveItems(data?.activeItems || {});
+      } catch (err) {
+        console.error('User items fetch error:', err);
       }
     };
 
-    window.addEventListener('storage', onStorage);
-    const onActiveStorage = (e) => {
-      if (e.key === 'activeItems') {
-        try {
-          const parsed = JSON.parse(e.newValue || '{}');
-          setActiveItems(parsed && typeof parsed === 'object' ? parsed : {});
-        } catch {
-          setActiveItems({});
-        }
-      }
+    fetchUserItems();
+
+    // 커스텀 이벤트 리스너 (아이템 구매/적용 시 리프레시)
+    window.addEventListener('purchasedItemsUpdated', fetchUserItems);
+    window.addEventListener('activeItemsUpdated', fetchUserItems);
+
+    return () => {
+      window.removeEventListener('purchasedItemsUpdated', fetchUserItems);
+      window.removeEventListener('activeItemsUpdated', fetchUserItems);
     };
-    window.addEventListener('storage', onActiveStorage);
-    const handleActiveEvent = (ev) => {
-      const next = ev?.detail || {};
-      try {
-        const stored = JSON.parse(localStorage.getItem('activeItems') || '{}');
-        setActiveItems(stored && typeof stored === 'object' ? stored : {});
-      } catch {
-        setActiveItems({});
-      }
-    };
-    window.addEventListener('activeItemsUpdated', handleActiveEvent);
-    return () => window.removeEventListener('storage', onStorage);
-    // cleanup additional listeners
-    window.removeEventListener('storage', onActiveStorage);
-    window.removeEventListener('activeItemsUpdated', handleActiveEvent);
   }, []);
 
   const handleItemClick = (item) => {

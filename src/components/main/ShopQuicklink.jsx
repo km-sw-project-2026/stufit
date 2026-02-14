@@ -26,9 +26,11 @@ function ShopQuicklink () {
         }
     }, [index]);
 
+
     // Circular navigation
     const prev = () => setIndex(i => (i - 1 + images.length) % images.length);
     const next = () => setIndex(i => (i + 1) % images.length);
+
     return(
         <div className="shop-quicklink">
                     <div className="shop-header">
