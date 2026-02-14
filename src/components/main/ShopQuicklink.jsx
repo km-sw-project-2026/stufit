@@ -89,6 +89,24 @@ function ShopQuicklink() {
     console.log('ShopQuicklink', { mounted: mountedFlag, virtualIndex, logicalIndex, containerWidth, displayImagesLength: displayImages.length });
   }, [mountedFlag, virtualIndex, logicalIndex, containerWidth]);
 
+  useEffect(() => {
+    // log a small neighborhood of image srcs to inspect their values
+    try {
+      const start = Math.max(0, virtualIndex - 3);
+      const end = Math.min(displayImages.length, virtualIndex + 4);
+      const infos = displayImages.slice(start, end).map((s, idx) => ({
+        i: start + idx,
+        type: typeof s,
+        val: (typeof s === 'string' && s.length > 60) ? `${s.slice(0,60)}...` : String(s)
+      }));
+      // eslint-disable-next-line no-console
+      console.log('ShopQuicklink neighborhood', { infos });
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error('ShopQuicklink debug fail', e);
+    }
+  }, [virtualIndex]);
+
   // navigation to a logical index (click/pagination)
   const jumpTo = (logical) => {
     setScaleActive(false);
@@ -248,6 +266,10 @@ function ShopQuicklink() {
                           <img
                             src={src}
                             alt="item"
+                            onLoad={() => {
+                              // eslint-disable-next-line no-console
+                              console.log('ShopQuicklink image loaded', src);
+                            }}
                             onError={(e) => {
                               // eslint-disable-next-line no-console
                               console.warn('ShopQuicklink image failed to load, using placeholder', src);
@@ -258,7 +280,8 @@ function ShopQuicklink() {
                               height: '100%',
                               objectFit: 'cover',
                               display: 'block',
-                              borderRadius: '50%'
+                              borderRadius: '50%',
+                              border: '1px solid rgba(0,0,0,0.06)'
                             }}
                           />
                         </div>
