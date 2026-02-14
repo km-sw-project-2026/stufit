@@ -4,6 +4,157 @@ import HostGiveUpModal from "./modal/HostGiveUpModal";
 import FinalGiveUpModal from "./modal/FinalGiveUpModal";
 import CustomAlertModal from "./modal/CustomAlertModal";
 
+// 주간 제출 현황 컴포넌트
+function WeeklySubmissionStatus({ challengeId }) {
+    const [weekData, setWeekData] = useState([]);
+    const [username, setUsername] = useState('');
+
+    const daysOfWeek = ['월', '화', '수', '목', '금', '토', '일'];
+
+    useEffect(() => {
+        const user = localStorage.getItem('username');
+        setUsername(user || '');
+        loadWeeklyData();
+    }, [challengeId]);
+
+    const loadWeeklyData = async () => {
+        try {
+            const user = localStorage.getItem('username');
+            if (!user || !challengeId) return;
+
+            const response = await fetch(`/api/challenges/${challengeId}/progress`, {
+                headers: { 'X-Username': user }
+            });
+
+            if (!response.ok) return;
+
+            const result = await response.json();
+            const rows = Array.isArray(result?.data) ? result.data : [];
+            const userRows = rows.filter(row => row.username === user);
+
+            // 오늘 기준 최근 7일 계산
+            const today = new Date();
+            const last7Days = [];
+            
+            for (let i = 6; i >= 0; i--) {
+                const date = new Date(today);
+                date.setDate(date.getDate() - i);
+                const dateStr = date.toISOString().split('T')[0];
+                const hasSubmitted = userRows.some(row => row.date === dateStr);
+                last7Days.push({ dateStr, hasSubmitted });
+            }
+
+            setWeekData(last7Days);
+        } catch (error) {
+            console.error('주간 데이터 로드 실패:', error);
+        }
+    };
+
+    return (
+        <div style={{
+            border: '1px solid #70c1b3',
+            borderRadius: '15px',
+            padding: '20px',
+            backgroundColor: '#f9fffe'
+        }}>
+            {/* 사용자 정보 */}
+            <div style={{
+                marginBottom: '20px',
+                paddingBottom: '15px',
+                borderBottom: '1px solid #ddd'
+            }}>
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px'
+                }}>
+                    <img 
+                        src="/img/Profile.png" 
+                        alt="Profile" 
+                        style={{
+                            width: '35px',
+                            height: '35px',
+                            borderRadius: '50%',
+                            objectFit: 'cover'
+                        }}
+                    />
+                    <span style={{
+                        fontSize: '0.95rem',
+                        fontWeight: '600',
+                        color: '#333'
+                    }}>
+                        {username}
+                    </span>
+                </div>
+            </div>
+
+            {/* 주간 제출 현황 */}
+            <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'flex-end',
+                gap: '8px'
+            }}>
+                {weekData.map((day, idx) => (
+                    <div key={idx} style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: '8px',
+                        flex: 1
+                    }}>
+                        {/* 요일 표시 */}
+                        <div style={{
+                            fontSize: '0.9rem',
+                            fontWeight: '600',
+                            color: '#666',
+                            height: '20px',
+                            display: 'flex',
+                            alignItems: 'center'
+                        }}>
+                            {daysOfWeek[idx]}
+                        </div>
+
+                        {/* 제출 상태 원형 버튼 */}
+                        <div style={{
+                            width: '40px',
+                            height: '40px',
+                            borderRadius: '50%',
+                            border: '2px solid',
+                            borderColor: day.hasSubmitted ? '#70c1b3' : '#ddd',
+                            backgroundColor: day.hasSubmitted ? '#70c1b3' : 'white',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'default',
+                            transition: 'all 0.2s ease'
+                        }}>
+                            {day.hasSubmitted && (
+                                <span style={{
+                                    color: 'white',
+                                    fontSize: '1.2rem',
+                                    fontWeight: 'bold'
+                                }}>
+                                    ✓
+                                </span>
+                            )}
+                        </div>
+
+                        {/* 날짜 */}
+                        <div style={{
+                            fontSize: '0.75rem',
+                            color: '#999',
+                            height: '16px'
+                        }}>
+                            {new Date(day.dateStr).getDate()}
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
+
 function ChallengeDetailView({ challenge: initialChallenge, onClose }) {
     const [challenge, setChallenge] = useState(initialChallenge);
     const [modalOpen, setModalOpen] = useState(false);
@@ -479,64 +630,8 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose }) {
                                 </>
                             ) : (
                                 <>
-                                    <h3>참여 현황</h3>
-                                    <div className="status-grid">
-                                        <div className="status-item">
-                                            <div className="status-user">
-                                                <div className="status-avatar">
-                                                    <img src="img/Profile.png" alt="Profile" />
-                                                </div>
-                                                <span>김예선</span>
-                                            </div>
-                                            <span className="status-label success">인증 완료</span>
-                                        </div>
-                                        <div className="status-item">
-                                            <div className="status-user">
-                                                <div className="status-avatar">
-                                                    <img src="img/Profile.png" alt="Profile" />
-                                                </div>
-                                                <span>이정민</span>
-                                            </div>
-                                            <span className="status-label danger">미제출</span>
-                                        </div>
-                                        <div className="status-item">
-                                            <div className="status-user">
-                                                <div className="status-avatar">
-                                                    <img src="img/Profile.png" alt="Profile" />
-                                                </div>
-                                                <span>이정민</span>
-                                            </div>
-                                            <span className="status-label danger">미제출</span>
-                                        </div>
-
-                                        <div className="status-item">
-                                            <div className="status-user">
-                                                <div className="status-avatar">
-                                                    <img src="img/Profile.png" alt="Profile" />
-                                                </div>
-                                                <span>유태민</span>
-                                            </div>
-                                            <span className="status-label success">인증 완료</span>
-                                        </div>
-                                        <div className="status-item">
-                                            <div className="status-user">
-                                                <div className="status-avatar">
-                                                    <img src="img/Profile.png" alt="Profile" />
-                                                </div>
-                                                <span>박현서</span>
-                                            </div>
-                                            <span className="status-label warning">인증 실패</span>
-                                        </div>
-                                        <div className="status-item">
-                                            <div className="status-user">
-                                                <div className="status-avatar">
-                                                    <img src="img/Profile.png" alt="Profile" />
-                                                </div>
-                                                <span>박현서</span>
-                                            </div>
-                                            <span className="status-label warning">인증 실패</span>
-                                        </div>
-                                    </div>
+                                    <h3 className="detail-title-left">참여 현황</h3>
+                                    <WeeklySubmissionStatus challengeId={challenge?.challenge_id} />
                                 </>
                             )}
                         </div>
