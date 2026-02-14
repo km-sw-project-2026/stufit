@@ -47,8 +47,6 @@ function MyItems() {
         });
 
         setPurchasedItemsByKey(purchasedMap);
-
-        // activeItems는 { image: itemId, frame: itemId, bg: itemId }
         setActiveItems(data?.activeItems || {});
       } catch (err) {
         console.error('User items fetch error:', err);
