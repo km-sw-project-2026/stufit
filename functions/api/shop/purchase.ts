@@ -23,6 +23,7 @@ export async function onRequestPost(context: { request: Request; env: any; userI
         const fallbackUserId = Number(body?.userId);
         const userId = typeof authenticatedUserId === 'number' ? authenticatedUserId : fallbackUserId;
         const price = Number(body?.price);
+        const itemId = Number(body?.itemId);
 
         if (!userId || Number.isNaN(userId)) {
             return new Response(
@@ -70,10 +71,33 @@ export async function onRequestPost(context: { request: Request; env: any; userI
             );
         }
 
+        // 이미 보유한 아이템인지 확인
+        if (itemId && !Number.isNaN(itemId)) {
+            const existingItem = await env.D1_DB
+                .prepare('SELECT 1 FROM user_items WHERE user_id = ? AND item_id = ?')
+                .bind(userId, itemId)
+                .first();
+
+            if (existingItem) {
+                return new Response(
+                    JSON.stringify({ message: '이미 보유한 아이템입니다.' }),
+                    { status: 400, headers: { 'Content-Type': 'application/json' } }
+                );
+            }
+        }
+
         await env.D1_DB
             .prepare('UPDATE user_profiles SET points = points - ? WHERE user_id = ?')
             .bind(price, userId)
             .run();
+
+        // user_items에 아이템 추가
+        if (itemId && !Number.isNaN(itemId)) {
+            await env.D1_DB
+                .prepare('INSERT OR IGNORE INTO user_items (user_id, item_id) VALUES (?, ?)')
+                .bind(userId, itemId)
+                .run();
+        }
 
         const nextPoints = currentPoints - price;
 

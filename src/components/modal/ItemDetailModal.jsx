@@ -33,32 +33,44 @@ function ItemDetailModal({ isOpen, onClose, item }) {
                 <>
                   <button 
                     className={`item-detail-use-btn ${item.isUsing ? 'using' : ''}`}
-                    onClick={() => {
-                      // 적용 상태 토글: localStorage.activeItems에 타입별로 id를 저장
+                    onClick={async () => {
+                      const userId = localStorage.getItem('userId');
+                      const username = localStorage.getItem('username');
+
+                      if (!userId) {
+                        alert('로그인이 필요합니다.');
+                        return;
+                      }
+
                       try {
-                        const stored = localStorage.getItem('activeItems');
-                        let active = {};
-                        if (stored) {
-                          active = JSON.parse(stored) || {};
+                        const isRemoving = item.isUsing;
+                        const response = await fetch('/api/user/items', {
+                          method: 'PUT',
+                          headers: {
+                            'Content-Type': 'application/json',
+                            'X-Username': username || '',
+                          },
+                          body: JSON.stringify({
+                            userId: Number(userId),
+                            itemType: item.type,
+                            itemId: isRemoving ? null : item.id,
+                          }),
+                        });
+
+                        const data = await response.json();
+
+                        if (!response.ok) {
+                          alert(data?.message || '아이템 적용에 실패했습니다.');
+                          return;
                         }
 
-                        if (active[item.type] === item.id) {
-                          // 이미 적용중이면 해제
-                          delete active[item.type];
-                          alert('아이템 사용을 해제했습니다.');
-                        } else {
-                          active[item.type] = item.id;
-                          alert('아이템을 적용했습니다.');
-                        }
-
-                        localStorage.setItem('activeItems', JSON.stringify(active));
-                        try {
-                          window.dispatchEvent(new CustomEvent('activeItemsUpdated', { detail: { type: item.type, id: active[item.type] ?? null } }));
-                        } catch (e) {
-                          // ignore
-                        }
+                        alert(isRemoving ? '아이템 사용을 해제했습니다.' : '아이템을 적용했습니다.');
+                        
+                        // 이벤트 발생으로 다른 컴포넌트에 알림
+                        window.dispatchEvent(new CustomEvent('activeItemsUpdated'));
                       } catch (err) {
-                        console.error('activeItems 토글 실패:', err);
+                        console.error('아이템 적용 실패:', err);
+                        alert('아이템 적용 중 오류가 발생했습니다.');
                       }
 
                       onClose();

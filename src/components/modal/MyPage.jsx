@@ -5,7 +5,6 @@ import { shopItems } from '../shopView/shopItems';
 function MyPage({ isOpen, onClose }) {
   const [userData, setUserData] = useState(null);
   const navigate = useNavigate();
-  const useLocalPoints = true;
 
   const formatPoints = (value) => {
     const numeric = Number(value);
@@ -35,44 +34,56 @@ function MyPage({ isOpen, onClose }) {
     const userId = localStorage.getItem('userId');
     const cachedPoints = localStorage.getItem('points');
 
-    if (username) {
-      const computeOwnedCount = () => {
-        try {
-          const stored = localStorage.getItem('purchasedItems');
-          if (!stored) return 0;
-          const parsed = JSON.parse(stored);
-          if (!parsed || typeof parsed !== 'object') return 0;
-          return Object.keys(parsed).length;
-        } catch (err) {
-          console.error('purchasedItems 파싱 실패:', err);
-          return 0;
-        }
-      };
-
-      const ownedCount = computeOwnedCount();
-
-      setUserData({
-        username: username,
-        score: '0',
-        joinDate: localStorage.getItem('joinDate') || '2024년 7월 1일',
-        rank: '1위',
-        currentRank: '1위',
-        challenges: '10개',
-        points: cachedPoints ? Number(cachedPoints) : 0,
-        posts: '0개',
-        comments: '0개',
-        items: `${ownedCount}개`
-      });
-    }
-
     const fetchStats = async () => {
       if (!userId) {
+        // 로그인 안 된 경우 기본값 설정
+        if (username) {
+          setUserData({
+            username: username,
+            score: '0',
+            joinDate: localStorage.getItem('joinDate') || '2024년 7월 1일',
+            rank: '1위',
+            currentRank: '1위',
+            challenges: '10개',
+            points: cachedPoints ? Number(cachedPoints) : 0,
+            posts: '0개',
+            comments: '0개',
+            items: '0개'
+          });
+        }
         return;
       }
 
       try {
-        const response = await fetch(`/api/user/stats?userId=${userId}`, {
+        // 사용자 아이템 정보 가져오기
+        const itemsResponse = await fetch(`/api/user/items?userId=${userId}`, {
           headers: { 'X-Username': username || '' },
+        });
+        const itemsData = await itemsResponse.json();
+        const ownedCount = itemsData?.purchasedItems?.length || 0;
+
+        // 초기 userData 설정 (아이템 개수 포함)
+        setUserData({
+          username: username || '',
+          score: '0',
+          joinDate: localStorage.getItem('joinDate') || '2024년 7월 1일',
+          rank: '1위',
+          currentRank: '1위',
+          challenges: '10개',
+          points: cachedPoints ? Number(cachedPoints) : 0,
+          posts: '0개',
+          comments: '0개',
+          items: `${ownedCount}개`
+        });
+
+        // 통계 정보 가져오기
+        const response = await fetch(`/api/user/stats?userId=${userId}&t=${Date.now()}`, {
+          headers: { 
+            'X-Username': username || '',
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+          },
         });
         const data = await response.json();
 
@@ -83,15 +94,12 @@ function MyPage({ isOpen, onClose }) {
         if (data.success && data.stats) {
           const posts = data.stats.posts;
           const comments = data.stats.comments;
-
-          if (!useLocalPoints) {
-            const nextPoints = Number(data.stats.points) || 0;
-            localStorage.setItem('points', String(nextPoints));
-          }
+          const nextPoints = Number(data.stats.points) || 0;
+          localStorage.setItem('points', String(nextPoints));
 
           setUserData((prev) => (prev ? {
             ...prev,
-            ...(useLocalPoints ? {} : { points: Number(data.stats.points) || 0 }),
+            points: nextPoints,
             posts: `${posts}개`,
             comments: `${comments}개`
           } : prev));
@@ -108,22 +116,29 @@ function MyPage({ isOpen, onClose }) {
   useEffect(() => {
     if (!isOpen) return;
 
-    const readActive = () => {
-      try {
-        const stored = localStorage.getItem('activeItems');
-        const parsed = stored ? JSON.parse(stored) : {};
-        return parsed && typeof parsed === 'object' ? parsed : {};
-      } catch {
-        return {};
-      }
-    };
+    const applyActiveToUI = async () => {
+      const userId = localStorage.getItem('userId');
+      const username = localStorage.getItem('username');
 
-    const applyActiveToUI = () => {
-      const active = readActive();
-      // set CSS or state via DOM updates below by setting attributes on body or storing in local state
-      const frameItem = active.frame ? shopItems.find(s => s.id === Number(active.frame)) : null;
-      const bgItem = active.bg ? shopItems.find(s => s.id === Number(active.bg)) : null;
-      const imageItem = active.image ? shopItems.find(s => s.id === Number(active.image)) : null;
+      if (!userId) {
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/user/items?userId=${userId}`, {
+          headers: { 'X-Username': username || '' },
+        });
+        const data = await response.json();
+
+        if (!response.ok) {
+          console.error('Failed to fetch active items:', data?.message);
+          return;
+        }
+
+        const active = data?.activeItems || {};
+        const frameItem = active.frame ? shopItems.find(s => s.id === Number(active.frame)) : null;
+        const bgItem = active.bg ? shopItems.find(s => s.id === Number(active.bg)) : null;
+        const imageItem = active.image ? shopItems.find(s => s.id === Number(active.image)) : null;
 
       // Apply background to header area only
       const headerBgEl = document.querySelector('.mypage-header .mypage-header-bg');
@@ -189,16 +204,17 @@ function MyPage({ isOpen, onClose }) {
           frameOverlay.style.zIndex = '';
         }
       }
+      } catch (err) {
+        console.error('Active items fetch error:', err);
+      }
     };
 
     applyActiveToUI();
 
     const handleActiveEvent = () => applyActiveToUI();
     window.addEventListener('activeItemsUpdated', handleActiveEvent);
-    window.addEventListener('storage', handleActiveEvent);
     return () => {
       window.removeEventListener('activeItemsUpdated', handleActiveEvent);
-      window.removeEventListener('storage', handleActiveEvent);
     };
   }, [isOpen]);
 
