@@ -87,9 +87,31 @@ function Shop() {
     const handleAddPoints = async () => {
         const amount = 1000000;
         const currentUsername = localStorage.getItem('username');
-        const currentUserId = localStorage.getItem('userId') || userId;
+        let resolvedUserId = localStorage.getItem('userId') || userId;
 
-        if (!currentUserId) {
+        if (!resolvedUserId && currentUsername) {
+            try {
+                const resolveResponse = await fetch(`/api/user/resolve?username=${encodeURIComponent(currentUsername)}`, {
+                    headers: { 'X-Username': currentUsername || '' },
+                });
+                let resolveData = null;
+                try {
+                    resolveData = await resolveResponse.json();
+                } catch {
+                    resolveData = null;
+                }
+
+                if (resolveResponse.ok && resolveData?.userId) {
+                    resolvedUserId = String(resolveData.userId);
+                    localStorage.setItem('userId', resolvedUserId);
+                    setUserId(resolvedUserId);
+                }
+            } catch (err) {
+                console.error('Resolve userId error (add points):', err);
+            }
+        }
+
+        if (!resolvedUserId) {
             openAlert('로그인 후 이용해주세요.');
             return;
         }
@@ -101,18 +123,19 @@ function Shop() {
                     'Content-Type': 'application/json',
                     'X-Username': currentUsername || '',
                 },
-                body: JSON.stringify({ userId: Number(currentUserId), amount }),
+                body: JSON.stringify({ userId: Number(resolvedUserId), amount }),
             });
 
             let data = null;
+            let rawText = '';
             try {
                 data = await response.json();
             } catch {
-                data = null;
+                rawText = await response.text().catch(() => '');
             }
 
             if (!response.ok) {
-                openAlert(data?.message || '포인트 추가에 실패했습니다.');
+                openAlert(data?.message || rawText || `포인트 추가에 실패했습니다. (${response.status})`);
                 return;
             }
 
@@ -280,7 +303,8 @@ function Shop() {
                 const purchasedMap = {};
 
                 itemIds.forEach(itemId => {
-                    const item = shopItems.find(it => it.id === itemId);
+                    const normalizedItemId = Number(itemId);
+                    const item = shopItems.find(it => it.id === normalizedItemId);
                     if (item) {
                         const key = buildWishlistKey(item.type, item.id);
                         purchasedMap[key] = true;

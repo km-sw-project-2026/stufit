@@ -21,6 +21,18 @@ export async function onRequestGet(context: { request: Request; env: any; userId
             );
         }
 
+        const existingUser = await env.D1_DB
+            .prepare('SELECT user_id FROM users WHERE user_id = ?')
+            .bind(userId)
+            .first();
+
+        if (!existingUser) {
+            return new Response(
+                JSON.stringify({ message: '유효하지 않은 사용자입니다. 다시 로그인 후 시도해주세요.' }),
+                { status: 400, headers: { 'Content-Type': 'application/json' } }
+            );
+        }
+
         const profile = await env.D1_DB
             .prepare('SELECT points FROM user_profiles WHERE user_id = ?')
             .bind(userId)
