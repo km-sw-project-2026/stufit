@@ -182,7 +182,7 @@ function Shop() {
                     'Content-Type': 'application/json',
                     'X-Username': currentUsername || '',
                 },
-                body: JSON.stringify({ userId: Number(resolvedUserId), price, itemName: item?.name, itemId: item?.id }),
+                body: JSON.stringify({ userId: Number(resolvedUserId), price, itemName: item?.name, itemType: item?.type, itemId: item?.id }),
             });
 
             const data = await response.json();
