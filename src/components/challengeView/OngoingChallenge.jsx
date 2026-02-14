@@ -608,7 +608,6 @@ import { useNavigate } from 'react-router-dom';
 import CreateChallengeModal from '../modal/CreateChallengeModal';
 import EditChallengeModal from '../modal/EditChallengeModal'; 
 import Challenge from './Challenge';
-import ChallengeDetailView from '../ChallengeDetailView';
 
 function OngoingChallenge() {
     const navigate = useNavigate();
@@ -683,7 +682,9 @@ function OngoingChallenge() {
         fetchChallenges(); // 챌린지 생성 후 목록 새로고침
     };
     const closeChallengeModal = () => setIsChallengeModalVisible(false);
-    const openChallengeDetail = (challenge) => setSelectedChallenge(challenge);
+    const openChallengeDetail = (challenge) => {
+        navigate(`/challenge/${challenge.challenge_id}`);
+    };
     const closeChallengeDetail = () => {
         setSelectedChallenge(null);
         fetchChallenges(); // 챌린지 상세보기 닫은 후 목록 새로고침
@@ -892,13 +893,6 @@ function OngoingChallenge() {
 
             {isChallengeModalVisible && (
                 <Challenge closeChallengeModal={closeChallengeModal} onCreateSuccess={fetchChallenges} />
-            )}
-
-            {selectedChallenge && (
-                <ChallengeDetailView 
-                    challenge={selectedChallenge} 
-                    onClose={closeChallengeDetail} 
-                />
             )}
 
             {isEditModalOpen && (
