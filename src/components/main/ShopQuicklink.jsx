@@ -10,6 +10,13 @@ function ShopQuicklink () {
     const images = allImages.slice(0, 5);
     while (images.length < 5) images.push('/img/Profile2.png');
 
+    // Debug: report what images were found (non-sensitive)
+    useEffect(() => {
+        try {
+            console.debug('ShopQuicklink images:', images);
+        } catch (e) {}
+    }, [images]);
+
     const [index, setIndex] = useState(0);
 
     // Keyboard navigation
@@ -41,11 +48,11 @@ function ShopQuicklink () {
                 </a>
 
                 <div className="shop-slider-container" style={{ display: 'flex', alignItems: 'center', gap: 24, marginTop: 12 }}>
-                    <button className="shop-nav prev" onClick={prev} aria-label="previous" style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}>
+                    <button type="button" className="shop-nav prev" onClick={prev} aria-label="previous" style={{ background: 'transparent', border: 'none', cursor: 'pointer', position: 'relative', zIndex: 20 }}>
                         <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#222" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
                     </button>
 
-                    <div className="shop-items-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '700px', height: '260px', overflow: 'hidden' }}>
+                    <div className="shop-items-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '700px', height: '260px', overflow: 'hidden', position: 'relative' }}>
                         {images.map((src, i) => {
                             const pos = ((i - index) + images.length) % images.length; // position relative to center
                             // determine size based on distance to center (center, near, far)
@@ -72,13 +79,13 @@ function ShopQuicklink () {
                                     margin: '0 8px',
                                     background: '#fff'
                                 }}>
-                                    <img src={src} alt={`item-${i}`} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                                    <img src={src} alt={`item-${i}`} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} onError={(e)=>{ e.currentTarget.src = '/img/Profile2.png'; }} />
                                 </div>
                             );
                         })}
                     </div>
 
-                    <button className="shop-nav next" onClick={next} aria-label="next" style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}>
+                    <button type="button" className="shop-nav next" onClick={next} aria-label="next" style={{ background: 'transparent', border: 'none', cursor: 'pointer', position: 'relative', zIndex: 20 }}>
                         <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#222" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
                     </button>
                 </div>
