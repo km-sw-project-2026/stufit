@@ -24,6 +24,7 @@ import * as commentLike from '../functions/api/comment/[id]/like';
 // shop/user
 import * as shopPurchase from '../functions/api/shop/purchase';
 import * as userPoints from '../functions/api/user/points';
+import * as userItems from '../functions/api/user/items';
 import * as userResolve from '../functions/api/user/resolve';
 
 // challenges extra
@@ -260,7 +261,33 @@ export default {
       console.log('✅ User authenticated: - index.js:168', username, 'userId:', userId);
 
       if (pathname === '/api/user/points' || pathname.startsWith('/api/user/points/')) {
-        return userPoints.onRequestGet({ request, env, userId });
+        if (request.method === 'GET') {
+          return userPoints.onRequestGet({ request, env, userId });
+        }
+
+        if (request.method === 'POST') {
+          return userPoints.onRequestPost({ request, env, userId });
+        }
+
+        return new Response(JSON.stringify({ message: 'Method Not Allowed' }), {
+          status: 405,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+
+      if (pathname === '/api/user/items' || pathname.startsWith('/api/user/items/')) {
+        if (request.method === 'GET') {
+          return userItems.onRequestGet({ request, env, userId });
+        }
+
+        if (request.method === 'PUT') {
+          return userItems.onRequestPut({ request, env, userId });
+        }
+
+        return new Response(JSON.stringify({ message: 'Method Not Allowed' }), {
+          status: 405,
+          headers: { 'Content-Type': 'application/json' }
+        });
       }
 
       if (pathname === '/api/shop/purchase' || pathname.startsWith('/api/shop/purchase/')) {

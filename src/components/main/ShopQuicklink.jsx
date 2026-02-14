@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useLayoutEffect } from 'react';
 
 // Explicit imports to ensure assets load reliably in dev and CI
 import bgTeeth from '../../assets/shop-items/bg-teeth.png';
@@ -35,19 +35,90 @@ function ShopQuicklink() {
     pumpkin,
   ];
 
-  const [index, setIndex] = useState(() => Math.floor(images.length / 2));
+  const [scaleActive, setScaleActive] = useState(true);
+  const containerRef = useRef(null);
+  const [containerWidth, setContainerWidth] = useState(700);
+  const n = images.length;
+  const displayImages = [...images, ...images, ...images];
+  const [virtualIndex, setVirtualIndex] = useState(n + Math.floor(n / 2));
+  const logicalIndex = ((virtualIndex % n) + n) % n;
+  const [transitionEnabled, setTransitionEnabled] = useState(true);
+  const [mountedFlag, setMountedFlag] = useState(false);
+  const [showOutlines, setShowOutlines] = useState(false);
+  const placeholderSvg = `data:image/svg+xml;utf8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><rect width="100%" height="100%" fill="#f3f3f3"/><circle cx="50%" cy="50%" r="40" fill="#e6e6e6"/></svg>')}`;
+
+  useLayoutEffect(() => {
+    const update = () => {
+      if (containerRef.current) {
+        const w = containerRef.current.getBoundingClientRect().width || containerRef.current.clientWidth;
+        setContainerWidth(w);
+      }
+    };
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, []);
+
+  const TRANS_DUR = 300;
+
+  // move virtual index by delta (keyboard)
+  const moveBy = (delta) => {
+    setScaleActive(false);
+    setVirtualIndex((prev) => prev + delta);
+    window.setTimeout(() => setScaleActive(true), 140);
+  };
 
   useEffect(() => {
     const onKey = (e) => {
-      if (e.key === 'ArrowLeft') setIndex((i) => (i - 1 + images.length) % images.length);
-      if (e.key === 'ArrowRight') setIndex((i) => (i + 1) % images.length);
+      if (e.key === 'ArrowLeft') moveBy(-1);
+      if (e.key === 'ArrowRight') moveBy(1);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [images.length]);
+  }, []);
 
-  const prev = () => setIndex((i) => (i - 1 + images.length) % images.length);
-  const next = () => setIndex((i) => (i + 1) % images.length);
+  useEffect(() => {
+    setMountedFlag(true);
+  }, []);
+
+  useEffect(() => {
+    // helpful console outputs for debugging in dev
+    // these will show only if the component actually mounts
+    // keep them lightweight
+    // eslint-disable-next-line no-console
+    console.log('ShopQuicklink', { mounted: mountedFlag, virtualIndex, logicalIndex, containerWidth, displayImagesLength: displayImages.length });
+  }, [mountedFlag, virtualIndex, logicalIndex, containerWidth]);
+
+  // navigation to a logical index (click/pagination)
+  const jumpTo = (logical) => {
+    setScaleActive(false);
+    setVirtualIndex(n + (logical % n));
+    window.setTimeout(() => setScaleActive(true), 140);
+  };
+
+  const prev = () => moveBy(-1);
+  const next = () => moveBy(1);
+
+  // when virtualIndex moves beyond middle copy, reset without transition to keep infinite illusion
+  useEffect(() => {
+    if (virtualIndex >= 2 * n) {
+      const t = setTimeout(() => {
+        setTransitionEnabled(false);
+        setVirtualIndex((v) => v - n);
+        requestAnimationFrame(() => requestAnimationFrame(() => setTransitionEnabled(true)));
+      }, TRANS_DUR);
+      return () => clearTimeout(t);
+    }
+    if (virtualIndex < n) {
+      const t = setTimeout(() => {
+        setTransitionEnabled(false);
+        setVirtualIndex((v) => v + n);
+        requestAnimationFrame(() => requestAnimationFrame(() => setTransitionEnabled(true)));
+      }, TRANS_DUR);
+      return () => clearTimeout(t);
+    }
+    return undefined;
+  }, [virtualIndex, n]);
 
   return (
     <div className="shop-quicklink" style={{ padding: '40px 0' }}>
@@ -57,6 +128,15 @@ function ShopQuicklink() {
       </div>
 
       <div className="shop-content" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        {/* Debug overlay - visible on page to confirm component mounted and show core values */}
+        <div style={{ position: 'absolute', left: 12, top: 12, padding: 8, background: 'rgba(255,255,255,0.9)', border: '1px solid rgba(0,0,0,0.06)', borderRadius: 6, fontSize: 12, color: '#222', zIndex: 9999 }}>
+          <div style={{ fontWeight: 600, marginBottom: 4 }}>ShopQuicklink Debug</div>
+          <div>mounted: {mountedFlag ? 'yes' : 'no'}</div>
+          <div>virtualIndex: {virtualIndex}</div>
+          <div>logicalIndex: {logicalIndex}</div>
+          <div>containerW: {Math.round(containerWidth)}</div>
+          <div>images: {displayImages.length}</div>
+        </div>
         <a
           href="#"
           className="shop-more-link"
@@ -85,72 +165,109 @@ function ShopQuicklink() {
             </svg>
           </button>
 
-          <div className="shop-items-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 700, height: 240, overflow: 'hidden' }}>
-            {images.map((src, i) => {
-              const n = images.length;
-              let pos = ((i - index) + n) % n; // circular relative position (0..n-1)
-              if (pos > n / 2) pos -= n; // convert to negative side for left
-              const absPos = Math.abs(pos);
+          <div ref={containerRef} className="shop-items-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 700, height: 240, overflow: 'hidden' }}>
+            {
+              (() => {
+                const containerWidthLocal = containerWidth || 700;
+                const base = 100;
+                const gap = 20; // left+right margins total
+                const slot = base + gap;
+                const translateX = Math.round(containerWidthLocal / 2 - (virtualIndex * slot + base / 2));
 
-              const base = 100;
-              let scale = 0.65;
-              let zIndex = 1;
-              let opacity = 0;
-              let display = 'block';
+                return (
+                  <div
+                    className="shop-items-row"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      transition: transitionEnabled ? `transform ${TRANS_DUR}ms ease` : 'none',
+                      transform: `translateX(${translateX}px)`,
+                      willChange: 'transform'
+                    }}
+                  >
+                    {displayImages.map((src, i) => {
+                      const pos = i - virtualIndex;
+                      const absPos = Math.abs(pos);
 
-              if (absPos === 0) {
-                scale = 1.5;
-                zIndex = 6;
-                opacity = 1;
-              } else if (absPos === 1) {
-                scale = 1.05;
-                zIndex = 4;
-                opacity = 0.95;
-              } else if (absPos === 2) {
-                scale = 0.9;
-                zIndex = 3;
-                opacity = 0.6;
-              } else if (absPos <= 3) {
-                scale = 0.75;
-                zIndex = 2;
-                opacity = 0.35;
-              } else {
-                // hide distant items so they don't clutter view
-                display = 'none';
-              }
+                      let scale = 0.65;
+                      let zIndex = 1;
+                      let opacity = 0;
+                      let pointerEvents = 'auto';
 
-              return (
-                <div
-                  key={i}
-                  onClick={() => setIndex(i)}
-                  style={{
-                    display,
-                    width: base,
-                    height: base,
-                    flex: `0 0 ${base}px`,
-                    borderRadius: '50%',
-                    overflow: 'hidden',
-                    display: display === 'none' ? 'none' : 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    transition: 'transform 300ms ease, box-shadow 300ms ease, opacity 300ms ease',
-                    transform: `scale(${scale})`,
-                    transformOrigin: 'center center',
-                    boxShadow: absPos === 0 ? '0 10px 30px rgba(0,0,0,0.12)' : 'none',
-                    zIndex,
-                    opacity,
-                    margin: '0 10px',
-                    background: '#fff',
-                    position: 'relative',
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
-                    backgroundImage: `url(${src})`,
-                    cursor: 'pointer',
-                    willChange: 'transform'
-                  }}
-                />
-              );
-            })}
+                      if (absPos === 0) {
+                        scale = scaleActive ? 1.5 : 1.0;
+                        zIndex = 6;
+                        opacity = 1;
+                      } else if (absPos === 1) {
+                        scale = 1.05;
+                        zIndex = 4;
+                        opacity = 0.95;
+                      } else if (absPos === 2) {
+                        scale = 0.9;
+                        zIndex = 3;
+                        opacity = 0.6;
+                      } else if (absPos <= 3) {
+                        scale = 0.75;
+                        zIndex = 2;
+                        opacity = 0.35;
+                      } else {
+                        // keep space but invisible and non-interactive
+                        scale = 0.6;
+                        zIndex = 1;
+                        opacity = 0;
+                        pointerEvents = 'none';
+                      }
+
+                      return (
+                        <div
+                          key={`${i}-${String(src)}`}
+                          onClick={() => jumpTo(i % n)}
+                          style={{
+                            width: base,
+                            height: base,
+                            flex: `0 0 ${base}px`,
+                            borderRadius: '50%',
+                            overflow: 'hidden',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            transition: `${absPos === 0 ? 'transform 300ms ease, box-shadow 300ms ease, opacity 300ms ease' : 'transform 0ms, opacity 200ms'}`,
+                            transform: `scale(${scale})`,
+                            transformOrigin: 'center center',
+                            boxShadow: absPos === 0 ? '0 10px 30px rgba(0,0,0,0.12)' : 'none',
+                            zIndex,
+                            opacity,
+                            margin: '0 10px',
+                            background: '#fff',
+                            position: 'relative',
+                            cursor: pointerEvents === 'none' ? 'default' : 'pointer',
+                            pointerEvents,
+                            willChange: 'transform'
+                          }}
+                        >
+                          <img
+                            src={src}
+                            alt="item"
+                            onError={(e) => {
+                              // eslint-disable-next-line no-console
+                              console.warn('ShopQuicklink image failed to load, using placeholder', src);
+                              e.currentTarget.src = placeholderSvg;
+                            }}
+                            style={{
+                              width: '100%',
+                              height: '100%',
+                              objectFit: 'cover',
+                              display: 'block',
+                              borderRadius: '50%'
+                            }}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()
+            }
           </div>
 
           <button
@@ -175,14 +292,14 @@ function ShopQuicklink() {
           {images.map((_, i) => (
             <button
               key={i}
-              onClick={() => setIndex(i)}
+              onClick={() => jumpTo(i)}
               aria-label={`Go to item ${i + 1}`}
               style={{
                 width: 12,
                 height: 12,
                 borderRadius: '50%',
                 border: 'none',
-                background: i === index ? '#176B5F' : '#ddd',
+                background: i === logicalIndex ? '#176B5F' : '#ddd',
                 cursor: 'pointer',
               }}
             />
