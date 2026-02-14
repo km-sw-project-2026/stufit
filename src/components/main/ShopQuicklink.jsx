@@ -1,14 +1,17 @@
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
+// Explicit imports to ensure assets load reliably in dev and CI
+import bgTeeth from '../../assets/shop-items/bg-teeth.png';
+import frameChicken from '../../assets/shop-items/frame-chicken.png';
+import frameVip from '../../assets/shop-items/frame-vip.png';
+import jellyfishGreen from '../../assets/shop-items/jellyfish-green.png';
+import bgLemon from '../../assets/shop-items/bg-lemon.png';
 
 function ShopQuicklink () {
     const navigate = useNavigate();
 
     // Collect available images from assets folder and pick up to 5
-    const modules = import.meta.glob('../../assets/shop-items/*.{png,jpg,jpeg,gif}', { eager: true, as: 'url' }) || {};
-    const allImages = Object.values(modules);
-    const images = allImages.slice(0, 5);
-    while (images.length < 5) images.push('/img/Profile2.png');
+    const images = [bgTeeth, frameChicken, frameVip, jellyfishGreen, bgLemon];
 
     // Debug: report what images were found (non-sensitive)
     useEffect(() => {
