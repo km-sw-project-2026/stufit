@@ -63,20 +63,20 @@ function ShopQuicklink() {
             </svg>
           </button>
 
-          <div className="shop-items-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 760, height: 260, overflow: 'hidden' }}>
+          <div className="shop-items-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 700, height: 240, overflow: 'hidden' }}>
             {images.map((src, i) => {
               const pos = ((i - index) + images.length) % images.length; // relative position
-              const base = 120; // base size in px
-              let scale = 0.67; // small
+              const base = 100; // base size in px (smaller overall)
+              let scale = 0.7; // small
               let zIndex = 1;
-              let opacity = 0.6;
+              let opacity = 0.65;
 
               if (i === index) {
-                scale = 1.8; // center enlarged
-                zIndex = 4;
+                scale = 1.5; // center enlarged but smaller than before
+                zIndex = 5;
                 opacity = 1;
               } else if (pos === 1 || pos === images.length - 1) {
-                scale = 1.1; // adjacent
+                scale = 1.05; // adjacent
                 zIndex = 3;
                 opacity = 0.95;
               }
@@ -96,10 +96,11 @@ function ShopQuicklink() {
                     justifyContent: 'center',
                     transition: 'transform 300ms ease, box-shadow 300ms ease, opacity 300ms ease',
                     transform: `scale(${scale})`,
-                    boxShadow: i === index ? '0 10px 30px rgba(0,0,0,0.15)' : 'none',
+                    transformOrigin: 'center center',
+                    boxShadow: i === index ? '0 10px 30px rgba(0,0,0,0.12)' : 'none',
                     zIndex,
                     opacity,
-                    margin: '0 12px',
+                    margin: '0 10px',
                     background: '#fff',
                     position: 'relative',
                     backgroundSize: 'cover',
