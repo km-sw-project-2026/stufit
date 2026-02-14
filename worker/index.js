@@ -212,8 +212,35 @@ export default {
          1️⃣ 사용자 인증 (username 기반)
       ========================= */
 
+      const resolveUserIdFallback = async () => {
+        const fromHeader = Number(getHeader('X-User-Id') || getHeader('X-UserId'));
+        if (!Number.isNaN(fromHeader) && fromHeader > 0) {
+          return fromHeader;
+        }
+
+        const fromQuery = Number(url.searchParams.get('userId'));
+        if (!Number.isNaN(fromQuery) && fromQuery > 0) {
+          return fromQuery;
+        }
+
+        if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method)) {
+          try {
+            const body = await request.clone().json();
+            const fromBody = Number(body?.userId);
+            if (!Number.isNaN(fromBody) && fromBody > 0) {
+              return fromBody;
+            }
+          } catch {
+            // ignore invalid/non-JSON body
+          }
+        }
+
+        return null;
+      };
+
       // username으로 userId 조회 (간단한 인증)
       let username = getHeader('X-Username');
+      let userId;
 
       if (!username) {
         // Allow unauthenticated GET for challenge detail (show members public view)
@@ -226,39 +253,58 @@ export default {
           });
         }
 
-        console.log('❌ No XUsername header - index.js:136');
-        return new Response(JSON.stringify({ message: '로그인이 필요합니다.' }), { 
-          status: 401,
-          headers: { 'Content-Type': 'application/json' }
-        });
+        const fallbackUserId = await resolveUserIdFallback();
+        if (fallbackUserId && env?.D1_DB) {
+          const userRow = await env.D1_DB
+            .prepare('SELECT user_id FROM users WHERE user_id = ?')
+            .bind(fallbackUserId)
+            .first();
+
+          if (userRow?.user_id) {
+            userId = userRow.user_id;
+            console.log('✅ Fallback userId authenticated:', userId);
+          }
+        }
+
+        if (userId) {
+          // continue with authenticated routing below
+        } else {
+          console.log('❌ No XUsername header - index.js:136');
+          return new Response(JSON.stringify({ message: '로그인이 필요합니다.' }), { 
+            status: 401,
+            headers: { 'Content-Type': 'application/json' }
+          });
+        }
       }
 
       // URL 디코딩 (한글 이름 지원)
-      const originalUsername = username;
-      try {
-        username = decodeURIComponent(username);
-        console.log('✅ Decoded username: - index.js:147', originalUsername, '->', username);
-      } catch (e) {
-        console.log('⚠️ Failed to decode username: - index.js:149', originalUsername, e);
-        // 디코딩 실패 시 원본 사용
+      if (!userId) {
+        const originalUsername = username;
+        try {
+          username = decodeURIComponent(username);
+          console.log('✅ Decoded username: - index.js:147', originalUsername, '->', username);
+        } catch (e) {
+          console.log('⚠️ Failed to decode username: - index.js:149', originalUsername, e);
+          // 디코딩 실패 시 원본 사용
+        }
+
+        console.log('🔍 Looking up user: - index.js:153', username);
+        const userRow = await env.D1_DB
+          .prepare('SELECT user_id FROM users WHERE username = ?')
+          .bind(username)
+          .first();
+
+        if (!userRow) {
+          console.log('❌ User not found: - index.js:160', username);
+          return new Response(JSON.stringify({ message: '사용자를 찾을 수 없습니다.' }), { 
+            status: 401,
+            headers: { 'Content-Type': 'application/json' }
+          });
+        }
+
+        userId = userRow.user_id;
+        console.log('✅ User authenticated: - index.js:168', username, 'userId:', userId);
       }
-
-      console.log('🔍 Looking up user: - index.js:153', username);
-      const userRow = await env.D1_DB
-        .prepare('SELECT user_id FROM users WHERE username = ?')
-        .bind(username)
-        .first();
-
-      if (!userRow) {
-        console.log('❌ User not found: - index.js:160', username);
-        return new Response(JSON.stringify({ message: '사용자를 찾을 수 없습니다.' }), { 
-          status: 401,
-          headers: { 'Content-Type': 'application/json' }
-        });
-      }
-
-      const userId = userRow.user_id;
-      console.log('✅ User authenticated: - index.js:168', username, 'userId:', userId);
 
       if (pathname === '/api/user/points' || pathname.startsWith('/api/user/points/')) {
         if (request.method === 'GET') {
