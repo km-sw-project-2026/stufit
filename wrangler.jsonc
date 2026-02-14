@@ -13,6 +13,10 @@
       "database_id": "cc896ec3-95aa-4b4b-aed3-8bd90bdbe633"  // D1 데이터베이스의 고유 ID
     }
   ],
+  // Static assets (use the newer `assets` setting instead of legacy `site`)
+  "assets": {
+    "directory": "./dist"
+  },
   /**
    * Smart Placement
    * https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement
