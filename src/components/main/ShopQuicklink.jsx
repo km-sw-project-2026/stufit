@@ -260,7 +260,7 @@ function ShopQuicklink() {
                             transition: `transform ${TRANS_DUR}ms cubic-bezier(.2,.9,.27,1), box-shadow ${TRANS_DUR}ms`,
                             transform: `scale(${scale})`,
                             transformOrigin: 'center center',
-                            boxShadow: absPos === 0 ? '0 18px 40px rgba(0,0,0,0.18)' : 'none',
+                            boxShadow: (isTranslating ? absPosCurrent : absPosActive) === 0 ? '0 18px 40px rgba(0,0,0,0.18)' : 'none',
                             zIndex,
                             opacity,
                             margin: `0 ${gapHalf}px`,
