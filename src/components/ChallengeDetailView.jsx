@@ -278,6 +278,27 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose }) {
 
     };
 
+    const loadWeeklyData = async () => {
+        try {
+            const user = localStorage.getItem('username');
+            if (!user || !challenge?.challenge_id) return;
+
+            const response = await fetch(`/api/challenges/${challenge.challenge_id}/progress`, {
+                headers: { 'X-Username': user }
+            });
+
+            if (!response.ok) return;
+
+            const result = await response.json();
+            const rows = Array.isArray(result?.data) ? result.data : [];
+            const userRows = rows.filter(row => row.username === user);
+
+            console.log('[loadWeeklyData] 주간 데이터 로드:', userRows.map(r => r.date));
+        } catch (error) {
+            console.error('[loadWeeklyData] 오류:', error);
+        }
+    };
+
     const loadProgress = async () => {
         const username = localStorage.getItem('username');
         if (!username || !challenge?.challenge_id) {
@@ -416,7 +437,9 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose }) {
 
             console.log('[handleSubmitProgress] 제출 성공! setSubmittedToday(true) 호출');
             
-            await loadProgress();            await loadWeeklyData(); // 참여 현황 즉시 업데이트            await fetchMembers(); // 멤버 상태 즉시 갱신
+            await loadProgress();
+            await loadWeeklyData(); // 참여 현황 즉시 업데이트
+            await fetchMembers(); // 멤버 상태 즉시 갱신
             
             // loadProgress()가 상태를 덮어쓸 수 있으므로 다시 설정
             setSubmittedToday(true);
