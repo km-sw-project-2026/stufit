@@ -84,6 +84,52 @@ function Shop() {
         setAlertModal({ show: true, message });
     };
 
+    const handleAddPoints = async () => {
+        const amount = 1000000;
+        const currentUsername = localStorage.getItem('username');
+        const currentUserId = localStorage.getItem('userId') || userId;
+
+        if (!currentUserId) {
+            openAlert('로그인 후 이용해주세요.');
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/user/points', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Username': currentUsername || '',
+                },
+                body: JSON.stringify({ userId: Number(currentUserId), amount }),
+            });
+
+            let data = null;
+            try {
+                data = await response.json();
+            } catch {
+                data = null;
+            }
+
+            if (!response.ok) {
+                openAlert(data?.message || '포인트 추가에 실패했습니다.');
+                return;
+            }
+
+            const nextPoints = Number(data?.points);
+            if (!Number.isNaN(nextPoints)) {
+                setPoints(nextPoints);
+                localStorage.setItem('points', String(nextPoints));
+                window.dispatchEvent(new CustomEvent('pointsUpdated', { detail: { points: nextPoints } }));
+            }
+
+            openAlert(`포인트가 ${amount.toLocaleString('ko-KR')}P 추가되었습니다. (임시)`);
+        } catch (err) {
+            console.error('Add points error:', err);
+            openAlert('포인트 추가 중 오류가 발생했습니다.');
+        }
+    };
+
     const handlePurchase = async (scope, item) => {
         const currentUsername = localStorage.getItem('username');
         const currentUserId = localStorage.getItem('userId');
@@ -130,13 +176,13 @@ function Shop() {
         }
 
         try {
-                const response = await fetch('/api/shop/purchase', {
+            const response = await fetch('/api/shop/purchase', {
                 method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-Username': currentUsername || '',
-                    },
-                body: JSON.stringify({ userId: Number(resolvedUserId), price, itemName: item?.name, itemId: item?.id }),
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Username': currentUsername || '',
+                },
+                body: JSON.stringify({ userId: Number(resolvedUserId), price, itemName: item?.name, itemType: item?.type, itemId: item?.id }),
             });
 
             const data = await response.json();
@@ -153,7 +199,6 @@ function Shop() {
                 window.dispatchEvent(new CustomEvent('pointsUpdated', { detail: { points: nextPoints } }));
             }
 
-            // 구매 성공 이벤트 발생 (다른 컴포넌트에서 재로드)
             window.dispatchEvent(new CustomEvent('purchasedItemsUpdated'));
 
             const wishlistKey = item?._wishlistKey ?? buildWishlistKey(scope, item?.id);
@@ -186,10 +231,10 @@ function Shop() {
             }
 
             try {
-                    const currentUsername = localStorage.getItem('username');
-                    const response = await fetch(`/api/user/points?userId=${userId}`, {
-                        headers: { 'X-Username': currentUsername || '' },
-                    });
+                const currentUsername = localStorage.getItem('username');
+                const response = await fetch(`/api/user/points?userId=${userId}`, {
+                    headers: { 'X-Username': currentUsername || '' },
+                });
                 const data = await response.json();
 
                 if (!response.ok) {
@@ -231,12 +276,10 @@ function Shop() {
                     return;
                 }
 
-                // purchasedItems는 itemId 배열로 받음
                 const itemIds = data?.purchasedItems || [];
                 const purchasedMap = {};
-                
+
                 itemIds.forEach(itemId => {
-                    // shopItems에서 해당 아이템 찾기
                     const item = shopItems.find(it => it.id === itemId);
                     if (item) {
                         const key = buildWishlistKey(item.type, item.id);
@@ -251,8 +294,6 @@ function Shop() {
         };
 
         fetchPurchasedItems();
-
-        // 구매 이벤트 리스너
         window.addEventListener('purchasedItemsUpdated', fetchPurchasedItems);
         return () => {
             window.removeEventListener('purchasedItemsUpdated', fetchPurchasedItems);
@@ -384,6 +425,7 @@ function Shop() {
                     <div className="shop-points" title={pointsError || ''}>
                         <span className="shop-points-label">나의 보유 포인트</span>
                         <span className="shop-points-value">{formatPoints(points)}</span>
+                        <button type="button" onClick={handleAddPoints}>+1000P (임시)</button>
                     </div>
                 </div>
                 {renderContent()}

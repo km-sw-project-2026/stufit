@@ -32,7 +32,7 @@ import frameDragon from '../../assets/shop-items/frame-dragon.png';
 
 export const shopItems = [
     { id: 1, category: '프로필 테두리', name: '너는 못 사는 VIP 테두리', price: '999,999 P', color: '#fff', type: 'frame', image: frameVip, scale: 1.12, myPageScale: 2, myPageOffsetY: -7, myPageOffsetX: -10 },
-    { id: 2, category: '프로필 테두리', name: '딸기 테두리', price: '3,000 P', color: '#fff', type: 'frame', image: frameStrawberry, scale: 1.06, myPageScale: 2.25, myPageOffsetY: 13, myPageOffsetX: 0 },
+    { id: 2, category: '프로필 테두리', name: '딸기 테두리', price: '3,000 P', color: '#fff', type: 'frame', image: frameStrawberry, scale: 1.06, myPageScale: 2.25, myPageOffsetY: 13, myPageOffsetX: -3 },
     { id: 3, category: '프로필 테두리', name: '레몬 테두리', price: '4,000 P', color: '#fff', type: 'frame', image: frameLemon, scale: 1.06, myPageScale: 2.65, myPageOffsetY: 20, myPageOffsetX: 0 },
     { id: 4, category: '프로필 테두리', name: '맥도날드 모자 테두리', price: '5,000 P', color: '#fff', type: 'frame', image: frameMcHat, scale: 1.1, myPageScale: 1.1, myPageOffsetY: 10, myPageOffsetX: -1 },
     { id: 5, category: '프로필 테두리', name: '맥도날드 햄버거 테두리', price: '5,000 P', color: '#fff', type: 'frame', image: frameMcBurger, scale: 1.1, myPageScale: 2.75, myPageOffsetY: 20, myPageOffsetX: 0 },

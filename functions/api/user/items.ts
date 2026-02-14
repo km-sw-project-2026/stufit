@@ -12,8 +12,11 @@ export async function onRequestGet(context: { request: Request; env: any; userId
 
         const url = new URL(request.url);
         const userIdRaw = url.searchParams.get('userId');
-        const fallbackUserId = Number(userIdRaw);
-        const userId = typeof authenticatedUserId === 'number' ? authenticatedUserId : fallbackUserId;
+        const requestedUserId = Number(userIdRaw);
+        const hasRequestedUserId = !Number.isNaN(requestedUserId) && requestedUserId > 0;
+        const userId = hasRequestedUserId
+            ? requestedUserId
+            : (typeof authenticatedUserId === 'number' ? authenticatedUserId : Number.NaN);
 
         if (!userId || Number.isNaN(userId)) {
             return new Response(
@@ -82,8 +85,11 @@ export async function onRequestPut(context: { request: Request; env: any; userId
             );
         }
 
-        const fallbackUserId = Number(body?.userId);
-        const userId = typeof authenticatedUserId === 'number' ? authenticatedUserId : fallbackUserId;
+        const requestedUserId = Number(body?.userId);
+        const hasRequestedUserId = !Number.isNaN(requestedUserId) && requestedUserId > 0;
+        const userId = hasRequestedUserId
+            ? requestedUserId
+            : (typeof authenticatedUserId === 'number' ? authenticatedUserId : Number.NaN);
         const itemType = body?.itemType; // 'image', 'frame', 'bg'
         const itemId = body?.itemId ? Number(body.itemId) : null;
 
