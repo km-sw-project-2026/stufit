@@ -53,6 +53,31 @@ export default {
       // [DEBUG] Log all requests to ensure we are seeing traffic
       console.log(`[Worker] Incoming: ${request.method} ${pathname}`);
 
+      // ===== 먼저 API가 아닌 경로는 정적 파일로 제공 =====
+      if (!pathname.startsWith('/api/')) {
+        console.log('[Worker] Non-API path, serving static assets');
+        if (env.ASSETS) {
+          try {
+            // 정적 자산 요청 시도
+            const assetResponse = await env.ASSETS.fetch(request);
+            
+            // 자산이 존재하면 반환
+            if (assetResponse.status !== 404) {
+              return assetResponse;
+            }
+            
+            // 자산이 없으면 index.html 반환 (SPA 라우팅)
+            const indexUrl = new URL(request.url);
+            indexUrl.pathname = '/index.html';
+            const indexRequest = new Request(indexUrl, request);
+            return env.ASSETS.fetch(indexRequest);
+          } catch (assetError) {
+            console.error('[Worker] 정적 자산 제공 오류:', assetError);
+          }
+        }
+        return new Response('Not Found', { status: 404 });
+      }
+
       if (pathname.startsWith('/api/attendance')) {
         console.log('[Worker] Matched /api/attendance');
         
@@ -385,7 +410,8 @@ export default {
         return postById.default(request, { env, params: { id: postMatchAuth[1] }, userId });
       }
 
-      return new Response('Not Found', { status: 404 });
+      // ===== API 경로가 여기까지 오면 404 =====
+      return new Response('API Not Found', { status: 404, headers: { 'Content-Type': 'application/json' } });
     } catch (err) {
       console.error("❌ WORKER ERROR: - index.js:323", err?.message || String(err));
       return new Response(
