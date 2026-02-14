@@ -377,25 +377,85 @@ function Challenge({ closeChallengeModal, onCreateSuccess }) {
     const showAlert = (msg) => { setGlobalAlertMessage(msg); setGlobalAlertOpen(true); };
 
     // 챌린지 카드 컴포넌트 (내부 정의)
-    const ChallengeCard = ({ challenge }) => (
-        <div className="challenge-card" style={{ 
-            border: '1px solid #70c1b3', borderRadius: '20px', padding: '35px', 
-            backgroundColor: 'white', minHeight: '240px', display: 'flex',
-            flexDirection: 'column', justifyContent: 'space-between', position: 'relative'
-        }}>
-            <div>
-                <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{challenge.title}</h3>
-                <div style={{ color: '#555', marginTop: '15px', lineHeight: '1.8' }}>
-                    <p>기간: {challenge.created_at?.split('T')[0]} ~ {challenge.end_date?.split('T')[0]}</p>
-                    <p>목표: {challenge.goal}</p>
+    const ChallengeCard = ({ challenge, onShowAlert, onJoinSuccess }) => {
+        const [joinLoading, setJoinLoading] = useState(false);
+
+        const handleJoin = async () => {
+            if (joinLoading) return;
+            setJoinLoading(true);
+            
+            try {
+                const username = localStorage.getItem('username');
+                if (!username) {
+                    onShowAlert('로그인이 필요합니다.');
+                    return;
+                }
+
+                const res = await fetch(`/api/challenges/${challenge.challenge_id}/join`, {
+                    method: 'POST',
+                    headers: { 'X-Username': encodeURIComponent(username) }
+                });
+                
+                let payload = null;
+                try { 
+                    payload = await res.json(); 
+                } catch (e) { 
+                    console.error('JSON 파싱 오류', e);
+                }
+
+                if (res.ok) {
+                    onShowAlert(payload?.message || '참가 완료!');
+                    window.dispatchEvent(new CustomEvent('challenge-joined', { 
+                        detail: { challengeId: challenge.challenge_id, members: payload?.members || [] } 
+                    }));
+                    if (onJoinSuccess) {
+                        setTimeout(() => onJoinSuccess(), 400);
+                    }
+                } else {
+                    const msg = payload?.message || payload?.error || '참가 처리에 실패했습니다.';
+                    onShowAlert(msg);
+                }
+            } catch (err) {
+                console.error('참가 처리 오류', err);
+                onShowAlert('참가 처리 중 오류가 발생했습니다.');
+            } finally {
+                setJoinLoading(false);
+            }
+        };
+
+        return (
+            <div className="challenge-card" style={{ 
+                border: '1px solid #70c1b3', borderRadius: '20px', padding: '35px', 
+                backgroundColor: 'white', minHeight: '240px', display: 'flex',
+                flexDirection: 'column', justifyContent: 'space-between', position: 'relative'
+            }}>
+                <div>
+                    <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{challenge.title}</h3>
+                    <div style={{ color: '#555', marginTop: '15px', lineHeight: '1.8' }}>
+                        <p>기간: {challenge.created_at?.split('T')[0]} ~ {challenge.end_date?.split('T')[0]}</p>
+                        <p>목표: {challenge.goal}</p>
+                    </div>
                 </div>
+                <button 
+                    onClick={handleJoin}
+                    disabled={joinLoading}
+                    style={{ 
+                        alignSelf: 'flex-end', 
+                        border: '1px solid #247b7b', 
+                        borderRadius: '20px', 
+                        padding: '8px 25px', 
+                        backgroundColor: 'white', 
+                        color: '#247b7b', 
+                        fontWeight: 'bold',
+                        cursor: joinLoading ? 'not-allowed' : 'pointer',
+                        opacity: joinLoading ? 0.6 : 1
+                    }}
+                >
+                    {joinLoading ? '참여중...' : '참여하기'}
+                </button>
             </div>
-            <button style={{ 
-                alignSelf: 'flex-end', border: '1px solid #247b7b', borderRadius: '20px', 
-                padding: '8px 25px', backgroundColor: 'white', color: '#247b7b', fontWeight: 'bold' 
-            }}>참여하기</button>
-        </div>
-    );
+        );
+    };
 
 return (
     <>
@@ -480,7 +540,12 @@ return (
                             </p>
                         ) : challenges.length > 0 ? (
                             challenges.map(challenge => (
-                                <ChallengeCard key={challenge.challenge_id} challenge={challenge} onShowAlert={showAlert} />
+                                <ChallengeCard 
+                                    key={challenge.challenge_id} 
+                                    challenge={challenge} 
+                                    onShowAlert={showAlert}
+                                    onJoinSuccess={fetchChallenges}
+                                />
                             ))
                         ) : (
                             <p style={{ textAlign: 'center', gridColumn: 'span 2', color: '#888', padding: '50px' }}>
