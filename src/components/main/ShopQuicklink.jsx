@@ -36,6 +36,7 @@ function ShopQuicklink() {
   ];
 
   const [index, setIndex] = useState(() => Math.floor(images.length / 2));
+  const [scaleActive, setScaleActive] = useState(true);
 
   useEffect(() => {
     const onKey = (e) => {
@@ -46,8 +47,16 @@ function ShopQuicklink() {
     return () => window.removeEventListener('keydown', onKey);
   }, [images.length]);
 
-  const prev = () => setIndex((i) => (i - 1 + images.length) % images.length);
-  const next = () => setIndex((i) => (i + 1) % images.length);
+  // navigation that temporarily disables immediate scaling so center enlarges after arrival
+  const jumpTo = (newIndex) => {
+    setScaleActive(false);
+    setIndex(newIndex);
+    // small delay so items 'arrive' then scale
+    window.setTimeout(() => setScaleActive(true), 140);
+  };
+
+  const prev = () => jumpTo((index - 1 + images.length) % images.length);
+  const next = () => jumpTo((index + 1) % images.length);
 
   return (
     <div className="shop-quicklink" style={{ padding: '40px 0' }}>
@@ -99,7 +108,7 @@ function ShopQuicklink() {
               let display = 'block';
 
               if (absPos === 0) {
-                scale = 1.5;
+                scale = scaleActive ? 1.5 : 1.0;
                 zIndex = 6;
                 opacity = 1;
               } else if (absPos === 1) {
@@ -133,7 +142,7 @@ function ShopQuicklink() {
                     display: display === 'none' ? 'none' : 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    transition: 'transform 300ms ease, box-shadow 300ms ease, opacity 300ms ease',
+                    transition: `${absPos === 0 ? 'transform 300ms ease, box-shadow 300ms ease, opacity 300ms ease' : 'transform 0ms, opacity 200ms'}`,
                     transform: `scale(${scale})`,
                     transformOrigin: 'center center',
                     boxShadow: absPos === 0 ? '0 10px 30px rgba(0,0,0,0.12)' : 'none',
