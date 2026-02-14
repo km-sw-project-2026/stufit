@@ -32,15 +32,42 @@ function WeeklySubmissionStatus({ challengeId }) {
             const rows = Array.isArray(result?.data) ? result.data : [];
             const userRows = rows.filter(row => row.username === user);
 
-            // 오늘 기준 최근 7일 계산
-            const today = new Date();
+            // 한국 시간(Asia/Seoul) 기준 최근 7일 계산
+            const formatter = new Intl.DateTimeFormat('en-CA', {
+                timeZone: 'Asia/Seoul',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+            });
+            
+            const pad = (n) => String(n).padStart(2, '0');
+            // Seoul 기준 현재 날짜를 먼저 구합니다
+            const todayStr = formatter.format(new Date());
+            const [year, month, day] = todayStr.split('-').map(Number);
+            
             const last7Days = [];
             
+            // 순수 숫자 기반으로 각 날짜를 계산합니다
             for (let i = 6; i >= 0; i--) {
-                const date = new Date(today);
-                date.setDate(date.getDate() - i);
-                const dateStr = date.toISOString().split('T')[0];
+                let calcDay = day - i;
+                let calcMonth = month;
+                let calcYear = year;
+                
+                // 월 초 처리
+                if (calcDay <= 0) {
+                    calcMonth--;
+                    if (calcMonth <= 0) {
+                        calcMonth = 12;
+                        calcYear--;
+                    }
+                    // 이전 달의 마지막 날짜 계산
+                    const daysInMonth = new Date(calcYear, calcMonth, 0).getDate();
+                    calcDay += daysInMonth;
+                }
+                
+                const dateStr = `${calcYear}-${pad(calcMonth)}-${pad(calcDay)}`;
                 const hasSubmitted = userRows.some(row => row.date === dateStr);
+                console.log('[loadWeeklyData] dateStr:', dateStr, 'hasSubmitted:', hasSubmitted, 'userRows:', userRows.map(r => r.date));
                 last7Days.push({ dateStr, hasSubmitted });
             }
 
@@ -54,32 +81,32 @@ function WeeklySubmissionStatus({ challengeId }) {
         <div style={{
             border: '1px solid #70c1b3',
             borderRadius: '15px',
-            padding: '20px',
+            padding: '12px 15px',
             backgroundColor: '#f9fffe'
         }}>
             {/* 사용자 정보 */}
             <div style={{
-                marginBottom: '20px',
-                paddingBottom: '15px',
+                marginBottom: '10px',
+                paddingBottom: '8px',
                 borderBottom: '1px solid #ddd'
             }}>
                 <div style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '10px'
+                    gap: '8px'
                 }}>
                     <img 
                         src="/img/Profile.png" 
                         alt="Profile" 
                         style={{
-                            width: '35px',
-                            height: '35px',
+                            width: '28px',
+                            height: '28px',
                             borderRadius: '50%',
                             objectFit: 'cover'
                         }}
                     />
                     <span style={{
-                        fontSize: '0.95rem',
+                        fontSize: '0.85rem',
                         fontWeight: '600',
                         color: '#333'
                     }}>
@@ -93,22 +120,22 @@ function WeeklySubmissionStatus({ challengeId }) {
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'flex-end',
-                gap: '8px'
+                gap: '4px'
             }}>
                 {weekData.map((day, idx) => (
                     <div key={idx} style={{
                         display: 'flex',
                         flexDirection: 'column',
                         alignItems: 'center',
-                        gap: '8px',
+                        gap: '4px',
                         flex: 1
                     }}>
                         {/* 요일 표시 */}
                         <div style={{
-                            fontSize: '0.9rem',
+                            fontSize: '0.75rem',
                             fontWeight: '600',
                             color: '#666',
-                            height: '20px',
+                            height: '14px',
                             display: 'flex',
                             alignItems: 'center'
                         }}>
@@ -117,8 +144,8 @@ function WeeklySubmissionStatus({ challengeId }) {
 
                         {/* 제출 상태 원형 버튼 */}
                         <div style={{
-                            width: '40px',
-                            height: '40px',
+                            width: '32px',
+                            height: '32px',
                             borderRadius: '50%',
                             border: '2px solid',
                             borderColor: day.hasSubmitted ? '#70c1b3' : '#ddd',
@@ -132,7 +159,7 @@ function WeeklySubmissionStatus({ challengeId }) {
                             {day.hasSubmitted && (
                                 <span style={{
                                     color: 'white',
-                                    fontSize: '1.2rem',
+                                    fontSize: '0.9rem',
                                     fontWeight: 'bold'
                                 }}>
                                     ✓
@@ -142,11 +169,11 @@ function WeeklySubmissionStatus({ challengeId }) {
 
                         {/* 날짜 */}
                         <div style={{
-                            fontSize: '0.75rem',
+                            fontSize: '0.65rem',
                             color: '#999',
-                            height: '16px'
+                            height: '12px'
                         }}>
-                            {new Date(day.dateStr).getDate()}
+                            {day.dateStr.split('-')[2]}
                         </div>
                     </div>
                 ))}
@@ -273,7 +300,15 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose }) {
             const rows = Array.isArray(result?.data) ? result.data : [];
             const userRows = rows.filter(row => row.username === username);
             const count = userRows.length;
-            const today = new Date().toISOString().slice(0, 10);
+            
+            // 한국 시간(Asia/Seoul) 기준으로 오늘 날짜 계산
+            const formatter = new Intl.DateTimeFormat('en-CA', {
+                timeZone: 'Asia/Seoul',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+            });
+            const today = formatter.format(new Date());
             console.log('[loadProgress] today:', today);
             console.log('[loadProgress] userRows:', userRows);
             
@@ -291,10 +326,8 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose }) {
                     setRemainingDays(Math.max(total - elapsed, 0));
                 }
 
-                // compute local YYYY-MM-DD for today's comparison to avoid TZ shifts
-                const d = new Date();
-                const pad = (n) => String(n).padStart(2, '0');
-                const todayLocal = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+                // 위에서 선언한 formatter를 사용
+                const todayLocal = formatter.format(new Date());
                 const hasToday = userRows.some(row => row.date === todayLocal);
                 console.log('[loadProgress] hasToday:', hasToday, '각 row의 date:', userRows.map(r => r.date));
                 setSubmittedToday(hasToday);
@@ -353,13 +386,23 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose }) {
         console.log('[handleSubmitProgress] 제출 중 상태로 변경');
         
         try {
-            console.log('[handleSubmitProgress] API 호출 시작');
+            // 클라이언트에서 한국 시간 기준 오늘 날짜 계산
+            const formatter = new Intl.DateTimeFormat('en-CA', {
+                timeZone: 'Asia/Seoul',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+            });
+            const todayInSeoul = formatter.format(new Date());
+            console.log('[handleSubmitProgress] API 호출 시작, todayInSeoul:', todayInSeoul);
+            
             const response = await fetch(`/api/challenges/${challenge.challenge_id}/verify`, {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-Username': username
-                }
+                },
+                body: JSON.stringify({ date: todayInSeoul })
             });
 
             const result = await response.json();
@@ -445,10 +488,11 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose }) {
             const username = localStorage.getItem('username');
             const headers = {};
             if (username) headers['X-Username'] = username;
-            const res = await fetch(`/api/challenges/${challenge.challenge_id}/members`, { headers });
+            // 전체 챌린지 정보를 가져옴 (members 포함)
+            const res = await fetch(`/api/challenges/${challenge.challenge_id}`, { headers });
             if (!res.ok) return;
             const payload = await res.json();
-            const list = payload?.members || [];
+            const list = (payload?.data && payload.data.members) ? payload.data.members : (payload?.members || []);
             setMembers(list || []);
         } catch (e) {
             console.error('pollMembers 실패:', e);
@@ -636,7 +680,7 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose }) {
                             )}
                         </div>
 
-                                        <div className="detail-actions">
+                                        <div className="detail-actions" style={{ marginTop: '10px' }}>
                                             <button className="btn-giveup" onClick={giveupHandler}>give up</button>
                                             <button className="btn-complete">complete</button>
                                         </div>
