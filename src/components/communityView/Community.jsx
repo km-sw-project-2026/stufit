@@ -256,18 +256,14 @@
 //         if (!username) {
 //             alert('로그인이 필요합니다.');
 //             return;
-            // console.log('[Community] Deleting post', postId, 'as', username);
-            // const response = await fetch(`/api/post/${postId}`, {
-            //     method: 'DELETE',
-            //     headers: { 'X-Username': username }
-            // });
+//         }
 
-            // console.log('[Community] delete response status', response.status);
+//         try {
+//             const response = await fetch(`/api/post/${postId}`, {
 //                 method: 'DELETE',
 //                 headers: { 'X-Username': username }
-                // const payload = await response.json().catch(() => ({}));
-                // console.warn('[Community] delete payload', payload);
-                // return alert(payload.message || '게시글 삭제에 실패했습니다.');
+//             });
+
 //             if (!response.ok) {
 //                 const payload = await response.json().catch(() => ({}));
 //                 alert(payload.message || '게시글 삭제에 실패했습니다.');
@@ -566,19 +562,6 @@ function Community() {
 
             // 작성 성공 후 목록 새로고침
             await fetchPosts();
-            try {
-                window.dispatchEvent(new CustomEvent('user-stats-changed', { detail: { postsDelta: 1, commentsDelta: 0 } }));
-            } catch (e) {
-                console.warn('Event dispatch failed:', e);
-            }
-            try {
-                const key = 'mypage_posts_count';
-                const prev = Number(localStorage.getItem(key) || '0');
-                localStorage.setItem(key, String(prev + 1));
-                window.dispatchEvent(new StorageEvent('storage', { key, newValue: String(prev + 1), oldValue: String(prev) }));
-            } catch (e) {
-                console.warn('localStorage update failed:', e);
-            }
             setNewPostModalOpen(false);
         } catch (error) {
             alert(error.message || '게시글 작성에 실패했습니다.');
@@ -617,20 +600,6 @@ function Community() {
 
             closeDetailView();
             await fetchPosts();
-            try {
-                window.dispatchEvent(new CustomEvent('user-stats-changed', { detail: { postsDelta: -1, commentsDelta: 0 } }));
-            } catch (e) {
-                console.warn('Event dispatch failed:', e);
-            }
-            try {
-                const key = 'mypage_posts_count';
-                const prev = Number(localStorage.getItem(key) || '0');
-                const next = Math.max(0, prev - 1);
-                localStorage.setItem(key, String(next));
-                window.dispatchEvent(new StorageEvent('storage', { key, newValue: String(next), oldValue: String(prev) }));
-            } catch (e) {
-                console.warn('localStorage update failed:', e);
-            }
         } catch (error) {
             console.error('게시글 삭제 실패:', error);
             alert('게시글 삭제에 실패했습니다.');

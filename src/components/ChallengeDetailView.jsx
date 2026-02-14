@@ -289,24 +289,17 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose }) {
         }
     };
 
-    // Polling helper: fetch full detail instead of members-only endpoint
+    // Polling helper: only fetch members list (lighter) on interval
     const pollMembers = async () => {
         if (!challenge?.challenge_id) return;
         try {
             const username = localStorage.getItem('username');
             const headers = {};
             if (username) headers['X-Username'] = username;
-            const res = await fetch(`/api/challenges/${challenge.challenge_id}`, { headers });
-            if (res.status === 404) {
-                console.warn('[pollMembers] challenge not found (404)');
-                return;
-            }
+            const res = await fetch(`/api/challenges/${challenge.challenge_id}/members`, { headers });
             if (!res.ok) return;
             const payload = await res.json();
-            const list = (payload?.data && payload.data.members) ? payload.data.members : (payload?.members || []);
-            if ((list.length === 0) && payload?.data?.isJoined && username) {
-                list.push({ user_id: null, username, status: 'not_submitted' });
-            }
+            const list = payload?.members || [];
             setMembers(list || []);
         } catch (e) {
             console.error('pollMembers 실패:', e);
@@ -549,6 +542,59 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose }) {
                                 </>
                             )}
                         </div>
+
+                                        <div className="detail-card">
+                                            <h3 className="detail-title-left">초대 코드로 참가</h3>
+                                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                                <input
+                                                    placeholder="초대 코드 입력"
+                                                    value={inviteCode}
+                                                    onChange={(e) => setInviteCode(e.target.value)}
+                                                    style={{ padding: '10px', borderRadius: '8px', border: '1px solid #ddd', flex: 1 }}
+                                                />
+                                                <button
+                                                    className="submit-btn"
+                                                    onClick={async () => {
+                                                        if (!inviteCode || !challenge?.challenge_id) {
+                                                            alert('코드를 입력해주세요.');
+                                                            return;
+                                                        }
+                                                        if (!challenge.challenge_code) {
+                                                            alert('이 챌린지는 초대 코드가 설정되어 있지 않습니다.');
+                                                            return;
+                                                        }
+                                                        if (String(inviteCode).trim() !== String(challenge.challenge_code)) {
+                                                            alert('코드가 일치하지 않습니다.');
+                                                            return;
+                                                        }
+                                                        setJoinLoading(true);
+                                                        try {
+                                                            const username = localStorage.getItem('username');
+                                                            const headers = { 'Content-Type': 'application/json' };
+                                                            if (username) headers['X-Username'] = username;
+                                                            const res = await fetch(`/api/challenges/${challenge.challenge_id}/join`, { method: 'POST', headers });
+                                                            const result = await res.json();
+                                                            if (!res.ok) {
+                                                                alert(result?.message || '참가에 실패했습니다.');
+                                                                return;
+                                                            }
+                                                            setMembers(result.members || []);
+                                                            window.dispatchEvent(new CustomEvent('challenge-joined', { detail: { challengeId: challenge.challenge_id, members: result.members || [] } }));
+                                                            alert('참가되었습니다!');
+                                                        } catch (err) {
+                                                            console.error('join by code error', err);
+                                                            alert('참가 중 오류가 발생했습니다.');
+                                                        } finally {
+                                                            setJoinLoading(false);
+                                                        }
+                                                    }}
+                                                    disabled={joinLoading}
+                                                    style={{ padding: '10px 16px', borderRadius: '8px', background: '#1f6157', color: 'white', border: 'none', cursor: 'pointer' }}
+                                                >
+                                                    {joinLoading ? '참가 중...' : '참가'}
+                                                </button>
+                                            </div>
+                                        </div>
 
                                         <div className="detail-actions">
                                             <button className="btn-giveup" onClick={giveupHandler}>give up</button>
