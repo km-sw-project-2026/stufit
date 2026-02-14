@@ -44,6 +44,8 @@ function ShopQuicklink() {
   const logicalIndex = ((virtualIndex % n) + n) % n;
   const [transitionEnabled, setTransitionEnabled] = useState(true);
   const [mountedFlag, setMountedFlag] = useState(false);
+  const [showOutlines, setShowOutlines] = useState(false);
+  const placeholderSvg = `data:image/svg+xml;utf8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><rect width="100%" height="100%" fill="#f3f3f3"/><circle cx="50%" cy="50%" r="40" fill="#e6e6e6"/></svg>')}`;
 
   useLayoutEffect(() => {
     const update = () => {
@@ -246,6 +248,11 @@ function ShopQuicklink() {
                           <img
                             src={src}
                             alt="item"
+                            onError={(e) => {
+                              // eslint-disable-next-line no-console
+                              console.warn('ShopQuicklink image failed to load, using placeholder', src);
+                              e.currentTarget.src = placeholderSvg;
+                            }}
                             style={{
                               width: '100%',
                               height: '100%',
