@@ -54,32 +54,32 @@ function WeeklySubmissionStatus({ challengeId }) {
         <div style={{
             border: '1px solid #70c1b3',
             borderRadius: '15px',
-            padding: '20px',
+            padding: '12px 15px',
             backgroundColor: '#f9fffe'
         }}>
             {/* 사용자 정보 */}
             <div style={{
-                marginBottom: '20px',
-                paddingBottom: '15px',
+                marginBottom: '10px',
+                paddingBottom: '8px',
                 borderBottom: '1px solid #ddd'
             }}>
                 <div style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '10px'
+                    gap: '8px'
                 }}>
                     <img 
                         src="/img/Profile.png" 
                         alt="Profile" 
                         style={{
-                            width: '35px',
-                            height: '35px',
+                            width: '28px',
+                            height: '28px',
                             borderRadius: '50%',
                             objectFit: 'cover'
                         }}
                     />
                     <span style={{
-                        fontSize: '0.95rem',
+                        fontSize: '0.85rem',
                         fontWeight: '600',
                         color: '#333'
                     }}>
@@ -93,22 +93,22 @@ function WeeklySubmissionStatus({ challengeId }) {
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'flex-end',
-                gap: '8px'
+                gap: '4px'
             }}>
                 {weekData.map((day, idx) => (
                     <div key={idx} style={{
                         display: 'flex',
                         flexDirection: 'column',
                         alignItems: 'center',
-                        gap: '8px',
+                        gap: '4px',
                         flex: 1
                     }}>
                         {/* 요일 표시 */}
                         <div style={{
-                            fontSize: '0.9rem',
+                            fontSize: '0.75rem',
                             fontWeight: '600',
                             color: '#666',
-                            height: '20px',
+                            height: '14px',
                             display: 'flex',
                             alignItems: 'center'
                         }}>
@@ -117,8 +117,8 @@ function WeeklySubmissionStatus({ challengeId }) {
 
                         {/* 제출 상태 원형 버튼 */}
                         <div style={{
-                            width: '40px',
-                            height: '40px',
+                            width: '32px',
+                            height: '32px',
                             borderRadius: '50%',
                             border: '2px solid',
                             borderColor: day.hasSubmitted ? '#70c1b3' : '#ddd',
@@ -132,7 +132,7 @@ function WeeklySubmissionStatus({ challengeId }) {
                             {day.hasSubmitted && (
                                 <span style={{
                                     color: 'white',
-                                    fontSize: '1.2rem',
+                                    fontSize: '0.9rem',
                                     fontWeight: 'bold'
                                 }}>
                                     ✓
@@ -142,9 +142,9 @@ function WeeklySubmissionStatus({ challengeId }) {
 
                         {/* 날짜 */}
                         <div style={{
-                            fontSize: '0.75rem',
+                            fontSize: '0.65rem',
                             color: '#999',
-                            height: '16px'
+                            height: '12px'
                         }}>
                             {new Date(day.dateStr).getDate()}
                         </div>
