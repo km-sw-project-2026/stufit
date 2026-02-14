@@ -416,8 +416,7 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose }) {
 
             console.log('[handleSubmitProgress] 제출 성공! setSubmittedToday(true) 호출');
             
-            await loadProgress();
-            await fetchMembers(); // 멤버 상태 즉시 갱신
+            await loadProgress();            await loadWeeklyData(); // 참여 현황 즉시 업데이트            await fetchMembers(); // 멤버 상태 즉시 갱신
             
             // loadProgress()가 상태를 덮어쓸 수 있으므로 다시 설정
             setSubmittedToday(true);
