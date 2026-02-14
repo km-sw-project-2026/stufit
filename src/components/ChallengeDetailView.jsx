@@ -5,7 +5,7 @@ import FinalGiveUpModal from "./modal/FinalGiveUpModal";
 import CustomAlertModal from "./modal/CustomAlertModal";
 
 // 주간 제출 현황 컴포넌트
-function WeeklySubmissionStatus({ challengeId }) {
+function WeeklySubmissionStatus({ challengeId, refreshKey }) {
     const [weekData, setWeekData] = useState([]);
     const [username, setUsername] = useState('');
 
@@ -15,7 +15,7 @@ function WeeklySubmissionStatus({ challengeId }) {
         const user = localStorage.getItem('username');
         setUsername(user || '');
         loadWeeklyData();
-    }, [challengeId]);
+    }, [challengeId, refreshKey]);
 
     const loadWeeklyData = async () => {
         try {
@@ -195,6 +195,7 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose }) {
     const [submitLoading, setSubmitLoading] = useState(false);
     const [elapsedDays, setElapsedDays] = useState(0);
     const [remainingDays, setRemainingDays] = useState(0);
+    const [refreshKey, setRefreshKey] = useState(0);
 
     // props로 받은 challenge가 변경되면 state 업데이트
     useEffect(() => {
@@ -438,7 +439,7 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose }) {
             console.log('[handleSubmitProgress] 제출 성공! setSubmittedToday(true) 호출');
             
             await loadProgress();
-            await loadWeeklyData(); // 참여 현황 즉시 업데이트
+            setRefreshKey(prev => prev + 1); // WeeklySubmissionStatus 리로드
             await fetchMembers(); // 멤버 상태 즉시 갱신
             
             // loadProgress()가 상태를 덮어쓸 수 있으므로 다시 설정
@@ -697,7 +698,7 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose }) {
                             ) : (
                                 <>
                                     <h3 className="detail-title-left">참여 현황</h3>
-                                    <WeeklySubmissionStatus challengeId={challenge?.challenge_id} />
+                                    <WeeklySubmissionStatus challengeId={challenge?.challenge_id} refreshKey={refreshKey} />
                                 </>
                             )}
                         </div>
