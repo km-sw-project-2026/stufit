@@ -399,110 +399,97 @@ function Challenge({ closeChallengeModal, onCreateSuccess }) {
 
 return (
     <>
-        <div id="challenge-modal" style={{ backgroundColor: '#eeeeee', minHeight: '100vh', display: 'flex', flexDirection: 'column', position: 'relative', zIndex: 30001 }}>
-            <div className="modal-content" style={{ maxWidth: '1300px', margin: '0 auto', width: '100%', flex: 1, display: 'flex', flexDirection: 'column', padding: '38px 40px', position: 'relative' }}>
-            
-            {/* 1. 상단 헤더 영역 (위치 고정) */}
-            <div className="modal-header-top" style={{ 
-                display: 'flex', 
-                justifyContent: 'space-between', 
-                alignItems: 'flex-start', 
-                marginBottom: '50px', 
-                gap: '30px',
-                position: 'relative',
-                zIndex: 10,
-                pointerEvents: 'auto'
-            }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '30px' }}>
-                    <h2 style={{ fontSize: '2rem', margin: 0, fontWeight: 'bold' }}>전체 챌린지</h2>
-                    <div className="search-bar" style={{ display: 'flex', alignItems: 'center', backgroundColor: 'white', borderRadius: '25px', padding: '8px 20px', border: '1px solid #ccc' }}>
-                        <input type="text" placeholder="Enter code" value={searchCode} onChange={(e) => setSearchCode(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') joinByCode(); }} style={{ border: 'none', outline: 'none', width: '180px' }} />
-                        <button onClick={() => joinByCode()} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
-                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <circle cx="11" cy="11" r="8"></circle>
-                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                            </svg>
-                        </button>
+        <div id="challenge-modal" style={{ backgroundColor: '#eeeeee', minHeight: '100vh', padding: '38px 40px', display: 'block' }}>
+            <div style={{ maxWidth: '1300px', margin: '0 auto' }}>
+                <div className="modal-content">
+                    <div className="modal-header-top" style={{ 
+                        display: 'flex', 
+                        justifyContent: 'space-between', 
+                        alignItems: 'flex-start', 
+                        marginBottom: '50px', 
+                        gap: '30px'
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '30px' }}>
+                            <h2 style={{ fontSize: '2rem', margin: 0, fontWeight: 'bold', letterSpacing: '-0.5px' }}>전체 챌린지</h2>
+                            <div className="search-bar" style={{ 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                backgroundColor: 'white', 
+                                borderRadius: '25px', 
+                                padding: '8px 20px', 
+                                border: '1px solid #ccc' 
+                            }}>
+                                <input 
+                                    type="text" 
+                                    placeholder="Enter code" 
+                                    value={searchCode} 
+                                    onChange={(e) => setSearchCode(e.target.value)} 
+                                    onKeyDown={(e) => { if (e.key === 'Enter') joinByCode(); }} 
+                                    style={{ border: 'none', outline: 'none', width: '180px' }} 
+                                />
+                                <button onClick={() => joinByCode()} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}>
+                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <circle cx="11" cy="11" r="8"></circle>
+                                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '10px' }}>
+                            <button
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    navigate('/ongoing-challenges');
+                                }}
+                                style={{ 
+                                    color: '#666', 
+                                    fontSize: '0.9rem', 
+                                    textDecoration: 'none',
+                                    cursor: 'pointer',
+                                    padding: 0,
+                                    background: 'none',
+                                    border: 'none'
+                                }}
+                            >
+                                진행중인 챌린지 보러가기 →
+                            </button>
+                            <button 
+                                className="create-challenge-btn"
+                                style={{ 
+                                    backgroundColor: 'white', 
+                                    border: '1px solid #70c1b3', 
+                                    borderRadius: '25px', 
+                                    padding: '10px 25px', 
+                                    cursor: 'pointer', 
+                                    color: '#247b7b', 
+                                    fontWeight: 'bold'
+                                }}
+                                onClick={handleCreateChallenge}
+                            >
+                                챌린지 만들기
+                            </button>
+                        </div>
                     </div>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', marginRight: '145px', position: 'relative', zIndex: 20000, pointerEvents: 'auto' }}>
-                    <button
-                        onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            navigate('/ongoing-challenges');
-                        }}
-                        style={{ 
-                            color: '#666', 
-                            fontSize: '0.9rem', 
-                            textDecoration: 'none',
-                            cursor: 'pointer',
-                            padding: '5px',
-                            display: 'inline-block',
-                            position: 'relative',
-                            zIndex: 20001,
-                            pointerEvents: 'auto',
-                            background: 'none',
-                            border: 'none'
-                        }}
-                    >
-                        진행중인 챌린지 보러가기 →
-                    </button>
-                    <button 
-                        type="button"
-                        style={{ 
-                            backgroundColor: 'white', 
-                            border: '1px solid #70c1b3', 
-                            borderRadius: '25px', 
-                            padding: '10px 25px', 
-                            cursor: 'pointer', 
-                            color: '#247b7b', 
-                            fontWeight: 'bold'
-                        }}
-                        onClick={handleCreateChallenge}
-                    >
-                        챌린지 만들기
-                    </button>
-                </div>
-            </div>
 
-            {/* 2. 챌린지 리스트 및 '없음' 메시지 영역 (가운데 정렬 핵심) */}
-            <div className="challenge-container" style={{ 
-                flex: 1, 
-                display: 'flex', 
-                flexDirection: 'column',
-                justifyContent: loading || challenges.length === 0 ? 'center' : 'flex-start', /* 내용 없을 때 세로 중앙 */
-                alignItems: 'center', /* 가로 중앙 */
-                width: '100%',
-                position: 'relative',
-                zIndex: 1
-            }}>
-                {loading ? (
-                    <p style={{ color: '#888', fontSize: '1.1rem' }}>챌린지를 불러오는 중...</p>
-                ) : challenges.length > 0 ? (
-                    <div className="challenge-grid" style={{ 
-                        display: 'grid', 
-                        gridTemplateColumns: '1fr 1fr', 
-                        gap: '40px', 
-                        width: '100%' 
-                    }}>
-                        {challenges.map(challenge => (
-                            <ChallengeCard key={challenge.challenge_id} challenge={challenge} onShowAlert={showAlert} />
-                        ))}
+                    <div className="challenge-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '40px', paddingTop: '10px' }}>
+                        {loading ? (
+                            <p style={{ textAlign: 'center', gridColumn: 'span 2', color: '#888', padding: '50px' }}>
+                                챌린지를 불러오는 중...
+                            </p>
+                        ) : challenges.length > 0 ? (
+                            challenges.map(challenge => (
+                                <ChallengeCard key={challenge.challenge_id} challenge={challenge} onShowAlert={showAlert} />
+                            ))
+                        ) : (
+                            <p style={{ textAlign: 'center', gridColumn: 'span 2', color: '#888', padding: '50px' }}>
+                                아직 공개된 챌린지가 없습니다.
+                            </p>
+                        )}
                     </div>
-                ) : (
-                    /* 🚀 이 부분이 화면 정중앙에 오게 됩니다 */
-                    <p style={{ 
-                        textAlign: 'center', 
-                        color: '#888', 
-                        fontSize: '1.1rem',
-                        marginTop: '-100px' /* 헤더 높이만큼 약간 위로 보정하여 시각적 중앙 맞춤 */
-                    }}>
-                        아직 공개된 챌린지가 없습니다.
-                    </p>
-                )}
+                </div>
             </div>
-        </div>
         </div>
         
         {createChallengeModalOpen && (
