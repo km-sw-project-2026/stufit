@@ -12,7 +12,10 @@ export default async function handler(request: Request, { env, userId }: Handler
     console.log('[Verify] challenge_id:', id);
     if (Number.isNaN(id)) return new Response('Invalid challengeId', { status: 400 });
 
-    const today = new Date().toISOString().slice(0, 10);
+    // 한국 시간(UTC+9) 기준 현재 날짜
+    const now = new Date();
+    const koreanTime = new Date(now.getTime() + 9 * 60 * 60 * 1000);
+    const today = koreanTime.toISOString().split('T')[0];
     console.log('[Verify] today:', today);
 
     const already = await env.D1_DB.prepare(
