@@ -253,7 +253,6 @@
 // ------------------위에 코드에서 또 수정
 
 
-
 import React, { useState, useEffect } from 'react';
 import CustomAlertModal from '../modal/CustomAlertModal';
 
@@ -267,45 +266,53 @@ function Attendance() {
   const points = ["100P", "120P", "140P", "160P", "180P", "200P", "220P"];
 
   const todayIndex = new Date().getDay();
-  const todayDateString = new Date().toISOString().split('T')[0];
-
-
-
+  const todayDateString = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD 형식 안전하게 생성
 
   useEffect(() => {
     const fetchAttendance = async () => {
       const userId = localStorage.getItem('userId');
-      localStorage.removeItem('stufit_attendance');
       if (!userId || userId === "null" || userId === "undefined") {
         setCheckedDays(Array(7).fill(false));
         return;
       }
       try {
+        // 캐시 방지 타임스탬프 추가
         const response = await fetch(`/api/attendance?userId=${userId}&t=${new Date().getTime()}`);
         if (response.ok) {
           const data = await response.json();
           const newCheckedDays = Array(7).fill(false);
+          
+          // 이번 주 일요일 구하기 (기준점)
           const today = new Date();
           const sunday = new Date(today);
           sunday.setDate(today.getDate() - today.getDay());
           sunday.setHours(0, 0, 0, 0);
+
           if (data.logs && Array.isArray(data.logs)) {
             data.logs.forEach(log => {
-              const logDate = new Date(log.date);
-              if (logDate >= sunday) newCheckedDays[logDate.getDay()] = true;
+              // 서버에서 온 log.date ("YYYY-MM-DD")를 날짜 객체로 변환
+              const logDate = new Date(log.date + "T00:00:00"); 
+
+              // 핵심: 이번 주 일요일 이후의 기록만 해당 요일 인덱스에 정확히 매핑
+              if (logDate >= sunday) {
+                const dayIndex = logDate.getDay(); 
+                newCheckedDays[dayIndex] = true; // 기록이 실존하는 요일만 도장 찍기
+              }
             });
+            
+            // 오늘 날짜 출석 여부 업데이트
+            const hasCheckedToday = data.logs.some(log => log.date === todayDateString);
+            if (hasCheckedToday) setLastCheckDate(todayDateString);
           }
           setCheckedDays(newCheckedDays);
-          if (data.logs && data.logs.some(log => log.date === todayDateString)) setLastCheckDate(todayDateString);
-        } else {
-          setCheckedDays(Array(7).fill(false));
         }
       } catch (error) {
         console.error('출석 데이터 로딩 실패:', error);
       }
     };
     fetchAttendance();
-  }, [todayDateString]);
+    // 유저가 바뀌어도 데이터를 새로 불러오도록 의존성 배열 보강
+  }, [todayDateString, localStorage.getItem('userId')]);
 
   const showAlert = (msg) => {
     setAlertMessage(msg);
@@ -333,9 +340,10 @@ function Attendance() {
         body: JSON.stringify({ userId, date: todayDateString })
       });
       if (response.ok) {
-        const newCheckedDays = [...checkedDays];
-        newCheckedDays[index] = true;
-        setCheckedDays(newCheckedDays);
+        // 성공 시 화면 즉시 반영
+        const nextCheckedDays = [...checkedDays];
+        nextCheckedDays[index] = true;
+        setCheckedDays(nextCheckedDays);
         setLastCheckDate(todayDateString);
         showAlert(`${days[index]}요일 출석 완료! 랭킹 포인트가 반영되었습니다.`);
       } else {
@@ -378,7 +386,7 @@ function Attendance() {
           </div>
         </div>
         <div className="attendance-footer-outside">
-          총 연속 출석체크일 수 : <span className="total-days-count">{checkedDays.filter(Boolean).length}</span>일
+          총 이번 주 출석일 수 : <span className="total-days-count">{checkedDays.filter(Boolean).length}</span>일
         </div>
       </div>
       {isAlertOpen && <CustomAlertModal message={alertMessage} onClose={() => setIsAlertOpen(false)} />}
