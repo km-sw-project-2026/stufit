@@ -300,7 +300,15 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose }) {
             const rows = Array.isArray(result?.data) ? result.data : [];
             const userRows = rows.filter(row => row.username === username);
             const count = userRows.length;
-            const today = new Date().toISOString().slice(0, 10);
+            
+            // 한국 시간(Asia/Seoul) 기준으로 오늘 날짜 계산
+            const formatter = new Intl.DateTimeFormat('en-CA', {
+                timeZone: 'Asia/Seoul',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+            });
+            const today = formatter.format(new Date());
             console.log('[loadProgress] today:', today);
             console.log('[loadProgress] userRows:', userRows);
             
@@ -318,13 +326,7 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose }) {
                     setRemainingDays(Math.max(total - elapsed, 0));
                 }
 
-                // 한국 시간(Asia/Seoul) 기준으로 오늘 날짜 계산
-                const formatter = new Intl.DateTimeFormat('en-CA', {
-                    timeZone: 'Asia/Seoul',
-                    year: 'numeric',
-                    month: '2-digit',
-                    day: '2-digit',
-                });
+                // 위에서 선언한 formatter를 사용
                 const todayLocal = formatter.format(new Date());
                 const hasToday = userRows.some(row => row.date === todayLocal);
                 console.log('[loadProgress] hasToday:', hasToday, '각 row의 date:', userRows.map(r => r.date));
