@@ -196,6 +196,7 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose }) {
     const [elapsedDays, setElapsedDays] = useState(0);
     const [remainingDays, setRemainingDays] = useState(0);
     const [refreshKey, setRefreshKey] = useState(0);
+    const [ongoingAlertOpen, setOngoingAlertOpen] = useState(false);
 
     // props로 받은 challenge가 변경되면 state 업데이트
     useEffect(() => {
@@ -467,6 +468,17 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose }) {
         }, 1500);
     };
 
+    // 완료하기 버튼 핸들러
+    const handleComplete = () => {
+        // 챌린지가 아직 진행 중인지 확인
+        if (remainingDays > 0) {
+            setOngoingAlertOpen(true);
+            return;
+        }
+        // 챌린지가 끝난 경우 완료 처리 로직 추가 가능
+        alert('챌린지를 완료했습니다!');
+    };
+
     // Props 기본값 설정
     const title = challenge?.title || '챌린지';
     const goal = challenge?.goal || '아침 6시 기상';
@@ -705,7 +717,7 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose }) {
 
                                         <div className="detail-actions" style={{ marginTop: '10px' }}>
                                             <button className="btn-giveup" onClick={giveupHandler}>give up</button>
-                                            <button className="btn-complete">complete</button>
+                                            <button className="btn-complete" onClick={handleComplete}>complete</button>
                                         </div>
                     </div>
                 </div>
@@ -729,6 +741,12 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose }) {
                             onClose();
                         }
                     }}
+                />
+            )}
+            {ongoingAlertOpen && (
+                <CustomAlertModal
+                    message="아직 챌린지가 진행 중입니다!"
+                    onClose={() => setOngoingAlertOpen(false)}
                 />
             )}
         </>
