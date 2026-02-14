@@ -163,13 +163,15 @@ function ShopQuicklink() {
             </svg>
           </button>
 
-          <div ref={containerRef} className="shop-items-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 700, height: 240, overflow: 'hidden' }}>
+          <div ref={containerRef} className="shop-items-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: 260, overflow: 'hidden' }}>
             {
               (() => {
-                const containerWidthLocal = containerWidth || 700;
-                const base = 100;
-                const gap = 20; // left+right margins total
-                const slot = base + gap;
+                const containerWidthLocal = containerWidth || 900;
+                const VISIBLE = 5; // show five items fully
+                const gapTotal = 32; // total horizontal gap per slot (left+right)
+                const slot = Math.round(containerWidthLocal / VISIBLE);
+                const base = Math.max(80, slot - gapTotal);
+                const gapHalf = Math.round((slot - base) / 2);
                 const translateX = Math.round(containerWidthLocal / 2 - (virtualIndex * slot + base / 2));
 
                 return (
@@ -188,32 +190,28 @@ function ShopQuicklink() {
                       const pos = i - virtualIndex;
                       const absPos = Math.abs(pos);
 
-                      let scale = 0.65;
+                      let scale = 0.75;
                       let zIndex = 1;
-                      let opacity = 0;
+                      let opacity = 1;
                       let pointerEvents = 'auto';
 
                       if (absPos === 0) {
-                        scale = isTranslating ? 1.0 : 1.45;
+                        scale = isTranslating ? 1.0 : 1.6;
                         zIndex = 6;
                         opacity = 1;
                       } else if (absPos === 1) {
                         scale = 1.05;
-                        zIndex = 4;
-                        opacity = 0.95;
+                        zIndex = 5;
+                        opacity = 1;
                       } else if (absPos === 2) {
                         scale = 0.9;
-                        zIndex = 3;
-                        opacity = 0.6;
-                      } else if (absPos <= 3) {
-                        scale = 0.75;
-                        zIndex = 2;
-                        opacity = 0.35;
+                        zIndex = 4;
+                        opacity = 1;
                       } else {
-                        // keep space visible (small opacity) and non-interactive to avoid blank gaps
-                        scale = 0.6;
+                        // keep distant items small but visible to avoid blank gaps
+                        scale = 0.75;
                         zIndex = 1;
-                        opacity = 0.08;
+                        opacity = 0.9;
                         pointerEvents = 'none';
                       }
 
@@ -230,27 +228,40 @@ function ShopQuicklink() {
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            transition: `${absPos === 0 ? 'transform 300ms ease, box-shadow 300ms ease, opacity 300ms ease' : 'transform 0ms, opacity 200ms'}`,
+                            transition: `transform ${TRANS_DUR}ms cubic-bezier(.2,.9,.27,1), box-shadow ${TRANS_DUR}ms`,
                             transform: `scale(${scale})`,
                             transformOrigin: 'center center',
-                            boxShadow: absPos === 0 ? '0 10px 30px rgba(0,0,0,0.12)' : 'none',
+                            boxShadow: absPos === 0 ? '0 18px 40px rgba(0,0,0,0.18)' : 'none',
                             zIndex,
-                            opacity: showOutlines ? 1 : opacity,
-                            margin: '0 10px',
+                            opacity,
+                            margin: `0 ${gapHalf}px`,
                             background: '#fff',
                             position: 'relative',
                             cursor: pointerEvents === 'none' ? 'default' : 'pointer',
                             pointerEvents,
                             willChange: 'transform',
-                            border: showOutlines ? '1px dashed rgba(0,0,0,0.06)' : 'none'
+                            border: 'none'
                           }}
                         >
                           <img
                             src={src}
                             alt="item"
-                            onLoad={() => {
-                              // eslint-disable-next-line no-console
-                              console.log('ShopQuicklink image loaded', src);
+                            onLoad={(e) => {
+                              const imgEl = e.currentTarget;
+                              try {
+                                const rect = imgEl.getBoundingClientRect();
+                                const natural = imgEl.naturalWidth || 1;
+                                const factor = rect.width / natural;
+                                // If image is being upscaled significantly, use pixelated rendering for pixel-art
+                                if (factor > 1.1) {
+                                  imgEl.style.imageRendering = 'pixelated';
+                                  imgEl.style.webkitImageRendering = 'pixelated';
+                                } else {
+                                  imgEl.style.imageRendering = 'auto';
+                                }
+                              } catch (err) {
+                                // ignore
+                              }
                             }}
                             onError={(e) => {
                               // eslint-disable-next-line no-console
