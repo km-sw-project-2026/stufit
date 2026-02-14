@@ -65,7 +65,8 @@ function ShopQuicklink() {
   const moveBy = (delta) => {
     setScaleActive(false);
     setVirtualIndex((prev) => prev + delta);
-    window.setTimeout(() => setScaleActive(true), 120);
+    // wait until translate finishes, then enable center scale
+    window.setTimeout(() => setScaleActive(true), TRANS_DUR + 30);
   };
 
   useEffect(() => {
@@ -83,7 +84,7 @@ function ShopQuicklink() {
   const jumpTo = (logical) => {
     setScaleActive(false);
     setVirtualIndex(n + (logical % n));
-    window.setTimeout(() => setScaleActive(true), 140);
+    window.setTimeout(() => setScaleActive(true), TRANS_DUR + 30);
   };
 
   const prev = () => moveBy(-1);
@@ -193,10 +194,10 @@ function ShopQuicklink() {
                         zIndex = 2;
                         opacity = 0.35;
                       } else {
-                        // keep space but invisible and non-interactive
+                        // keep space visible (small opacity) and non-interactive to avoid blank gaps
                         scale = 0.6;
                         zIndex = 1;
-                        opacity = 0;
+                        opacity = 0.08;
                         pointerEvents = 'none';
                       }
 
