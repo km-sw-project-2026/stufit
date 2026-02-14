@@ -39,11 +39,16 @@ function WeeklySubmissionStatus({ challengeId }) {
                 month: '2-digit',
                 day: '2-digit',
             });
+            
+            // Seoul 기준 현재 날짜를 먼저 구합니다
+            const todayStr = formatter.format(new Date());
+            const [year, month, day] = todayStr.split('-').map(Number);
+            
             const last7Days = [];
             
             for (let i = 6; i >= 0; i--) {
-                const date = new Date();
-                date.setDate(date.getDate() - i);
+                // Seoul 시간 기준으로 i일 전의 날짜를 계산
+                const date = new Date(year, month - 1, day - i);
                 const dateStr = formatter.format(date);
                 const hasSubmitted = userRows.some(row => row.date === dateStr);
                 last7Days.push({ dateStr, hasSubmitted });
