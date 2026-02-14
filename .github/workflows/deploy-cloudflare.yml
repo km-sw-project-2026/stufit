@@ -55,9 +55,16 @@ jobs:
           echo "--- attempt wrangler whoami (may fail without token) ---"
           npx wrangler whoami --config wrangler.jsonc || true
 
+      - name: Generate ASCII-only wrangler config for CI
+        run: |
+          cat > wrangler.deploy.json << 'JSON'
+          {"name":"stufit","main":"worker/index.js","compatibility_date":"2026-01-20","assets":{"directory":"./dist"},"d1_databases":[{"binding":"D1_DB","database_name":"stufit","database_id":"cc896ec3-95aa-4b4b-aed3-8bd90bdbe633"}],"no_bundle":true}
+          JSON
+          echo "Generated wrangler.deploy.json:" && cat wrangler.deploy.json
+
       - name: Publish to Cloudflare (wrangler)
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
           npx wrangler --version
-          npx wrangler deploy --config wrangler.jsonc
+          npx wrangler deploy --config wrangler.deploy.json
