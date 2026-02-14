@@ -40,17 +40,34 @@ function WeeklySubmissionStatus({ challengeId }) {
                 day: '2-digit',
             });
             
+            const pad = (n) => String(n).padStart(2, '0');
             // Seoul 기준 현재 날짜를 먼저 구합니다
             const todayStr = formatter.format(new Date());
             const [year, month, day] = todayStr.split('-').map(Number);
             
             const last7Days = [];
             
+            // 순수 숫자 기반으로 각 날짜를 계산합니다
             for (let i = 6; i >= 0; i--) {
-                // Seoul 시간 기준으로 i일 전의 날짜를 계산
-                const date = new Date(year, month - 1, day - i);
-                const dateStr = formatter.format(date);
+                let calcDay = day - i;
+                let calcMonth = month;
+                let calcYear = year;
+                
+                // 월 초 처리
+                if (calcDay <= 0) {
+                    calcMonth--;
+                    if (calcMonth <= 0) {
+                        calcMonth = 12;
+                        calcYear--;
+                    }
+                    // 이전 달의 마지막 날짜 계산
+                    const daysInMonth = new Date(calcYear, calcMonth, 0).getDate();
+                    calcDay += daysInMonth;
+                }
+                
+                const dateStr = `${calcYear}-${pad(calcMonth)}-${pad(calcDay)}`;
                 const hasSubmitted = userRows.some(row => row.date === dateStr);
+                console.log('[loadWeeklyData] dateStr:', dateStr, 'hasSubmitted:', hasSubmitted, 'userRows:', userRows.map(r => r.date));
                 last7Days.push({ dateStr, hasSubmitted });
             }
 
@@ -156,7 +173,7 @@ function WeeklySubmissionStatus({ challengeId }) {
                             color: '#999',
                             height: '12px'
                         }}>
-                            {new Date(day.dateStr).getDate()}
+                            {day.dateStr.split('-')[2]}
                         </div>
                     </div>
                 ))}
@@ -650,7 +667,7 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose }) {
                             )}
                         </div>
 
-                                        <div className="detail-actions" style={{ marginTop: '-6px' }}>
+                                        <div className="detail-actions" style={{ marginTop: '10px' }}>
                                             <button className="btn-giveup" onClick={giveupHandler}>give up</button>
                                             <button className="btn-complete">complete</button>
                                         </div>
