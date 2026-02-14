@@ -685,6 +685,7 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose }) {
                                 className="submit-btn"
                                 onClick={handleSubmitProgress}
                                 disabled={submittedToday || submitLoading}
+                                style={{ marginTop: '-4px' }}
                             >
                                 {submittedToday ? '제출이 완료되었습니다' : submitLoading ? '제출 중...' : '제출하기'}
                             </button>
@@ -715,7 +716,7 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose }) {
                             )}
                         </div>
 
-                                        <div className="detail-actions" style={{ marginTop: '10px' }}>
+                                        <div className="detail-actions" style={{ marginTop: '6px' }}>
                                             <button className="btn-giveup" onClick={giveupHandler}>give up</button>
                                             <button className="btn-complete" onClick={handleComplete}>complete</button>
                                         </div>
