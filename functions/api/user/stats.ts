@@ -60,7 +60,9 @@ export const onRequestGet = async (context: { request: Request; env: any }) => {
   const { request, env } = context;
   try {
     const url = new URL(request.url);
+    // 1. 프론트엔드에서 쿼리 파라미터로 보낸 userId를 우선 확인
     const userIdArg = url.searchParams.get('userId');
+    // 2. 헤더에 포함된 username을 확인 (로그에서 확인된 방식)
     const username = request.headers.get('X-Username');
 
     if (!env.D1_DB) {
@@ -69,10 +71,9 @@ export const onRequestGet = async (context: { request: Request; env: any }) => {
 
     let userId: string | number | null = userIdArg;
 
-    // 1. 유저 ID가 없는 경우 username으로 user_id를 찾아옵니다.
-    // DB 스크린샷에 따라 'user_profiles' 테이블을 참조하도록 수정했습니다.
-    if (!userId && username) {
-      const user = await env.D1_DB.prepare("SELECT user_id FROM user_profiles WHERE username = ?")
+    // [핵심 수정] userId가 없거나 부정확할 경우 username으로 users 테이블에서 정확한 ID를 찾습니다.
+    if ((!userId || userId === 'null' || userId === 'undefined') && username) {
+      const user = await env.D1_DB.prepare("SELECT user_id FROM users WHERE username = ?")
         .bind(username)
         .first();
       if (user) {
@@ -80,26 +81,30 @@ export const onRequestGet = async (context: { request: Request; env: any }) => {
       }
     }
 
+    // 최종적으로 유저를 식별할 수 없는 경우 0을 반환하여 에러를 방지합니다.
     if (!userId) {
-      return Response.json({ error: 'User ID or Username required' }, { status: 400 });
+      return Response.json({
+        success: true,
+        stats: { posts: 0, comments: 0, points: 0 }
+      });
     }
 
-    // 2. 게시글 수 조회 (deleted_at이 없는 실제 게시글만 카운트)
+    // 3. 게시글 수 조회 (database.sql의 posts 테이블 참조)
     const postCountResult = await env.D1_DB.prepare(
       "SELECT COUNT(*) as count FROM posts WHERE user_id = ? AND deleted_at IS NULL"
     ).bind(userId).first();
 
-    // 3. 댓글 수 조회
+    // 4. 댓글 수 조회 (database.sql의 comments 테이블 참조)
     const commentCountResult = await env.D1_DB.prepare(
       "SELECT COUNT(*) as count FROM comments WHERE user_id = ?"
     ).bind(userId).first();
 
-    // 4. 포인트 조회
+    // 5. 포인트 조회 (database.sql의 user_profiles 테이블 참조)
     const profileResult = await env.D1_DB.prepare(
       "SELECT points FROM user_profiles WHERE user_id = ?"
     ).bind(userId).first();
 
-    // 기존 stats 구조를 그대로 유지하여 반환합니다.
+    // 프론트엔드 MyPage.jsx가 기대하는 형식 그대로 반환합니다.
     return Response.json({
       success: true,
       stats: {
@@ -111,6 +116,10 @@ export const onRequestGet = async (context: { request: Request; env: any }) => {
 
   } catch (err) {
     console.error('Stats fetch error:', err);
-    return Response.json({ error: (err as Error).message }, { status: 500 });
+    return Response.json({ 
+      success: false, 
+      error: (err as Error).message,
+      stats: { posts: 0, comments: 0, points: 0 } 
+    }, { status: 500 });
   }
 };
