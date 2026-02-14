@@ -41,6 +41,8 @@ function ShopQuicklink() {
   const n = images.length;
   const displayImages = [...images, ...images, ...images];
   const [virtualIndex, setVirtualIndex] = useState(n + Math.floor(n / 2));
+  const virtualRef = useRef(virtualIndex);
+  const [activeVirtual, setActiveVirtual] = useState(virtualIndex);
   const logicalIndex = ((virtualIndex % n) + n) % n;
   const [transitionEnabled, setTransitionEnabled] = useState(true);
   const [mountedFlag, setMountedFlag] = useState(false);
@@ -67,8 +69,8 @@ function ShopQuicklink() {
   const moveBy = (delta) => {
     setIsTranslating(true);
     setVirtualIndex((prev) => prev + delta);
-    // safety: ensure translating flag cleared after TRANS_DUR+50
-    window.setTimeout(() => setIsTranslating(false), TRANS_DUR + 50);
+    // safety: ensure translating flag cleared after TRANS_DUR+200
+    window.setTimeout(() => setIsTranslating(false), TRANS_DUR + 200);
   };
 
   useEffect(() => {
@@ -86,7 +88,7 @@ function ShopQuicklink() {
   const jumpTo = (logical) => {
     setIsTranslating(true);
     setVirtualIndex(n + (logical % n));
-    window.setTimeout(() => setIsTranslating(false), TRANS_DUR + 50);
+    window.setTimeout(() => setIsTranslating(false), TRANS_DUR + 200);
   };
 
   const prev = () => moveBy(-1);
@@ -94,6 +96,7 @@ function ShopQuicklink() {
 
   // when virtualIndex moves beyond middle copy, reset without transition to keep infinite illusion
   useEffect(() => {
+    virtualRef.current = virtualIndex;
     if (virtualIndex >= 2 * n) {
       const t = setTimeout(() => {
         setTransitionEnabled(false);
@@ -120,6 +123,8 @@ function ShopQuicklink() {
     const onEnd = (e) => {
       if (e.propertyName === 'transform') {
         setIsTranslating(false);
+        // after translate finishes, mark this virtual index as active so center-scale applies
+        setActiveVirtual(virtualRef.current);
       }
     };
     el.addEventListener('transitionend', onEnd);
@@ -187,32 +192,56 @@ function ShopQuicklink() {
                       }}
                     >
                     {displayImages.map((src, i) => {
-                      const pos = i - virtualIndex;
-                      const absPos = Math.abs(pos);
+                      const posCurrent = i - virtualIndex; // position during translate
+                      const absPosCurrent = Math.abs(posCurrent);
+                      const posActive = i - activeVirtual; // position after translate
+                      const absPosActive = Math.abs(posActive);
 
                       let scale = 0.75;
                       let zIndex = 1;
                       let opacity = 1;
                       let pointerEvents = 'auto';
 
-                      if (absPos === 0) {
-                        scale = isTranslating ? 1.0 : 1.6;
-                        zIndex = 6;
-                        opacity = 1;
-                      } else if (absPos === 1) {
-                        scale = 1.05;
-                        zIndex = 5;
-                        opacity = 1;
-                      } else if (absPos === 2) {
-                        scale = 0.9;
-                        zIndex = 4;
-                        opacity = 1;
+                      if (isTranslating) {
+                        // while translating, show positions relative to the moving index
+                        if (absPosCurrent === 0) {
+                          scale = 1.0;
+                          zIndex = 6;
+                          opacity = 1;
+                        } else if (absPosCurrent === 1) {
+                          scale = 1.05;
+                          zIndex = 5;
+                          opacity = 1;
+                        } else if (absPosCurrent === 2) {
+                          scale = 0.9;
+                          zIndex = 4;
+                          opacity = 1;
+                        } else {
+                          scale = 0.75;
+                          zIndex = 1;
+                          opacity = 0.9;
+                          pointerEvents = 'none';
+                        }
                       } else {
-                        // keep distant items small but visible to avoid blank gaps
-                        scale = 0.75;
-                        zIndex = 1;
-                        opacity = 0.9;
-                        pointerEvents = 'none';
+                        // after translate finishes, base scaling on active index so center enlarges
+                        if (absPosActive === 0) {
+                          scale = 1.6;
+                          zIndex = 6;
+                          opacity = 1;
+                        } else if (absPosActive === 1) {
+                          scale = 1.05;
+                          zIndex = 5;
+                          opacity = 1;
+                        } else if (absPosActive === 2) {
+                          scale = 0.9;
+                          zIndex = 4;
+                          opacity = 1;
+                        } else {
+                          scale = 0.75;
+                          zIndex = 1;
+                          opacity = 0.9;
+                          pointerEvents = 'none';
+                        }
                       }
 
                       return (
