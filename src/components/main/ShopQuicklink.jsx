@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useLayoutEffect } from 'react';
 
 // Explicit imports to ensure assets load reliably in dev and CI
 import bgTeeth from '../../assets/shop-items/bg-teeth.png';
@@ -37,15 +37,37 @@ function ShopQuicklink() {
 
   const [index, setIndex] = useState(() => Math.floor(images.length / 2));
   const [scaleActive, setScaleActive] = useState(true);
+  const containerRef = useRef(null);
+  const [containerWidth, setContainerWidth] = useState(700);
+
+  useLayoutEffect(() => {
+    const update = () => {
+      if (containerRef.current) setContainerWidth(containerRef.current.clientWidth);
+    };
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, []);
+
+  // use functional updates for keyboard to avoid stale index closures
+  const moveBy = (delta) => {
+    setScaleActive(false);
+    setIndex((prev) => {
+      const n = images.length;
+      const next = (prev + delta + n) % n;
+      return next;
+    });
+    window.setTimeout(() => setScaleActive(true), 140);
+  };
 
   useEffect(() => {
     const onKey = (e) => {
-      if (e.key === 'ArrowLeft') jumpTo((index - 1 + images.length) % images.length);
-      if (e.key === 'ArrowRight') jumpTo((index + 1) % images.length);
+      if (e.key === 'ArrowLeft') moveBy(-1);
+      if (e.key === 'ArrowRight') moveBy(1);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [images.length]);
+  }, []);
 
   // navigation that temporarily disables immediate scaling so center enlarges after arrival
   const jumpTo = (newIndex) => {
@@ -97,14 +119,15 @@ function ShopQuicklink() {
           <div className="shop-items-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 700, height: 240, overflow: 'hidden' }}>
             {
               (() => {
-                const containerWidth = 700;
+                const containerWidthLocal = containerWidth || 700;
                 const base = 100;
                 const gap = 20; // left+right margins total
                 const slot = base + gap;
-                const translateX = Math.round(containerWidth / 2 - (index * slot + base / 2));
+                const translateX = Math.round(containerWidthLocal / 2 - (index * slot + base / 2));
 
                 return (
                   <div
+                    ref={containerRef}
                     className="shop-items-row"
                     style={{
                       display: 'flex',
