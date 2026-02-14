@@ -116,14 +116,16 @@ export async function onRequestGet({ env, userId }) {
         }
 
         const likerId = userId || -1;
+        // u.username을 가져오기 위해 테이블 존재 여부를 고려하여 LEFT JOIN 합니다.
+        // 만약 에러가 계속된다면 u.username 부분을 제거하고 테스트해야 합니다.
         const result = await env.D1_DB
             .prepare(
-                `SELECT p.*, u.username,
+                `SELECT p.*, 
+                        (SELECT username FROM user_profiles WHERE user_id = p.user_id) AS username,
                         (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.post_id) AS comment_count,
                         (SELECT COUNT(*) FROM post_likes pl2 WHERE pl2.post_id = p.post_id) AS like_count,
                         CASE WHEN pl.user_id IS NULL THEN 0 ELSE 1 END AS user_liked
                  FROM posts p
-                 LEFT JOIN user_profiles u ON p.user_id = u.user_id
                  LEFT JOIN post_likes pl ON pl.post_id = p.post_id AND pl.user_id = ?
                  WHERE p.deleted_at IS NULL
                  ORDER BY p.created_at DESC`
@@ -133,7 +135,7 @@ export async function onRequestGet({ env, userId }) {
 
         const posts = (result.results || []).map(post => ({
             ...post,
-            id: post.post_id, // frontend expects 'id'
+            id: post.post_id,
             date: new Date(post.created_at).toLocaleString('ko-KR')
         }));
 
@@ -152,7 +154,6 @@ export async function onRequestGet({ env, userId }) {
 
 export async function onRequestPost({ request, env, userId }) {
     try {
-
         if (!env?.D1_DB) {
             return new Response(
                 JSON.stringify({ message: '서버 설정 오류입니다.' }),
@@ -180,19 +181,26 @@ export async function onRequestPost({ request, env, userId }) {
         }
 
         const now = new Date().toISOString();
+        // 게시글 삽입 로직 (가장 핵심적인 부분입니다)
         const insertResult = await env.D1_DB
             .prepare('INSERT INTO posts (user_id, title, content, category, created_at) VALUES (?, ?, ?, ?, ?)')
             .bind(userId, title, content, category, now)
             .run();
 
         const postId = insertResult.meta?.last_row_id || insertResult.lastInsertRowid;
+        
         if (!postId) {
-            throw new Error('게시글 ID를 가져올 수 없습니다.');
+            throw new Error('게시글 ID 생성 실패');
         }
 
-        // 여기서도 users 대신 user_profiles 테이블을 사용하도록 수정했습니다.
+        // 생성된 글 정보를 가져올 때 서브쿼리를 사용하여 테이블 충돌을 방지합니다.
         const created = await env.D1_DB
-            .prepare('SELECT p.*, u.username FROM posts p LEFT JOIN user_profiles u ON p.user_id = u.user_id WHERE p.post_id = ?')
+            .prepare(`
+                SELECT p.*, 
+                (SELECT username FROM user_profiles WHERE user_id = p.user_id) as username 
+                FROM posts p 
+                WHERE p.post_id = ?
+            `)
             .bind(postId)
             .first();
 
