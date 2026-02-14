@@ -488,10 +488,11 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose }) {
             const username = localStorage.getItem('username');
             const headers = {};
             if (username) headers['X-Username'] = username;
-            const res = await fetch(`/api/challenges/${challenge.challenge_id}/members`, { headers });
+            // 전체 챌린지 정보를 가져옴 (members 포함)
+            const res = await fetch(`/api/challenges/${challenge.challenge_id}`, { headers });
             if (!res.ok) return;
             const payload = await res.json();
-            const list = payload?.members || [];
+            const list = (payload?.data && payload.data.members) ? payload.data.members : (payload?.members || []);
             setMembers(list || []);
         } catch (e) {
             console.error('pollMembers 실패:', e);
