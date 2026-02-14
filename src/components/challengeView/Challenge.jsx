@@ -426,7 +426,7 @@ return (
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', marginRight: '145px', position: 'relative', zIndex: 20000, pointerEvents: 'auto' }}>
                     <a
-                        href="/ongoing-challenges"
+                        href="https://stufit.c01.kr/ongoing-challenges"
                         style={{ 
                             color: '#666', 
                             fontSize: '0.9rem', 
