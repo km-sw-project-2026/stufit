@@ -32,16 +32,19 @@ function WeeklySubmissionStatus({ challengeId }) {
             const rows = Array.isArray(result?.data) ? result.data : [];
             const userRows = rows.filter(row => row.username === user);
 
-            // 오늘 기준 최근 7일 계산 (로컬 타임존 기준)
-            const today = new Date();
+            // 한국 시간(Asia/Seoul) 기준 최근 7일 계산
+            const formatter = new Intl.DateTimeFormat('en-CA', {
+                timeZone: 'Asia/Seoul',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+            });
             const last7Days = [];
-            const pad = (n) => String(n).padStart(2, '0');
             
             for (let i = 6; i >= 0; i--) {
-                const date = new Date(today);
+                const date = new Date();
                 date.setDate(date.getDate() - i);
-                // 로컬 타임존 기준으로 YYYY-MM-DD 형식 생성
-                const dateStr = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+                const dateStr = formatter.format(date);
                 const hasSubmitted = userRows.some(row => row.date === dateStr);
                 last7Days.push({ dateStr, hasSubmitted });
             }
@@ -293,10 +296,14 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose }) {
                     setRemainingDays(Math.max(total - elapsed, 0));
                 }
 
-                // compute local YYYY-MM-DD for today's comparison to avoid TZ shifts
-                const d = new Date();
-                const pad = (n) => String(n).padStart(2, '0');
-                const todayLocal = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+                // 한국 시간(Asia/Seoul) 기준으로 오늘 날짜 계산
+                const formatter = new Intl.DateTimeFormat('en-CA', {
+                    timeZone: 'Asia/Seoul',
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                });
+                const todayLocal = formatter.format(new Date());
                 const hasToday = userRows.some(row => row.date === todayLocal);
                 console.log('[loadProgress] hasToday:', hasToday, '각 row의 date:', userRows.map(r => r.date));
                 setSubmittedToday(hasToday);
