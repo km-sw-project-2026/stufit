@@ -30,6 +30,31 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
 
+      - name: Verbose debug info
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+        run: |
+          echo "--- Environment summary ---"
+          echo "PWD: $(pwd)"
+          echo "User: $(whoami)"
+          echo "Node: $(node -v || echo 'node missing')"
+          echo "npm: $(npm -v || echo 'npm missing')"
+          echo "--- Repo root listing ---"
+          ls -la || true
+          echo "--- .wrangler deploy config (if exists) ---"
+          if [ -f .wrangler/deploy/config.json ]; then echo 'FOUND .wrangler/deploy/config.json:'; sed -n '1,200p' .wrangler/deploy/config.json; else echo 'no .wrangler/deploy/config.json'; fi
+          echo "--- Source wrangler.jsonc (repo) ---"
+          if [ -f wrangler.jsonc ]; then sed -n '1,200p' wrangler.jsonc; else echo 'no wrangler.jsonc at repo root'; fi
+          echo "--- Generated dist config (if exists) ---"
+          if [ -f dist/stufit/wrangler.json ]; then sed -n '1,200p' dist/stufit/wrangler.json; else echo 'no dist/stufit/wrangler.json'; fi
+          echo "--- assets folder listing (src/assets/shop-items) ---"
+          ls -la src/assets/shop-items || true
+          echo "--- attempt wrangler --version (to show which config path it reports) ---"
+          npx wrangler --version || true
+          echo "--- attempt wrangler whoami (may fail without token) ---"
+          npx wrangler whoami --config wrangler.jsonc || true
+
       - name: Publish to Cloudflare (wrangler)
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
