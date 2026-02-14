@@ -56,81 +56,61 @@
 
 // -------------------------------------------수정 코드(밑에)
 
-// 1. 에디터가 인식하지 못하는 클라우드플레어 전용 타입들을 직접 정의합니다.
-interface D1Database {
-  prepare: (query: string) => {
-    bind: (...args: any[]) => {
-      first: <T = any>() => Promise<T | null>;
-      all: <T = any>() => Promise<{ results: T[] }>;
-    };
-  };
-  batch: (queries: any[]) => Promise<any[]>;
-}
-
-interface Env {
-  // Cloudflare 대시보드에 설정한 Binding 이름과 정확히 일치해야 합니다.
-  D1_DB: D1Database; 
-}
-
-// 2. PagesFunction 타입을 정의하여 context 내부의 env와 request를 인식시킵니다.
-type PagesFunction<E = any> = (context: {
-  request: Request;
-  env: E;
-  params: Record<string, string>;
-}) => Promise<Response>;
-
-export const onRequest: PagesFunction<Env> = async (context) => {
+export const onRequestGet = async (context: { request: Request; env: any }) => {
   const { request, env } = context;
-  const { searchParams } = new URL(request.url);
-  const userId = searchParams.get('userId');
-
-  // 유저 ID가 없는 경우 에러 처리
-  if (!userId) {
-    return new Response(JSON.stringify({ 
-      success: false, 
-      error: 'User ID is required' 
-    }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' }
-    });
-  }
-
   try {
-    // 3. 실제 DB에서 게시글 수, 댓글 수, 포인트를 가져옵니다.
-    // D1 Studio의 테이블 구조(posts, comments, users)를 기반으로 쿼리합니다.
-    const [postsRes, commentsRes, userRes] = await Promise.all([
-      env.D1_DB.prepare("SELECT COUNT(*) as count FROM posts WHERE userId = ?").bind(userId).first(),
-      env.D1_DB.prepare("SELECT COUNT(*) as count FROM comments WHERE userId = ?").bind(userId).first(),
-      env.D1_DB.prepare("SELECT points FROM users WHERE id = ?").bind(userId).first()
-    ]);
+    const url = new URL(request.url);
+    
+    // 1. 다양한 경로로 유저 ID를 확인합니다.
+    // 로그에 찍힌 'userId: 4' 같은 형식을 우선적으로 잡습니다.
+    const queryUserId = url.searchParams.get('userId');
+    const headerUserId = request.headers.get('X-UserId');
+    
+    // 유효한 ID가 있는지 확인
+    const finalUserId = queryUserId || headerUserId;
 
-    // 결과값이 없을 경우를 대비해 기본값 0을 설정합니다.
-    const postsCount = (postsRes as any)?.count || 0;
-    const commentsCount = (commentsRes as any)?.count || 0;
-    const pointsCount = (userRes as any)?.points || 0;
+    if (!env.D1_DB) {
+      return Response.json({ error: 'DB 설정 오류' }, { status: 500 });
+    }
 
-    return new Response(JSON.stringify({
+    if (!finalUserId || finalUserId === 'null' || finalUserId === 'undefined') {
+      console.log('⚠️ 유저 ID를 찾을 수 없어 0을 반환합니다.');
+      return Response.json({
+        success: true,
+        stats: { posts: 0, comments: 0, points: 0 }
+      });
+    }
+
+    // 2. 해당 유저가 쓴 게시글 수 계산 (posts 테이블)
+    const postCount = await env.D1_DB.prepare(
+      "SELECT COUNT(*) as count FROM posts WHERE user_id = ? AND deleted_at IS NULL"
+    ).bind(finalUserId).first();
+
+    // 3. 해당 유저가 쓴 댓글 수 계산 (comments 테이블)
+    const commentCount = await env.D1_DB.prepare(
+      "SELECT COUNT(*) as count FROM comments WHERE user_id = ?"
+    ).bind(finalUserId).first();
+
+    // 4. 포인트 정보 계산 (user_profiles 테이블)
+    const profile = await env.D1_DB.prepare(
+      "SELECT points FROM user_profiles WHERE user_id = ?"
+    ).bind(finalUserId).first();
+
+    // 프론트엔드 MyPage.jsx가 사용하는 형식으로 정확히 반환
+    return Response.json({
       success: true,
       stats: {
-        posts: postsCount,
-        comments: commentsCount,
-        points: pointsCount
-      }
-    }), {
-      headers: { 
-        'Content-Type': 'application/json',
-        'Cache-Control': 'no-cache' 
+        posts: postCount?.count || 0,
+        comments: commentCount?.count || 0,
+        points: profile?.points || 0
       }
     });
 
-  } catch (error: any) {
-    // 500 에러 발생 시 구체적인 원인을 반환하도록 설정합니다.
-    return new Response(JSON.stringify({ 
+  } catch (err: any) {
+    console.error('❌ Stats Error:', err.message);
+    return Response.json({ 
       success: false, 
-      error: error.message 
-    }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+      stats: { posts: 0, comments: 0, points: 0 } 
+    }, { status: 500 });
   }
 };
