@@ -428,12 +428,9 @@ return (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', marginRight: '145px', position: 'relative', zIndex: 20000, pointerEvents: 'auto' }}>
                     <button
                         onClick={(e) => {
-                            console.log('진행중인 챌린지 보러가기 클릭됨');
                             e.preventDefault();
                             e.stopPropagation();
-                            console.log('Navigating to /ongoing-challenges');
                             navigate('/ongoing-challenges');
-                            console.log('Navigate 호출 완료');
                         }}
                         style={{ 
                             color: '#666', 
