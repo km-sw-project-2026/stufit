@@ -107,6 +107,13 @@ function ShopQuicklink () {
                         }} />
                     ))}
                 </div>
+                {/* Debug: visible info to confirm images are loaded */}
+                <div style={{ marginTop: 10, fontSize: 12, color: '#666' }}>
+                    <div>Debug: images count = {images.length}</div>
+                    <div style={{ maxWidth: 700, overflow: 'auto', whiteSpace: 'nowrap' }}>{images.map((s, i) => (
+                        <span key={i} style={{ display: 'inline-block', marginRight: 8 }}>{s.split('/').pop()}</span>
+                    ))}</div>
+                </div>
             </div>
         </div>
     );
