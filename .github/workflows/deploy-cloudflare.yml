@@ -51,8 +51,7 @@ jobs:
           echo "--- assets folder listing (src/assets/shop-items) ---"
           ls -la src/assets/shop-items || true
           echo "--- skipping wrangler --version (avoids ByteString telemetry error) ---"
-          echo "--- attempt wrangler whoami (may fail without token) ---"
-          npx wrangler whoami --config wrangler.jsonc || true
+          echo "--- skipping wrangler whoami (avoid invoking wrangler before deploy) ---"
 
       - name: Generate ASCII-only wrangler config for CI
         run: |
