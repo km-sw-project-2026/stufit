@@ -35,10 +35,14 @@ function ShopQuicklink() {
     pumpkin,
   ];
 
-  const [index, setIndex] = useState(() => Math.floor(images.length / 2));
   const [scaleActive, setScaleActive] = useState(true);
   const containerRef = useRef(null);
   const [containerWidth, setContainerWidth] = useState(700);
+  const n = images.length;
+  const displayImages = [...images, ...images, ...images];
+  const [virtualIndex, setVirtualIndex] = useState(n + Math.floor(n / 2));
+  const logicalIndex = ((virtualIndex % n) + n) % n;
+  const [transitionEnabled, setTransitionEnabled] = useState(true);
 
   useLayoutEffect(() => {
     const update = () => {
@@ -49,14 +53,12 @@ function ShopQuicklink() {
     return () => window.removeEventListener('resize', update);
   }, []);
 
-  // use functional updates for keyboard to avoid stale index closures
+  const TRANS_DUR = 300;
+
+  // move virtual index by delta (keyboard)
   const moveBy = (delta) => {
     setScaleActive(false);
-    setIndex((prev) => {
-      const n = images.length;
-      const next = (prev + delta + n) % n;
-      return next;
-    });
+    setVirtualIndex((prev) => prev + delta);
     window.setTimeout(() => setScaleActive(true), 140);
   };
 
@@ -69,16 +71,36 @@ function ShopQuicklink() {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
-  // navigation that temporarily disables immediate scaling so center enlarges after arrival
-  const jumpTo = (newIndex) => {
+  // navigation to a logical index (click/pagination)
+  const jumpTo = (logical) => {
     setScaleActive(false);
-    setIndex(newIndex);
-    // small delay so items 'arrive' then scale
+    setVirtualIndex(n + (logical % n));
     window.setTimeout(() => setScaleActive(true), 140);
   };
 
-  const prev = () => jumpTo((index - 1 + images.length) % images.length);
-  const next = () => jumpTo((index + 1) % images.length);
+  const prev = () => moveBy(-1);
+  const next = () => moveBy(1);
+
+  // when virtualIndex moves beyond middle copy, reset without transition to keep infinite illusion
+  useEffect(() => {
+    if (virtualIndex >= 2 * n) {
+      const t = setTimeout(() => {
+        setTransitionEnabled(false);
+        setVirtualIndex((v) => v - n);
+        requestAnimationFrame(() => requestAnimationFrame(() => setTransitionEnabled(true)));
+      }, TRANS_DUR);
+      return () => clearTimeout(t);
+    }
+    if (virtualIndex < n) {
+      const t = setTimeout(() => {
+        setTransitionEnabled(false);
+        setVirtualIndex((v) => v + n);
+        requestAnimationFrame(() => requestAnimationFrame(() => setTransitionEnabled(true)));
+      }, TRANS_DUR);
+      return () => clearTimeout(t);
+    }
+    return undefined;
+  }, [virtualIndex, n]);
 
   return (
     <div className="shop-quicklink" style={{ padding: '40px 0' }}>
@@ -116,31 +138,28 @@ function ShopQuicklink() {
             </svg>
           </button>
 
-          <div className="shop-items-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 700, height: 240, overflow: 'hidden' }}>
+          <div ref={containerRef} className="shop-items-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 700, height: 240, overflow: 'hidden' }}>
             {
               (() => {
                 const containerWidthLocal = containerWidth || 700;
                 const base = 100;
                 const gap = 20; // left+right margins total
                 const slot = base + gap;
-                const translateX = Math.round(containerWidthLocal / 2 - (index * slot + base / 2));
+                const translateX = Math.round(containerWidthLocal / 2 - (virtualIndex * slot + base / 2));
 
                 return (
                   <div
-                    ref={containerRef}
                     className="shop-items-row"
                     style={{
                       display: 'flex',
                       alignItems: 'center',
-                      transition: 'transform 300ms ease',
+                      transition: transitionEnabled ? `transform ${TRANS_DUR}ms ease` : 'none',
                       transform: `translateX(${translateX}px)`,
                       willChange: 'transform'
                     }}
                   >
-                    {images.map((src, i) => {
-                      const n = images.length;
-                      let pos = ((i - index) + n) % n;
-                      if (pos > n / 2) pos -= n;
+                    {displayImages.map((src, i) => {
+                      const pos = i - virtualIndex;
                       const absPos = Math.abs(pos);
 
                       let scale = 0.65;
@@ -174,8 +193,8 @@ function ShopQuicklink() {
 
                       return (
                         <div
-                          key={i}
-                          onClick={() => jumpTo(i)}
+                          key={`${i}-${src}`}
+                          onClick={() => jumpTo(i % n)}
                           style={{
                             width: base,
                             height: base,
@@ -239,7 +258,7 @@ function ShopQuicklink() {
                 height: 12,
                 borderRadius: '50%',
                 border: 'none',
-                background: i === index ? '#176B5F' : '#ddd',
+                background: i === logicalIndex ? '#176B5F' : '#ddd',
                 cursor: 'pointer',
               }}
             />
