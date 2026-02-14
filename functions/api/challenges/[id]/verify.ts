@@ -12,15 +12,26 @@ export default async function handler(request: Request, { env, userId }: Handler
     console.log('[Verify] challenge_id:', id);
     if (Number.isNaN(id)) return new Response('Invalid challengeId', { status: 400 });
 
-    // 한국 시간(UTC+9) 기준 현재 날짜
-    const now = new Date();
-    const formatter = new Intl.DateTimeFormat('en-CA', {
-      timeZone: 'Asia/Seoul',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    });
-    const today = formatter.format(now);
+    // 클라이언트에서 보낸 한국 시간 기준 날짜를 받습니다
+    let today: string;
+    try {
+      const body = await request.json();
+      today = (body.date || '').trim();
+    } catch (e) {
+      today = '';
+    }
+    
+    // 만약 클라이언트에서 날짜를 보내지 않으면 서버에서 계산
+    if (!today) {
+      const formatter = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Seoul',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      });
+      today = formatter.format(new Date());
+    }
+    
     console.log('[Verify] today:', today);
 
     const already = await env.D1_DB.prepare(

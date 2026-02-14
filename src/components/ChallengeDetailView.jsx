@@ -384,13 +384,23 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose }) {
         console.log('[handleSubmitProgress] 제출 중 상태로 변경');
         
         try {
-            console.log('[handleSubmitProgress] API 호출 시작');
+            // 클라이언트에서 한국 시간 기준 오늘 날짜 계산
+            const formatter = new Intl.DateTimeFormat('en-CA', {
+                timeZone: 'Asia/Seoul',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+            });
+            const todayInSeoul = formatter.format(new Date());
+            console.log('[handleSubmitProgress] API 호출 시작, todayInSeoul:', todayInSeoul);
+            
             const response = await fetch(`/api/challenges/${challenge.challenge_id}/verify`, {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-Username': username
-                }
+                },
+                body: JSON.stringify({ date: todayInSeoul })
             });
 
             const result = await response.json();
