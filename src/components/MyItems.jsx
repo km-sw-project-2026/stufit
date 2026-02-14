@@ -39,7 +39,8 @@ function MyItems() {
         const purchasedMap = {};
         
         itemIds.forEach(itemId => {
-          const item = shopItems.find(it => it.id === itemId);
+          const normalizedItemId = Number(itemId);
+          const item = shopItems.find(it => it.id === normalizedItemId);
           if (item) {
             const key = `${item.type}:${item.id}`;
             purchasedMap[key] = true;
