@@ -46,7 +46,10 @@ function ShopQuicklink() {
 
   useLayoutEffect(() => {
     const update = () => {
-      if (containerRef.current) setContainerWidth(containerRef.current.clientWidth);
+      if (containerRef.current) {
+        const w = containerRef.current.getBoundingClientRect().width || containerRef.current.clientWidth;
+        setContainerWidth(w);
+      }
     };
     update();
     window.addEventListener('resize', update);
@@ -193,7 +196,7 @@ function ShopQuicklink() {
 
                       return (
                         <div
-                          key={`${i}-${src}`}
+                          key={`${i}-${String(src)}`}
                           onClick={() => jumpTo(i % n)}
                           style={{
                             width: base,
@@ -213,14 +216,22 @@ function ShopQuicklink() {
                             margin: '0 10px',
                             background: '#fff',
                             position: 'relative',
-                            backgroundSize: 'cover',
-                            backgroundPosition: 'center',
-                            backgroundImage: `url(${src})`,
                             cursor: pointerEvents === 'none' ? 'default' : 'pointer',
                             pointerEvents,
                             willChange: 'transform'
                           }}
-                        />
+                        >
+                          <img
+                            src={src}
+                            alt="item"
+                            style={{
+                              width: '100%',
+                              height: '100%',
+                              objectFit: 'cover',
+                              display: 'block'
+                            }}
+                          />
+                        </div>
                       );
                     })}
                   </div>
