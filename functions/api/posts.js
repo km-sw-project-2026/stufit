@@ -106,7 +106,12 @@
 // --------------------------------------밑에는 수정 코드
 
 
-export async function onRequestGet({ env, userId }) {
+export async function onRequestGet(context) {
+    const { env, request } = context;
+    // URL에서 userId를 가져오거나 헤더에서 가져오는 로직이 필요할 수 있습니다.
+    const url = new URL(request.url);
+    const userId = url.searchParams.get('userId') || -1;
+
     try {
         if (!env?.D1_DB) {
             return new Response(
@@ -115,7 +120,6 @@ export async function onRequestGet({ env, userId }) {
             );
         }
 
-        const likerId = userId || -1;
         const result = await env.D1_DB
             .prepare(
                 `SELECT p.*, 
@@ -128,7 +132,7 @@ export async function onRequestGet({ env, userId }) {
                  WHERE p.deleted_at IS NULL
                  ORDER BY p.created_at DESC`
             )
-            .bind(likerId)
+            .bind(userId)
             .all();
 
         const posts = (result.results || []).map(post => ({
@@ -142,7 +146,6 @@ export async function onRequestGet({ env, userId }) {
             { status: 200, headers: { "Content-Type": "application/json" } }
         );
     } catch (err) {
-        console.error("❌ GET POSTS ERROR:", err?.message);
         return new Response(
             JSON.stringify({ success: false, message: '게시글을 불러올 수 없습니다.' }),
             { status: 500, headers: { "Content-Type": "application/json" } }
@@ -150,7 +153,9 @@ export async function onRequestGet({ env, userId }) {
     }
 }
 
-export async function onRequestPost({ request, env, userId }) {
+export async function onRequestPost(context) {
+    const { request, env } = context;
+    
     try {
         if (!env?.D1_DB) {
             return new Response(
@@ -159,17 +164,20 @@ export async function onRequestPost({ request, env, userId }) {
             );
         }
 
+        const body = await request.json().catch(() => ({}));
+        
+        // [중요] 클라이언트가 보낸 userId를 body에서 직접 꺼냅니다.
+        const userId = body.userId; 
+        const title = (body.title || '').trim();
+        const content = (body.content || '').trim();
+        const category = (body.category || '자유').trim();
+
         if (!userId) {
             return new Response(
-                JSON.stringify({ success: false, message: '로그인이 필요합니다.' }),
+                JSON.stringify({ success: false, message: '유저 정보(userId)가 없습니다.' }),
                 { status: 401, headers: { "Content-Type": "application/json" } }
             );
         }
-
-        const body = await request.json().catch(() => ({}));
-        const title = (body.title || '').trim();
-        const content = (body.content || '').trim();
-        const category = (body.category || 'data').trim();
 
         if (!title || !content) {
             return new Response(
@@ -180,8 +188,6 @@ export async function onRequestPost({ request, env, userId }) {
 
         const now = new Date().toISOString();
 
-        // [수정 핵심] database.sql의 posts 테이블 구조에 맞춰서 모든 필수 컬럼을 명시합니다.
-        // popular_reward_paid 컬럼에 기본값 0을 추가했습니다.
         const insertResult = await env.D1_DB
             .prepare(`
                 INSERT INTO posts (user_id, title, content, category, view_count, popular_reward_paid, created_at) 
@@ -190,7 +196,7 @@ export async function onRequestPost({ request, env, userId }) {
             .bind(userId, title, content, category, now)
             .run();
 
-        const postId = insertResult.meta?.last_row_id || insertResult.lastInsertRowid;
+        const postId = insertResult.meta?.last_row_id;
 
         const created = await env.D1_DB
             .prepare(`
@@ -207,7 +213,6 @@ export async function onRequestPost({ request, env, userId }) {
             { status: 201, headers: { "Content-Type": "application/json" } }
         );
     } catch (err) {
-        console.error('❌ POST CREATE ERROR:', err.message);
         return new Response(
             JSON.stringify({ 
                 success: false, 
