@@ -44,7 +44,7 @@ function ShopQuicklink() {
   const logicalIndex = ((virtualIndex % n) + n) % n;
   const [transitionEnabled, setTransitionEnabled] = useState(true);
   const [mountedFlag, setMountedFlag] = useState(false);
-  const [showOutlines, setShowOutlines] = useState(false);
+  const [showOutlines, setShowOutlines] = useState(true);
   const placeholderSvg = `data:image/svg+xml;utf8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><rect width="100%" height="100%" fill="#f3f3f3"/><circle cx="50%" cy="50%" r="40" fill="#e6e6e6"/></svg>')}`;
 
   useLayoutEffect(() => {
@@ -218,13 +218,14 @@ function ShopQuicklink() {
                             transformOrigin: 'center center',
                             boxShadow: absPos === 0 ? '0 10px 30px rgba(0,0,0,0.12)' : 'none',
                             zIndex,
-                            opacity,
+                            opacity: showOutlines ? 1 : opacity,
                             margin: '0 10px',
                             background: '#fff',
                             position: 'relative',
                             cursor: pointerEvents === 'none' ? 'default' : 'pointer',
                             pointerEvents,
-                            willChange: 'transform'
+                            willChange: 'transform',
+                            border: showOutlines ? '1px dashed rgba(0,0,0,0.06)' : 'none'
                           }}
                         >
                           <img
@@ -248,6 +249,11 @@ function ShopQuicklink() {
                               border: '1px solid rgba(0,0,0,0.06)'
                             }}
                           />
+                          {showOutlines && (
+                            <div style={{ position: 'absolute', left: 4, top: 4, fontSize: 10, background: 'rgba(255,255,255,0.8)', padding: '2px 4px', borderRadius: 4 }}>
+                              {`${i % n}:${pos}`}
+                            </div>
+                          )}
                         </div>
                       );
                     })}
