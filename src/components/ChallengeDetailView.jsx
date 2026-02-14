@@ -182,7 +182,7 @@ function WeeklySubmissionStatus({ challengeId, refreshKey }) {
     );
 }
 
-function ChallengeDetailView({ challenge: initialChallenge, onClose }) {
+function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = false }) {
     const [challenge, setChallenge] = useState(initialChallenge);
     const [modalOpen, setModalOpen] = useState(false);
     const [hostModalOpen, setHostModalOpen] = useState(false);
@@ -615,8 +615,8 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose }) {
 
     return (
         <>
-            <div id="challenge-detail-view" className="modal">
-                <div className="detail-view-container">
+            <div id="challenge-detail-view" className={isPage ? "" : "modal"}>
+                <div className="detail-view-container" style={isPage ? { maxWidth: '1400px', margin: '0 auto', padding: '40px 20px' } : {}}>
                     <div className="detail-sidebar">
                         <h2>MEMBER</h2>
                         <div className="member-list">
