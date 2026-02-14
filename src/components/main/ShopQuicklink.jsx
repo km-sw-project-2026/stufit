@@ -8,12 +8,34 @@ import frameChicken from '../../assets/shop-items/frame-chicken.png';
 import frameVip from '../../assets/shop-items/frame-vip.png';
 import jellyfishGreen from '../../assets/shop-items/jellyfish-green.png';
 import bgLemon from '../../assets/shop-items/bg-lemon.png';
+import bgAvocado from '../../assets/shop-items/bg-avocado.png';
+import frameCherry from '../../assets/shop-items/frame-cherryblossom.png';
+import frameLemon from '../../assets/shop-items/frame-lemon.png';
+import ghost from '../../assets/shop-items/ghost.png';
+import parrot from '../../assets/shop-items/parrot.png';
+import duck from '../../assets/shop-items/duck.png';
+import bgPink from '../../assets/shop-items/bg-pinkdots.png';
+import pumpkin from '../../assets/shop-items/pumpkin.png';
 
 function ShopQuicklink() {
   const navigate = useNavigate();
-  const images = [bgTeeth, frameChicken, frameVip, jellyfishGreen, bgLemon];
+  const images = [
+    bgTeeth,
+    frameChicken,
+    frameVip,
+    jellyfishGreen,
+    bgLemon,
+    bgAvocado,
+    frameCherry,
+    frameLemon,
+    ghost,
+    parrot,
+    duck,
+    bgPink,
+    pumpkin,
+  ];
 
-  const [index, setIndex] = useState(0);
+  const [index, setIndex] = useState(() => Math.floor(images.length / 2));
 
   useEffect(() => {
     const onKey = (e) => {
@@ -65,20 +87,36 @@ function ShopQuicklink() {
 
           <div className="shop-items-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 700, height: 240, overflow: 'hidden' }}>
             {images.map((src, i) => {
-              const pos = ((i - index) + images.length) % images.length; // relative position
-              const base = 100; // base size in px (smaller overall)
-              let scale = 0.7; // small
-              let zIndex = 1;
-              let opacity = 0.65;
+              const n = images.length;
+              let pos = ((i - index) + n) % n; // circular relative position (0..n-1)
+              if (pos > n / 2) pos -= n; // convert to negative side for left
+              const absPos = Math.abs(pos);
 
-              if (i === index) {
-                scale = 1.5; // center enlarged but smaller than before
-                zIndex = 5;
+              const base = 100;
+              let scale = 0.65;
+              let zIndex = 1;
+              let opacity = 0;
+              let display = 'block';
+
+              if (absPos === 0) {
+                scale = 1.5;
+                zIndex = 6;
                 opacity = 1;
-              } else if (pos === 1 || pos === images.length - 1) {
-                scale = 1.05; // adjacent
-                zIndex = 3;
+              } else if (absPos === 1) {
+                scale = 1.05;
+                zIndex = 4;
                 opacity = 0.95;
+              } else if (absPos === 2) {
+                scale = 0.9;
+                zIndex = 3;
+                opacity = 0.6;
+              } else if (absPos <= 3) {
+                scale = 0.75;
+                zIndex = 2;
+                opacity = 0.35;
+              } else {
+                // hide distant items so they don't clutter view
+                display = 'none';
               }
 
               return (
@@ -86,18 +124,19 @@ function ShopQuicklink() {
                   key={i}
                   onClick={() => setIndex(i)}
                   style={{
+                    display,
                     width: base,
                     height: base,
                     flex: `0 0 ${base}px`,
                     borderRadius: '50%',
                     overflow: 'hidden',
-                    display: 'flex',
+                    display: display === 'none' ? 'none' : 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     transition: 'transform 300ms ease, box-shadow 300ms ease, opacity 300ms ease',
                     transform: `scale(${scale})`,
                     transformOrigin: 'center center',
-                    boxShadow: i === index ? '0 10px 30px rgba(0,0,0,0.12)' : 'none',
+                    boxShadow: absPos === 0 ? '0 10px 30px rgba(0,0,0,0.12)' : 'none',
                     zIndex,
                     opacity,
                     margin: '0 10px',
