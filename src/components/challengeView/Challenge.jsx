@@ -425,8 +425,8 @@ return (
                     </div>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', marginRight: '145px', position: 'relative', zIndex: 20000, pointerEvents: 'auto' }}>
-                    <a
-                        href="/ongoing-challenges"
+                    <Link
+                        to="/ongoing-challenges"
                         style={{ 
                             color: '#666', 
                             fontSize: '0.9rem', 
@@ -440,7 +440,7 @@ return (
                         }}
                     >
                         진행중인 챌린지 보러가기 →
-                    </a>
+                    </Link>
                     <button 
                         type="button"
                         style={{ 
