@@ -68,8 +68,11 @@ export async function onRequestPost(context: { request: Request; env: any; userI
             );
         }
 
-        const fallbackUserId = Number(body?.userId);
-        const userId = typeof authenticatedUserId === 'number' ? authenticatedUserId : fallbackUserId;
+        const requestedUserId = Number(body?.userId);
+        const hasRequestedUserId = !Number.isNaN(requestedUserId) && requestedUserId > 0;
+        const userId = hasRequestedUserId
+            ? requestedUserId
+            : (typeof authenticatedUserId === 'number' ? authenticatedUserId : Number.NaN);
         const amount = Number(body?.amount);
 
         if (!userId || Number.isNaN(userId)) {
@@ -97,10 +100,21 @@ export async function onRequestPost(context: { request: Request; env: any; userI
             .run();
 
         const now = new Date().toISOString();
-        await env.D1_DB
-            .prepare('INSERT INTO point_logs (user_id, point, reason, created_at) VALUES (?, ?, ?, ?)')
-            .bind(userId, amount, '상점 테스트 포인트 지급', now)
-            .run();
+        try {
+            await env.D1_DB
+                .prepare('INSERT INTO point_logs (user_id, point, reason, created_at) VALUES (?, ?, ?, ?)')
+                .bind(userId, amount, '상점 테스트 포인트 지급', now)
+                .run();
+        } catch (pointColumnErr: any) {
+            try {
+                await env.D1_DB
+                    .prepare('INSERT INTO point_logs (user_id, points, reason, created_at) VALUES (?, ?, ?, ?)')
+                    .bind(userId, amount, '상점 테스트 포인트 지급', now)
+                    .run();
+            } catch (pointsColumnErr: any) {
+                console.warn('⚠️ POINT LOG INSERT SKIPPED:', pointColumnErr?.message || String(pointColumnErr), '|', pointsColumnErr?.message || String(pointsColumnErr));
+            }
+        }
 
         const profile = await env.D1_DB
             .prepare('SELECT points FROM user_profiles WHERE user_id = ?')

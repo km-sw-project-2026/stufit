@@ -6,8 +6,9 @@ function ShopAll({ wishlistScope, isWishlisted, isPurchased, toggleWishlist, onP
     return (
         <div className="shop-items-grid">
             {items.map((item) => {
-                const itemWishlisted = isWishlisted(wishlistScope, item.id);
-                const itemPurchased = isPurchased(wishlistScope, item.id);
+                const keyScope = item.type;
+                const itemWishlisted = isWishlisted(keyScope, item.id);
+                const itemPurchased = isPurchased(keyScope, item.id);
 
                 return (
                     <div key={item.id} className="shop-item-card">
@@ -27,14 +28,14 @@ function ShopAll({ wishlistScope, isWishlisted, isPurchased, toggleWishlist, onP
                         <div className="item-actions">
                             <button
                                 className={`item-wishlist-btn ${itemWishlisted ? 'wishlisted' : ''}`}
-                                onClick={() => toggleWishlist(wishlistScope, item)}
+                                onClick={() => toggleWishlist(keyScope, item)}
                                 title="찜하기"
                             >
                                 {itemWishlisted ? '♥' : '♡'}
                             </button>
                             <button
                                 className={`item-buy-btn ${itemPurchased ? 'purchased' : ''}`}
-                                onClick={() => onPurchase(wishlistScope, item)}
+                                onClick={() => onPurchase(keyScope, item)}
                                 disabled={itemPurchased}
                             >
                                 {itemPurchased ? '구매완료' : '구매하기'}

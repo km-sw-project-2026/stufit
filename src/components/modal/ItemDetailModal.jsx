@@ -1,5 +1,3 @@
-import { useState } from 'react';
-
 function ItemDetailModal({ isOpen, onClose, item }) {
   if (!isOpen || !item) return null;
 
@@ -57,7 +55,12 @@ function ItemDetailModal({ isOpen, onClose, item }) {
                           }),
                         });
 
-                        const data = await response.json();
+                        let data = null;
+                        try {
+                          data = await response.json();
+                        } catch {
+                          data = null;
+                        }
 
                         if (!response.ok) {
                           alert(data?.message || '아이템 적용에 실패했습니다.');

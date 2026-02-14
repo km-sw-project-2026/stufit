@@ -20,10 +20,19 @@ export async function onRequestPost(context: { request: Request; env: any; userI
             );
         }
 
-        const fallbackUserId = Number(body?.userId);
-        const userId = typeof authenticatedUserId === 'number' ? authenticatedUserId : fallbackUserId;
+        const requestedUserId = Number(body?.userId);
+        const hasRequestedUserId = !Number.isNaN(requestedUserId) && requestedUserId > 0;
+        const userId = hasRequestedUserId
+            ? requestedUserId
+            : (typeof authenticatedUserId === 'number' ? authenticatedUserId : Number.NaN);
         const price = Number(body?.price);
         const itemId = Number(body?.itemId);
+        const itemName = typeof body?.itemName === 'string' && body.itemName.trim()
+            ? body.itemName.trim()
+            : `아이템-${itemId}`;
+        const itemType = typeof body?.itemType === 'string' && body.itemType.trim()
+            ? body.itemType.trim()
+            : 'misc';
 
         if (!userId || Number.isNaN(userId)) {
             return new Response(
@@ -73,6 +82,18 @@ export async function onRequestPost(context: { request: Request; env: any; userI
 
         // 이미 보유한 아이템인지 확인
         if (itemId && !Number.isNaN(itemId)) {
+            const existingCatalogItem = await env.D1_DB
+                .prepare('SELECT item_id FROM items WHERE item_id = ?')
+                .bind(itemId)
+                .first();
+
+            if (!existingCatalogItem) {
+                await env.D1_DB
+                    .prepare('INSERT INTO items (item_id, name, type, price, image_url) VALUES (?, ?, ?, ?, ?)')
+                    .bind(itemId, itemName, itemType, price, null)
+                    .run();
+            }
+
             const existingItem = await env.D1_DB
                 .prepare('SELECT 1 FROM user_items WHERE user_id = ? AND item_id = ?')
                 .bind(userId, itemId)

@@ -54,12 +54,31 @@ function MyPage({ isOpen, onClose }) {
         return;
       }
 
+      // API 실패가 있어도 마이페이지는 열리도록 기본값을 먼저 세팅
+      setUserData({
+        username: username || '',
+        score: '0',
+        joinDate: localStorage.getItem('joinDate') || '2024년 7월 1일',
+        rank: '1위',
+        currentRank: '1위',
+        challenges: '10개',
+        points: cachedPoints ? Number(cachedPoints) : 0,
+        posts: '0개',
+        comments: '0개',
+        items: '0개'
+      });
+
       try {
         // 사용자 아이템 정보 가져오기
         const itemsResponse = await fetch(`/api/user/items?userId=${userId}`, {
           headers: { 'X-Username': username || '' },
         });
-        const itemsData = await itemsResponse.json();
+        let itemsData = null;
+        try {
+          itemsData = await itemsResponse.json();
+        } catch {
+          itemsData = null;
+        }
         const ownedCount = itemsData?.purchasedItems?.length || 0;
 
         // 초기 userData 설정 (아이템 개수 포함)
@@ -85,13 +104,18 @@ function MyPage({ isOpen, onClose }) {
             'Expires': '0'
           },
         });
-        const data = await response.json();
+        let data = null;
+        try {
+          data = await response.json();
+        } catch {
+          data = null;
+        }
 
         if (!response.ok) {
           return;
         }
 
-        if (data.success && data.stats) {
+        if (data?.success && data?.stats) {
           const posts = data.stats.posts;
           const comments = data.stats.comments;
           const nextPoints = Number(data.stats.points) || 0;
@@ -120,6 +144,73 @@ function MyPage({ isOpen, onClose }) {
       const userId = localStorage.getItem('userId');
       const username = localStorage.getItem('username');
 
+      const applyFromActive = (active) => {
+        const frameItem = active?.frame ? shopItems.find(s => s.id === Number(active.frame)) : null;
+        const bgItem = active?.bg ? shopItems.find(s => s.id === Number(active.bg)) : null;
+        const imageItem = active?.image ? shopItems.find(s => s.id === Number(active.image)) : null;
+
+        const headerBgEl = document.querySelector('.mypage-header .mypage-header-bg');
+        if (headerBgEl) {
+          if (bgItem && bgItem.image) {
+            headerBgEl.style.backgroundImage = `url(${bgItem.image})`;
+            headerBgEl.style.backgroundSize = 'cover';
+            headerBgEl.style.backgroundPosition = 'center';
+            headerBgEl.style.backgroundRepeat = 'no-repeat';
+            headerBgEl.style.display = 'block';
+          } else {
+            headerBgEl.style.backgroundImage = '';
+            headerBgEl.style.display = 'none';
+          }
+        }
+
+        const profileImgEl = document.querySelector('.mypage-modal .profile-img img:not(.profile-frame-overlay)');
+        if (profileImgEl) {
+          if (imageItem && imageItem.image) profileImgEl.src = imageItem.image;
+          else profileImgEl.src = '/img/Profile2.png';
+          try {
+            profileImgEl.style.objectFit = 'contain';
+            profileImgEl.style.width = profileImgEl.style.width || profileImgEl.width ? '' : '';
+          } catch (e) {
+            // ignore
+          }
+        }
+
+        const frameOverlay = document.querySelector('.mypage-modal .profile-frame-overlay');
+        if (frameOverlay) {
+          if (frameItem && frameItem.image) {
+            const scale = frameItem.myPageScale || 2.2;
+
+            frameOverlay.src = frameItem.image;
+            frameOverlay.style.display = 'block';
+            frameOverlay.style.position = 'absolute';
+            frameOverlay.style.top = '0';
+            frameOverlay.style.left = '0';
+            const widthPct = (scale * 100).toFixed(2) + '%';
+            const offsetPct = (scale - 1) / 2 * 100;
+            const additionalOffsetY = frameItem.myPageOffsetY ?? 20;
+            const additionalOffsetX = frameItem.myPageOffsetX ?? 0;
+            const topOffset = offsetPct + additionalOffsetY;
+            const leftOffset = offsetPct + additionalOffsetX;
+            frameOverlay.style.width = widthPct;
+            frameOverlay.style.height = widthPct;
+            frameOverlay.style.left = `-${leftOffset.toFixed(2)}%`;
+            frameOverlay.style.top = `-${topOffset.toFixed(2)}%`;
+            frameOverlay.style.objectFit = 'contain';
+            frameOverlay.style.pointerEvents = 'none';
+            frameOverlay.style.zIndex = '1015';
+            frameOverlay.style.transformOrigin = 'center center';
+          } else {
+            frameOverlay.style.display = 'none';
+            frameOverlay.style.position = '';
+            frameOverlay.style.left = '';
+            frameOverlay.style.top = '';
+            frameOverlay.style.width = '';
+            frameOverlay.style.height = '';
+            frameOverlay.style.zIndex = '';
+          }
+        }
+      };
+
       if (!userId) {
         return;
       }
@@ -128,7 +219,12 @@ function MyPage({ isOpen, onClose }) {
         const response = await fetch(`/api/user/items?userId=${userId}`, {
           headers: { 'X-Username': username || '' },
         });
-        const data = await response.json();
+        let data = null;
+        try {
+          data = await response.json();
+        } catch {
+          data = null;
+        }
 
         if (!response.ok) {
           console.error('Failed to fetch active items:', data?.message);
@@ -136,74 +232,7 @@ function MyPage({ isOpen, onClose }) {
         }
 
         const active = data?.activeItems || {};
-        const frameItem = active.frame ? shopItems.find(s => s.id === Number(active.frame)) : null;
-        const bgItem = active.bg ? shopItems.find(s => s.id === Number(active.bg)) : null;
-        const imageItem = active.image ? shopItems.find(s => s.id === Number(active.image)) : null;
-
-      // Apply background to header area only
-      const headerBgEl = document.querySelector('.mypage-header .mypage-header-bg');
-      if (headerBgEl) {
-        if (bgItem && bgItem.image) {
-          headerBgEl.style.backgroundImage = `url(${bgItem.image})`;
-          headerBgEl.style.backgroundSize = 'cover';
-          headerBgEl.style.backgroundPosition = 'center';
-          headerBgEl.style.backgroundRepeat = 'no-repeat';
-          headerBgEl.style.display = 'block';
-        } else {
-          headerBgEl.style.backgroundImage = '';
-          headerBgEl.style.display = 'none';
-        }
-      }
-
-      const profileImgEl = document.querySelector('.mypage-modal .profile-img img:not(.profile-frame-overlay)');
-      if (profileImgEl) {
-        if (imageItem && imageItem.image) profileImgEl.src = imageItem.image;
-        else profileImgEl.src = '/img/Profile2.png';
-        // ensure the profile image shows whole image
-        try {
-          profileImgEl.style.objectFit = 'contain';
-          profileImgEl.style.width = profileImgEl.style.width || profileImgEl.width ? '' : '';
-        } catch (e) {
-          // ignore
-        }
-      }
-
-      // frame overlay: place as absolute overlay inside .profile-img container
-      const frameOverlay = document.querySelector('.mypage-modal .profile-frame-overlay');
-      if (frameOverlay) {
-        if (frameItem && frameItem.image) {
-          // myPageScale 우선 사용, 없으면 기본 2.2
-          const scale = frameItem.myPageScale || 2.2;
-          
-          frameOverlay.src = frameItem.image;
-          frameOverlay.style.display = 'block';
-          frameOverlay.style.position = 'absolute';
-          frameOverlay.style.top = '0';
-          frameOverlay.style.left = '0';
-          const widthPct = (scale * 100).toFixed(2) + '%';
-          const offsetPct = (scale - 1) / 2 * 100;
-          const additionalOffsetY = frameItem.myPageOffsetY ?? 20;
-          const additionalOffsetX = frameItem.myPageOffsetX ?? 0;
-          const topOffset = offsetPct + additionalOffsetY;
-          const leftOffset = offsetPct + additionalOffsetX;
-          frameOverlay.style.width = widthPct;
-          frameOverlay.style.height = widthPct;
-          frameOverlay.style.left = `-${leftOffset.toFixed(2)}%`;
-          frameOverlay.style.top = `-${topOffset.toFixed(2)}%`;
-          frameOverlay.style.objectFit = 'contain';
-          frameOverlay.style.pointerEvents = 'none';
-          frameOverlay.style.zIndex = '1015';
-          frameOverlay.style.transformOrigin = 'center center';
-        } else {
-          frameOverlay.style.display = 'none';
-          frameOverlay.style.position = '';
-          frameOverlay.style.left = '';
-          frameOverlay.style.top = '';
-          frameOverlay.style.width = '';
-          frameOverlay.style.height = '';
-          frameOverlay.style.zIndex = '';
-        }
-      }
+        applyFromActive(active);
       } catch (err) {
         console.error('Active items fetch error:', err);
       }
@@ -233,16 +262,20 @@ function MyPage({ isOpen, onClose }) {
 
     window.addEventListener('pointsUpdated', handlePointsUpdated);
     const handlePurchasedUpdated = () => {
-      const stored = localStorage.getItem('purchasedItems');
-      let count = 0;
-      try {
-        const parsed = JSON.parse(stored || '{}');
-        if (parsed && typeof parsed === 'object') count = Object.keys(parsed).length;
-      } catch {
-        count = 0;
-      }
+      const userId = localStorage.getItem('userId');
+      const username = localStorage.getItem('username');
+      if (!userId) return;
 
-      setUserData((prev) => (prev ? { ...prev, items: `${count}개` } : prev));
+      fetch(`/api/user/items?userId=${userId}`, {
+        headers: { 'X-Username': username || '' },
+      })
+        .then((response) => response.json().then((data) => ({ ok: response.ok, data })).catch(() => ({ ok: response.ok, data: null })))
+        .then(({ ok, data }) => {
+          if (!ok) return;
+          const count = data?.purchasedItems?.length || 0;
+          setUserData((prev) => (prev ? { ...prev, items: `${count}개` } : prev));
+        })
+        .catch(() => {});
     };
 
     window.addEventListener('purchasedItemsUpdated', handlePurchasedUpdated);
@@ -255,6 +288,16 @@ function MyPage({ isOpen, onClose }) {
   }, [isOpen]);
 
   const handleLogout = async () => {
+    const clearClientSession = () => {
+      localStorage.removeItem('username');
+      localStorage.removeItem('userId');
+      localStorage.removeItem('joinDate');
+      localStorage.removeItem('points');
+      localStorage.removeItem('purchasedItems');
+      window.dispatchEvent(new Event('loginStatusChanged'));
+      window.dispatchEvent(new CustomEvent('pointsUpdated', { detail: { points: 0 } }));
+    };
+
     try {
       await fetch('/api/auth/logout', {
         method: 'POST',
@@ -262,19 +305,15 @@ function MyPage({ isOpen, onClose }) {
           'Content-Type': 'application/json'
         }
       });
-
-      // 로컬 스토리지에서 사용자 정보 제거
-      localStorage.removeItem('username');
-      localStorage.removeItem('userId');
-      localStorage.removeItem('joinDate');
-
-      alert('로그아웃 되었습니다.');
-      onClose();
-      navigate('/');
-      window.location.reload();
     } catch {
-      alert('로그아웃 실패');
+      // ignore network/server logout failure and continue with client logout
     }
+
+    clearClientSession();
+    alert('로그아웃 되었습니다.');
+    onClose();
+    navigate('/');
+    window.location.reload();
   };
 
   if (!isOpen || !userData) return null;
