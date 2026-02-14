@@ -50,8 +50,7 @@ jobs:
           if [ -f dist/stufit/wrangler.json ]; then sed -n '1,200p' dist/stufit/wrangler.json; else echo 'no dist/stufit/wrangler.json'; fi
           echo "--- assets folder listing (src/assets/shop-items) ---"
           ls -la src/assets/shop-items || true
-          echo "--- attempt wrangler --version (to show which config path it reports) ---"
-          npx wrangler --version || true
+          echo "--- skipping wrangler --version (avoids ByteString telemetry error) ---"
           echo "--- attempt wrangler whoami (may fail without token) ---"
           npx wrangler whoami --config wrangler.jsonc || true
 
@@ -65,6 +64,8 @@ jobs:
       - name: Publish to Cloudflare (wrangler)
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          # disable telemetry/interactive prompts to avoid non-ASCII conversion issues
+          WRANGLER_TELEMETRY_DISABLED: '1'
+          CI: 'true'
         run: |
-          npx wrangler --version
           npx wrangler deploy --config wrangler.deploy.json
