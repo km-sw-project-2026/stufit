@@ -40,8 +40,8 @@ function ShopQuicklink() {
 
   useEffect(() => {
     const onKey = (e) => {
-      if (e.key === 'ArrowLeft') setIndex((i) => (i - 1 + images.length) % images.length);
-      if (e.key === 'ArrowRight') setIndex((i) => (i + 1) % images.length);
+      if (e.key === 'ArrowLeft') jumpTo((index - 1 + images.length) % images.length);
+      if (e.key === 'ArrowRight') jumpTo((index + 1) % images.length);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -131,7 +131,7 @@ function ShopQuicklink() {
               return (
                 <div
                   key={i}
-                  onClick={() => setIndex(i)}
+                  onClick={() => jumpTo(i)}
                   style={{
                     display,
                     width: base,
@@ -184,7 +184,7 @@ function ShopQuicklink() {
           {images.map((_, i) => (
             <button
               key={i}
-              onClick={() => setIndex(i)}
+              onClick={() => jumpTo(i)}
               aria-label={`Go to item ${i + 1}`}
               style={{
                 width: 12,
