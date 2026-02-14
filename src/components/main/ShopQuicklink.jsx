@@ -59,13 +59,13 @@ function ShopQuicklink() {
     return () => window.removeEventListener('resize', update);
   }, []);
 
-  const TRANS_DUR = 300;
+  const TRANS_DUR = 240;
 
   // move virtual index by delta (keyboard)
   const moveBy = (delta) => {
     setScaleActive(false);
     setVirtualIndex((prev) => prev + delta);
-    window.setTimeout(() => setScaleActive(true), 140);
+    window.setTimeout(() => setScaleActive(true), 120);
   };
 
   useEffect(() => {
@@ -77,35 +77,7 @@ function ShopQuicklink() {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
-  useEffect(() => {
-    setMountedFlag(true);
-  }, []);
-
-  useEffect(() => {
-    // helpful console outputs for debugging in dev
-    // these will show only if the component actually mounts
-    // keep them lightweight
-    // eslint-disable-next-line no-console
-    console.log('ShopQuicklink', { mounted: mountedFlag, virtualIndex, logicalIndex, containerWidth, displayImagesLength: displayImages.length });
-  }, [mountedFlag, virtualIndex, logicalIndex, containerWidth]);
-
-  useEffect(() => {
-    // log a small neighborhood of image srcs to inspect their values
-    try {
-      const start = Math.max(0, virtualIndex - 3);
-      const end = Math.min(displayImages.length, virtualIndex + 4);
-      const infos = displayImages.slice(start, end).map((s, idx) => ({
-        i: start + idx,
-        type: typeof s,
-        val: (typeof s === 'string' && s.length > 60) ? `${s.slice(0,60)}...` : String(s)
-      }));
-      // eslint-disable-next-line no-console
-      console.log('ShopQuicklink neighborhood', { infos });
-    } catch (e) {
-      // eslint-disable-next-line no-console
-      console.error('ShopQuicklink debug fail', e);
-    }
-  }, [virtualIndex]);
+  // reduced transition duration for snappier feel
 
   // navigation to a logical index (click/pagination)
   const jumpTo = (logical) => {
@@ -146,15 +118,7 @@ function ShopQuicklink() {
       </div>
 
       <div className="shop-content" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        {/* Debug overlay - visible on page to confirm component mounted and show core values */}
-        <div style={{ position: 'absolute', left: 12, top: 12, padding: 8, background: 'rgba(255,255,255,0.9)', border: '1px solid rgba(0,0,0,0.06)', borderRadius: 6, fontSize: 12, color: '#222', zIndex: 9999 }}>
-          <div style={{ fontWeight: 600, marginBottom: 4 }}>ShopQuicklink Debug</div>
-          <div>mounted: {mountedFlag ? 'yes' : 'no'}</div>
-          <div>virtualIndex: {virtualIndex}</div>
-          <div>logicalIndex: {logicalIndex}</div>
-          <div>containerW: {Math.round(containerWidth)}</div>
-          <div>images: {displayImages.length}</div>
-        </div>
+        {/* debug removed for production */}
         <a
           href="#"
           className="shop-more-link"
@@ -213,7 +177,7 @@ function ShopQuicklink() {
                       let pointerEvents = 'auto';
 
                       if (absPos === 0) {
-                        scale = scaleActive ? 1.5 : 1.0;
+                        scale = scaleActive ? 1.45 : 1.0;
                         zIndex = 6;
                         opacity = 1;
                       } else if (absPos === 1) {
