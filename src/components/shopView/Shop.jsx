@@ -84,75 +84,6 @@ function Shop() {
         setAlertModal({ show: true, message });
     };
 
-    const handleAddPoints = async () => {
-        const amount = 1000000;
-        const currentUsername = localStorage.getItem('username');
-        let resolvedUserId = localStorage.getItem('userId') || userId;
-
-        if (!resolvedUserId && currentUsername) {
-            try {
-                const resolveResponse = await fetch(`/api/user/resolve?username=${encodeURIComponent(currentUsername)}`, {
-                    headers: { 'X-Username': currentUsername || '' },
-                });
-                let resolveData = null;
-                try {
-                    resolveData = await resolveResponse.json();
-                } catch {
-                    resolveData = null;
-                }
-
-                if (resolveResponse.ok && resolveData?.userId) {
-                    resolvedUserId = String(resolveData.userId);
-                    localStorage.setItem('userId', resolvedUserId);
-                    setUserId(resolvedUserId);
-                }
-            } catch (err) {
-                console.error('Resolve userId error (add points):', err);
-            }
-        }
-
-        if (!resolvedUserId) {
-            openAlert('로그인 후 이용해주세요.');
-            return;
-        }
-
-        try {
-            const response = await fetch('/api/user/points', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Username': currentUsername || '',
-                },
-                body: JSON.stringify({ userId: Number(resolvedUserId), amount }),
-            });
-
-            let data = null;
-            let rawText = '';
-            try {
-                data = await response.json();
-            } catch {
-                rawText = await response.text().catch(() => '');
-            }
-
-            if (!response.ok) {
-                openAlert(data?.message || rawText || `포인트 추가에 실패했습니다. (${response.status})`);
-                return;
-            }
-
-            const nextPoints = Number(data?.points);
-            if (!Number.isNaN(nextPoints)) {
-                setPoints(nextPoints);
-                localStorage.setItem('points', String(nextPoints));
-                window.dispatchEvent(new CustomEvent('pointsUpdated', { detail: { points: nextPoints } }));
-            }
-
-            openAlert(`포인트가 ${amount.toLocaleString('ko-KR')}P 추가되었습니다. (임시)`);
-        } catch (err) {
-            console.error('Add points error:', err);
-            openAlert('포인트 추가 중 오류가 발생했습니다.');
-        }
-    };
-
     const handlePurchase = async (scope, item) => {
         const currentUsername = localStorage.getItem('username');
         const currentUserId = localStorage.getItem('userId');
@@ -449,7 +380,6 @@ function Shop() {
                     <div className="shop-points" title={pointsError || ''}>
                         <span className="shop-points-label">나의 보유 포인트</span>
                         <span className="shop-points-value">{formatPoints(points)}</span>
-                        <button type="button" onClick={handleAddPoints}>+1000P (임시)</button>
                     </div>
                 </div>
                 {renderContent()}
