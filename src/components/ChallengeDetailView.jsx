@@ -32,14 +32,16 @@ function WeeklySubmissionStatus({ challengeId }) {
             const rows = Array.isArray(result?.data) ? result.data : [];
             const userRows = rows.filter(row => row.username === user);
 
-            // 오늘 기준 최근 7일 계산
+            // 오늘 기준 최근 7일 계산 (로컬 타임존 기준)
             const today = new Date();
             const last7Days = [];
+            const pad = (n) => String(n).padStart(2, '0');
             
             for (let i = 6; i >= 0; i--) {
                 const date = new Date(today);
                 date.setDate(date.getDate() - i);
-                const dateStr = date.toISOString().split('T')[0];
+                // 로컬 타임존 기준으로 YYYY-MM-DD 형식 생성
+                const dateStr = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
                 const hasSubmitted = userRows.some(row => row.date === dateStr);
                 last7Days.push({ dateStr, hasSubmitted });
             }
