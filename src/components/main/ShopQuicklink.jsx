@@ -43,6 +43,7 @@ function ShopQuicklink() {
   const [virtualIndex, setVirtualIndex] = useState(n + Math.floor(n / 2));
   const logicalIndex = ((virtualIndex % n) + n) % n;
   const [transitionEnabled, setTransitionEnabled] = useState(true);
+  const [mountedFlag, setMountedFlag] = useState(false);
 
   useLayoutEffect(() => {
     const update = () => {
@@ -73,6 +74,18 @@ function ShopQuicklink() {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, []);
+
+  useEffect(() => {
+    setMountedFlag(true);
+  }, []);
+
+  useEffect(() => {
+    // helpful console outputs for debugging in dev
+    // these will show only if the component actually mounts
+    // keep them lightweight
+    // eslint-disable-next-line no-console
+    console.log('ShopQuicklink', { mounted: mountedFlag, virtualIndex, logicalIndex, containerWidth, displayImagesLength: displayImages.length });
+  }, [mountedFlag, virtualIndex, logicalIndex, containerWidth]);
 
   // navigation to a logical index (click/pagination)
   const jumpTo = (logical) => {
@@ -113,6 +126,15 @@ function ShopQuicklink() {
       </div>
 
       <div className="shop-content" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        {/* Debug overlay - visible on page to confirm component mounted and show core values */}
+        <div style={{ position: 'absolute', left: 12, top: 12, padding: 8, background: 'rgba(255,255,255,0.9)', border: '1px solid rgba(0,0,0,0.06)', borderRadius: 6, fontSize: 12, color: '#222', zIndex: 9999 }}>
+          <div style={{ fontWeight: 600, marginBottom: 4 }}>ShopQuicklink Debug</div>
+          <div>mounted: {mountedFlag ? 'yes' : 'no'}</div>
+          <div>virtualIndex: {virtualIndex}</div>
+          <div>logicalIndex: {logicalIndex}</div>
+          <div>containerW: {Math.round(containerWidth)}</div>
+          <div>images: {displayImages.length}</div>
+        </div>
         <a
           href="#"
           className="shop-more-link"
@@ -228,7 +250,8 @@ function ShopQuicklink() {
                               width: '100%',
                               height: '100%',
                               objectFit: 'cover',
-                              display: 'block'
+                              display: 'block',
+                              borderRadius: '50%'
                             }}
                           />
                         </div>
