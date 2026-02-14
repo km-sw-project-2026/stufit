@@ -44,7 +44,9 @@ function ShopQuicklink() {
   const logicalIndex = ((virtualIndex % n) + n) % n;
   const [transitionEnabled, setTransitionEnabled] = useState(true);
   const [mountedFlag, setMountedFlag] = useState(false);
-  const [showOutlines, setShowOutlines] = useState(true);
+  const [showOutlines, setShowOutlines] = useState(false);
+  const rowRef = useRef(null);
+  const [isTranslating, setIsTranslating] = useState(false);
   const placeholderSvg = `data:image/svg+xml;utf8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><rect width="100%" height="100%" fill="#f3f3f3"/><circle cx="50%" cy="50%" r="40" fill="#e6e6e6"/></svg>')}`;
 
   useLayoutEffect(() => {
@@ -63,10 +65,10 @@ function ShopQuicklink() {
 
   // move virtual index by delta (keyboard)
   const moveBy = (delta) => {
-    setScaleActive(false);
+    setIsTranslating(true);
     setVirtualIndex((prev) => prev + delta);
-    // wait until translate finishes, then enable center scale
-    window.setTimeout(() => setScaleActive(true), TRANS_DUR + 30);
+    // safety: ensure translating flag cleared after TRANS_DUR+50
+    window.setTimeout(() => setIsTranslating(false), TRANS_DUR + 50);
   };
 
   useEffect(() => {
@@ -82,9 +84,9 @@ function ShopQuicklink() {
 
   // navigation to a logical index (click/pagination)
   const jumpTo = (logical) => {
-    setScaleActive(false);
+    setIsTranslating(true);
     setVirtualIndex(n + (logical % n));
-    window.setTimeout(() => setScaleActive(true), TRANS_DUR + 30);
+    window.setTimeout(() => setIsTranslating(false), TRANS_DUR + 50);
   };
 
   const prev = () => moveBy(-1);
@@ -110,6 +112,19 @@ function ShopQuicklink() {
     }
     return undefined;
   }, [virtualIndex, n]);
+
+  // listen for translate transition end to enable center scaling
+  useEffect(() => {
+    const el = rowRef.current;
+    if (!el) return undefined;
+    const onEnd = (e) => {
+      if (e.propertyName === 'transform') {
+        setIsTranslating(false);
+      }
+    };
+    el.addEventListener('transitionend', onEnd);
+    return () => el.removeEventListener('transitionend', onEnd);
+  }, [rowRef]);
 
   return (
     <div className="shop-quicklink" style={{ padding: '40px 0' }}>
@@ -159,15 +174,16 @@ function ShopQuicklink() {
 
                 return (
                   <div
-                    className="shop-items-row"
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      transition: transitionEnabled ? `transform ${TRANS_DUR}ms ease` : 'none',
-                      transform: `translateX(${translateX}px)`,
-                      willChange: 'transform'
-                    }}
-                  >
+                      ref={rowRef}
+                      className="shop-items-row"
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        transition: transitionEnabled ? `transform ${TRANS_DUR}ms ease` : 'none',
+                        transform: `translateX(${translateX}px)`,
+                        willChange: 'transform'
+                      }}
+                    >
                     {displayImages.map((src, i) => {
                       const pos = i - virtualIndex;
                       const absPos = Math.abs(pos);
@@ -178,7 +194,7 @@ function ShopQuicklink() {
                       let pointerEvents = 'auto';
 
                       if (absPos === 0) {
-                        scale = scaleActive ? 1.45 : 1.0;
+                        scale = isTranslating ? 1.0 : 1.45;
                         zIndex = 6;
                         opacity = 1;
                       } else if (absPos === 1) {
