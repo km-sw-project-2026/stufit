@@ -2,8 +2,7 @@ import { useNavigate } from 'react-router-dom';
 
 function ShopQuicklink () {
     const navigate = useNavigate();
-<<<<<<< HEAD
-=======
+
     // Use Vite's import.meta.glob to reliably collect asset URLs from src/assets/shop-items
         // Use only the user-selected images in the given order; fallback to placeholder if missing
         const desiredFiles = ['bg-teeth.png', 'frame-chicken.png', 'frame-vip.png', 'jellyfish-green.png', 'bg-lemon.png'];
@@ -31,7 +30,6 @@ function ShopQuicklink () {
         const prev = () => setIndex(i => (i - 1 + images.length) % images.length);
         const next = () => setIndex(i => (i + 1) % images.length);
 
->>>>>>> 18e352e2ece97040d14260b1fb26918fbb7530f7
     return(
         <div className="shop-quicklink">
                     <div className="shop-header">
