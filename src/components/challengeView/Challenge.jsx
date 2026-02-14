@@ -309,11 +309,12 @@
 // ----------------------------------------------------------------
 
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import CreateChallengeModal from '../modal/CreateChallengeModal';
 import CustomAlertModal from '../modals/CustomAlertModal';
 
 function Challenge({ closeChallengeModal, onCreateSuccess }) {
+    const navigate = useNavigate();
     const [createChallengeModalOpen, setCreateChallengeModalOpen] = useState(false);
     const [challenges, setChallenges] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -425,8 +426,12 @@ return (
                     </div>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', marginRight: '145px', position: 'relative', zIndex: 20000, pointerEvents: 'auto' }}>
-                    <Link
-                        to="/ongoing-challenges"
+                    <button
+                        onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            navigate('/ongoing-challenges');
+                        }}
                         style={{ 
                             color: '#666', 
                             fontSize: '0.9rem', 
@@ -436,11 +441,13 @@ return (
                             display: 'inline-block',
                             position: 'relative',
                             zIndex: 20001,
-                            pointerEvents: 'auto'
+                            pointerEvents: 'auto',
+                            background: 'none',
+                            border: 'none'
                         }}
                     >
                         진행중인 챌린지 보러가기 →
-                    </Link>
+                    </button>
                     <button 
                         type="button"
                         style={{ 
