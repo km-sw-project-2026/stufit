@@ -163,13 +163,15 @@ function ShopQuicklink() {
             </svg>
           </button>
 
-          <div ref={containerRef} className="shop-items-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 700, height: 240, overflow: 'hidden' }}>
+          <div ref={containerRef} className="shop-items-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: 260, overflow: 'hidden' }}>
             {
               (() => {
                 const containerWidthLocal = containerWidth || 900;
-                const base = 160;
-                const gap = 40; // left+right margins total
-                const slot = base + gap;
+                const VISIBLE = 5; // show five items fully
+                const gapTotal = 32; // total horizontal gap per slot (left+right)
+                const slot = Math.round(containerWidthLocal / VISIBLE);
+                const base = Math.max(80, slot - gapTotal);
+                const gapHalf = Math.round((slot - base) / 2);
                 const translateX = Math.round(containerWidthLocal / 2 - (virtualIndex * slot + base / 2));
 
                 return (
@@ -188,7 +190,7 @@ function ShopQuicklink() {
                       const pos = i - virtualIndex;
                       const absPos = Math.abs(pos);
 
-                      let scale = 0.8;
+                      let scale = 0.75;
                       let zIndex = 1;
                       let opacity = 1;
                       let pointerEvents = 'auto';
@@ -198,16 +200,16 @@ function ShopQuicklink() {
                         zIndex = 6;
                         opacity = 1;
                       } else if (absPos === 1) {
-                        scale = 1.0;
+                        scale = 1.05;
                         zIndex = 5;
                         opacity = 1;
                       } else if (absPos === 2) {
-                        scale = 0.85;
+                        scale = 0.9;
                         zIndex = 4;
                         opacity = 1;
                       } else {
                         // keep distant items small but visible to avoid blank gaps
-                        scale = 0.7;
+                        scale = 0.75;
                         zIndex = 1;
                         opacity = 0.9;
                         pointerEvents = 'none';
@@ -226,13 +228,13 @@ function ShopQuicklink() {
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            transition: 'transform 320ms cubic-bezier(.2,.9,.27,1), box-shadow 320ms',
+                            transition: `transform ${TRANS_DUR}ms cubic-bezier(.2,.9,.27,1), box-shadow ${TRANS_DUR}ms`,
                             transform: `scale(${scale})`,
                             transformOrigin: 'center center',
                             boxShadow: absPos === 0 ? '0 18px 40px rgba(0,0,0,0.18)' : 'none',
                             zIndex,
                             opacity,
-                            margin: '0 20px',
+                            margin: `0 ${gapHalf}px`,
                             background: '#fff',
                             position: 'relative',
                             cursor: pointerEvents === 'none' ? 'default' : 'pointer',
@@ -250,7 +252,7 @@ function ShopQuicklink() {
                                 const rect = imgEl.getBoundingClientRect();
                                 const natural = imgEl.naturalWidth || 1;
                                 const factor = rect.width / natural;
-                                // If image is being upscaled significantly, use pixelated rendering
+                                // If image is being upscaled significantly, use pixelated rendering for pixel-art
                                 if (factor > 1.1) {
                                   imgEl.style.imageRendering = 'pixelated';
                                   imgEl.style.webkitImageRendering = 'pixelated';
