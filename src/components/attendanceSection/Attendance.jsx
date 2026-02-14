@@ -269,31 +269,50 @@ function Attendance() {
   const todayIndex = new Date().getDay();
   const todayDateString = new Date().toISOString().split('T')[0];
 
+
+
+  // Attendance.jsx의 useEffect 부분만 아래 내용으로 교체하세요.
+
   useEffect(() => {
     const fetchAttendance = async () => {
       const userId = localStorage.getItem('userId');
-      localStorage.removeItem('stufit_attendance');
+      
+      // 유저 정보가 없으면 초기화 후 종료
       if (!userId || userId === "null" || userId === "undefined") {
         setCheckedDays(Array(7).fill(false));
+        setLastCheckDate(null);
         return;
       }
+
       try {
+        // 캐시 방지를 위해 타임스탬프(t) 추가
         const response = await fetch(`/api/attendance?userId=${userId}&t=${new Date().getTime()}`);
+        
         if (response.ok) {
           const data = await response.json();
           const newCheckedDays = Array(7).fill(false);
+          
+          // 이번 주 일요일 구하기
           const today = new Date();
           const sunday = new Date(today);
           sunday.setDate(today.getDate() - today.getDay());
           sunday.setHours(0, 0, 0, 0);
+
+          // 서버에서 온 logs를 확인하여 체크 표시
           if (data.logs && Array.isArray(data.logs)) {
             data.logs.forEach(log => {
               const logDate = new Date(log.date);
-              if (logDate >= sunday) newCheckedDays[logDate.getDay()] = true;
+              // 이번 주 기록만 필터링하여 해당 요일에 true 설정
+              if (logDate >= sunday) {
+                newCheckedDays[logDate.getDay()] = true;
+              }
+              // 오늘 날짜 출석 여부 확인
+              if (log.date === todayDateString) {
+                setLastCheckDate(todayDateString);
+              }
             });
           }
           setCheckedDays(newCheckedDays);
-          if (data.logs && data.logs.some(log => log.date === todayDateString)) setLastCheckDate(todayDateString);
         } else {
           setCheckedDays(Array(7).fill(false));
         }
@@ -302,7 +321,41 @@ function Attendance() {
       }
     };
     fetchAttendance();
-  }, [todayDateString]);
+  }, [todayDateString, localStorage.getItem('userId')]); // userId 변경 시에도 다시 불러오도록 추가
+  // useEffect(() => {
+  //   const fetchAttendance = async () => {
+  //     const userId = localStorage.getItem('userId');
+  //     localStorage.removeItem('stufit_attendance');
+  //     if (!userId || userId === "null" || userId === "undefined") {
+  //       setCheckedDays(Array(7).fill(false));
+  //       return;
+  //     }
+  //     try {
+  //       const response = await fetch(`/api/attendance?userId=${userId}&t=${new Date().getTime()}`);
+  //       if (response.ok) {
+  //         const data = await response.json();
+  //         const newCheckedDays = Array(7).fill(false);
+  //         const today = new Date();
+  //         const sunday = new Date(today);
+  //         sunday.setDate(today.getDate() - today.getDay());
+  //         sunday.setHours(0, 0, 0, 0);
+  //         if (data.logs && Array.isArray(data.logs)) {
+  //           data.logs.forEach(log => {
+  //             const logDate = new Date(log.date);
+  //             if (logDate >= sunday) newCheckedDays[logDate.getDay()] = true;
+  //           });
+  //         }
+  //         setCheckedDays(newCheckedDays);
+  //         if (data.logs && data.logs.some(log => log.date === todayDateString)) setLastCheckDate(todayDateString);
+  //       } else {
+  //         setCheckedDays(Array(7).fill(false));
+  //       }
+  //     } catch (error) {
+  //       console.error('출석 데이터 로딩 실패:', error);
+  //     }
+  //   };
+  //   fetchAttendance();
+  // }, [todayDateString]);
 
   const showAlert = (msg) => {
     setAlertMessage(msg);
