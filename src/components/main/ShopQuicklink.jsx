@@ -66,15 +66,17 @@ function ShopQuicklink() {
           <div className="shop-items-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 760, height: 260, overflow: 'hidden' }}>
             {images.map((src, i) => {
               const pos = ((i - index) + images.length) % images.length; // relative position
-              let size = 80;
+              const base = 120; // base size in px
+              let scale = 0.67; // small
               let zIndex = 1;
-              let opacity = 0.5;
+              let opacity = 0.6;
+
               if (i === index) {
-                size = 220;
+                scale = 1.8; // center enlarged
                 zIndex = 4;
                 opacity = 1;
               } else if (pos === 1 || pos === images.length - 1) {
-                size = 130;
+                scale = 1.1; // adjacent
                 zIndex = 3;
                 opacity = 0.95;
               }
@@ -84,14 +86,16 @@ function ShopQuicklink() {
                   key={i}
                   onClick={() => setIndex(i)}
                   style={{
-                    width: size,
-                    height: size,
+                    width: base,
+                    height: base,
+                    flex: `0 0 ${base}px`,
                     borderRadius: '50%',
                     overflow: 'hidden',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    transition: 'all 300ms ease',
+                    transition: 'transform 300ms ease, box-shadow 300ms ease, opacity 300ms ease',
+                    transform: `scale(${scale})`,
                     boxShadow: i === index ? '0 10px 30px rgba(0,0,0,0.15)' : 'none',
                     zIndex,
                     opacity,
@@ -101,26 +105,10 @@ function ShopQuicklink() {
                     backgroundSize: 'cover',
                     backgroundPosition: 'center',
                     backgroundImage: `url(${src})`,
-                    cursor: 'pointer'
+                    cursor: 'pointer',
+                    willChange: 'transform'
                   }}
-                >
-                  <div
-                    style={{
-                      position: 'absolute',
-                      bottom: 6,
-                      left: 6,
-                      right: 6,
-                      textAlign: 'center',
-                      fontSize: 11,
-                      color: '#333',
-                      background: 'rgba(255,255,255,0.7)',
-                      padding: '2px 4px',
-                      borderRadius: 6,
-                    }}
-                  >
-                    {String(src).split('/').pop()}
-                  </div>
-                </div>
+                />
               );
             })}
           </div>
@@ -161,12 +149,7 @@ function ShopQuicklink() {
           ))}
         </div>
 
-        <div style={{ marginTop: 12, fontSize: 12, color: '#666' }}>
-          <div>Debug: images count = {images.length}</div>
-          <div style={{ maxWidth: 760, overflow: 'auto', whiteSpace: 'nowrap' }}>{images.map((s, i) => (
-            <span key={i} style={{ display: 'inline-block', marginRight: 8 }}>{String(s).split('/').pop()}</span>
-          ))}</div>
-        </div>
+        {/* debug info removed for production UI */}
       </div>
     </div>
   );
