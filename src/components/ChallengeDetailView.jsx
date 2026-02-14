@@ -636,7 +636,7 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose }) {
                             )}
                         </div>
 
-                                        <div className="detail-actions">
+                                        <div className="detail-actions" style={{ marginTop: '-6px' }}>
                                             <button className="btn-giveup" onClick={giveupHandler}>give up</button>
                                             <button className="btn-complete">complete</button>
                                         </div>
