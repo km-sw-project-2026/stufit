@@ -47,12 +47,26 @@ export const onRequestGet = async (context: { request: Request; env: any; userId
 
     // username이 있으면 username 기반 집계를 우선 사용 (userId 불일치 방지)
     if (username) {
-      postCountResult = await env.D1_DB.prepare(
-        `SELECT COUNT(*) as count
-         FROM posts p
-         JOIN users u ON u.user_id = p.user_id
-         WHERE u.username = ? AND p.deleted_at IS NULL`
-      ).bind(username).first();
+      try {
+        postCountResult = await env.D1_DB.prepare(
+          `SELECT COUNT(*) as count
+           FROM posts p
+           JOIN users u ON u.user_id = p.user_id
+           WHERE u.username = ? AND p.deleted_at IS NULL`
+        ).bind(username).first();
+      } catch (postCountErr) {
+        const message = String((postCountErr as any)?.message || postCountErr || '');
+        if (message.includes('no such column') && message.includes('deleted_at')) {
+          postCountResult = await env.D1_DB.prepare(
+            `SELECT COUNT(*) as count
+             FROM posts p
+             JOIN users u ON u.user_id = p.user_id
+             WHERE u.username = ?`
+          ).bind(username).first();
+        } else {
+          throw postCountErr;
+        }
+      }
 
 
     // 3. 포인트와 점수 조회
@@ -67,25 +81,44 @@ export const onRequestGet = async (context: { request: Request; env: any; userId
          WHERE u.username = ?`
       ).bind(username).first();
 
-      profileResult = await env.D1_DB.prepare(
-        `SELECT up.points as points
-         FROM user_profiles up
-         JOIN users u ON u.user_id = up.user_id
-         WHERE u.username = ?`
-      ).bind(username).first();
+      try {
+        profileResult = await env.D1_DB.prepare(
+          `SELECT up.points as points
+           FROM user_profiles up
+           JOIN users u ON u.user_id = up.user_id
+           WHERE u.username = ?`
+        ).bind(username).first();
+      } catch {
+        profileResult = { points: 0 };
+      }
     } else {
       // fallback: userId 기반 집계
-      postCountResult = await env.D1_DB.prepare(
-        "SELECT COUNT(*) as count FROM posts WHERE user_id = ? AND deleted_at IS NULL"
-      ).bind(userId).first();
+      try {
+        postCountResult = await env.D1_DB.prepare(
+          "SELECT COUNT(*) as count FROM posts WHERE user_id = ? AND deleted_at IS NULL"
+        ).bind(userId).first();
+      } catch (postCountErr) {
+        const message = String((postCountErr as any)?.message || postCountErr || '');
+        if (message.includes('no such column') && message.includes('deleted_at')) {
+          postCountResult = await env.D1_DB.prepare(
+            "SELECT COUNT(*) as count FROM posts WHERE user_id = ?"
+          ).bind(userId).first();
+        } else {
+          throw postCountErr;
+        }
+      }
 
       commentCountResult = await env.D1_DB.prepare(
         "SELECT COUNT(*) as count FROM comments WHERE user_id = ?"
       ).bind(userId).first();
 
-      profileResult = await env.D1_DB.prepare(
-        "SELECT points FROM user_profiles WHERE user_id = ?"
-      ).bind(userId).first();
+      try {
+        profileResult = await env.D1_DB.prepare(
+          "SELECT points FROM user_profiles WHERE user_id = ?"
+        ).bind(userId).first();
+      } catch {
+        profileResult = { points: 0 };
+      }
     }
 
 
