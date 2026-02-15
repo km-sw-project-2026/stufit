@@ -195,10 +195,19 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
     });
   }
 
-  const members = await env.D1_DB
-    .prepare('SELECT u.user_id, u.username FROM challenge_members cm JOIN users u ON cm.user_id = u.user_id WHERE cm.challenge_id = ?')
-    .bind(challengeId)
-    .all();
+  let members;
+  try {
+    members = await env.D1_DB
+      .prepare('SELECT u.user_id, u.username FROM challenge_members cm JOIN users u ON cm.user_id = u.user_id WHERE cm.challenge_id = ?')
+      .bind(challengeId)
+      .all();
+  } catch (err) {
+    console.warn('[rewards] members query failed:', err);
+    return new Response(JSON.stringify({ message: '챌린지 멤버 조회에 실패했습니다.' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
 
   const memberList = Array.isArray(members?.results) ? members.results : [];
   if (memberList.length === 0) {
@@ -208,10 +217,16 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
     );
   }
 
-  const progress = await env.D1_DB
-    .prepare('SELECT user_id, COUNT(*) as count FROM challenge_daily_progress WHERE challenge_id = ? GROUP BY user_id')
-    .bind(challengeId)
-    .all();
+  let progress;
+  try {
+    progress = await env.D1_DB
+      .prepare('SELECT user_id, COUNT(*) as count FROM challenge_daily_progress WHERE challenge_id = ? GROUP BY user_id')
+      .bind(challengeId)
+      .all();
+  } catch (err) {
+    console.warn('[rewards] progress query failed:', err);
+    progress = { results: [] };
+  }
 
   const counts = new Map<number, number>();
   (progress?.results || []).forEach((row: any) => {
@@ -271,6 +286,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
   }
 
   const applied: Array<{ userId: number; points: number }> = [];
+  const errors: string[] = [];
   const now = new Date().toISOString();
   let transactionStarted = false;
 
@@ -285,46 +301,52 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
     for (const entry of ranking) {
       if (!entry.userId || entry.points === 0) continue;
 
-      const reason = `challenge_reward:${challengeId}:${action}:${mode}`;
-      const already = pointLogColumn
-        ? await env.D1_DB
-          .prepare('SELECT 1 FROM point_logs WHERE user_id = ? AND reason = ?')
-          .bind(entry.userId, reason)
-          .first()
-        : null;
+      try {
+        const reason = `challenge_reward:${challengeId}:${action}:${mode}`;
+        const already = pointLogColumn
+          ? await env.D1_DB
+            .prepare('SELECT 1 FROM point_logs WHERE user_id = ? AND reason = ?')
+            .bind(entry.userId, reason)
+            .first()
+          : null;
 
-      if (already) continue;
+        if (already) continue;
 
-      await env.D1_DB
-        .prepare('INSERT OR IGNORE INTO user_profiles (user_id, tier, score, points) VALUES (?, ?, ?, ?)')
-        .bind(entry.userId, 'bronze', 0, 0)
-        .run();
+        await env.D1_DB
+          .prepare('INSERT OR IGNORE INTO user_profiles (user_id, tier, score, points) VALUES (?, ?, ?, ?)')
+          .bind(entry.userId, 'bronze', 0, 0)
+          .run();
 
-      const profile = await env.D1_DB
-        .prepare('SELECT points FROM user_profiles WHERE user_id = ?')
-        .bind(entry.userId)
-        .first();
+        const profile = await env.D1_DB
+          .prepare('SELECT points FROM user_profiles WHERE user_id = ?')
+          .bind(entry.userId)
+          .first();
 
-      const currentPoints = Number(profile?.points) || 0;
-      const nextPoints = Math.max(0, currentPoints + entry.points);
+        const currentPoints = Number(profile?.points) || 0;
+        const nextPoints = Math.max(0, currentPoints + entry.points);
 
-      await env.D1_DB
-        .prepare('UPDATE user_profiles SET points = ? WHERE user_id = ?')
-        .bind(nextPoints, entry.userId)
-        .run();
+        await env.D1_DB
+          .prepare('UPDATE user_profiles SET points = ? WHERE user_id = ?')
+          .bind(nextPoints, entry.userId)
+          .run();
 
-      if (pointLogColumn) {
-        try {
-          await env.D1_DB
-            .prepare(`INSERT INTO point_logs (user_id, ${pointLogColumn}, reason, created_at) VALUES (?, ?, ?, ?)`) 
-            .bind(entry.userId, entry.points, reason, now)
-            .run();
-        } catch (pointLogErr: any) {
-          console.warn('POINT LOG INSERT SKIPPED:', pointLogErr?.message || String(pointLogErr));
+        if (pointLogColumn) {
+          try {
+            await env.D1_DB
+              .prepare(`INSERT INTO point_logs (user_id, ${pointLogColumn}, reason, created_at) VALUES (?, ?, ?, ?)`) 
+              .bind(entry.userId, entry.points, reason, now)
+              .run();
+          } catch (pointLogErr: any) {
+            console.warn('POINT LOG INSERT SKIPPED:', pointLogErr?.message || String(pointLogErr));
+          }
         }
-      }
 
-      applied.push({ userId: entry.userId, points: entry.points });
+        applied.push({ userId: entry.userId, points: entry.points });
+      } catch (entryErr: any) {
+        const message = entryErr?.message || String(entryErr);
+        console.warn('[rewards] entry update failed:', entry.userId, message);
+        errors.push(message);
+      }
     }
 
     if (transactionStarted) {
@@ -345,7 +367,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
   }
 
   return new Response(
-    JSON.stringify({ success: true, applied, ranking, type, mode }),
+    JSON.stringify({ success: true, applied, ranking, type, mode, errors }),
     { status: 200, headers: { 'Content-Type': 'application/json' } }
   );
 };
