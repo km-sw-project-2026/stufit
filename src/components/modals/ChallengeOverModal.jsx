@@ -62,25 +62,28 @@ function ChallengeOverModal({
                   <span className="name">랭킹 데이터가 없습니다.</span>
                 </div>
               ) : (
-                rankingData.map((item) => (
-                  <div key={item.rank} className="ranking-item">
-                    <span className="rank">{item.rank}</span>
-                    <span className="name">{item.name}</span>
-                    <div className="score-info">
-                      <div className="score-group">
-                        <span className="label">포인트</span>
-                        <span className="value">
-                          {item.points > 0 ? `+${item.points}` : `${item.points}`}
-                        </span>
-                      </div>
-                      <div className="divider" />
-                      <div className="score-group">
-                        <span className="label">점수</span>
-                        <span className="value">{item.score}</span>
+                rankingData.map((item) => {
+                  console.log('[ChallengeOverModal] render item:', item);
+                  return (
+                    <div key={item.rank} className="ranking-item">
+                      <span className="rank">{item.rank}</span>
+                      <span className="name">{item.name}</span>
+                      <div className="score-info">
+                        <div className="score-group">
+                          <span className="label">포인트</span>
+                          <span className="value">
+                            {item.points > 0 ? `+${item.points}` : `${item.points}`}
+                          </span>
+                        </div>
+                        <div className="divider" />
+                        <div className="score-group">
+                          <span className="label">점수</span>
+                          <span className="value">{item.score}</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           </div>

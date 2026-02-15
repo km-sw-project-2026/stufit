@@ -126,6 +126,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
   const mode = resolveMode(challenge);
   const type = resolveType(challenge);
   let pointLogColumn: 'point' | 'points' | null = null;
+  let hasScoreColumn = false;
 
   try {
     const pointLogInfo = await env.D1_DB.prepare("PRAGMA table_info('point_logs')").all();
@@ -136,7 +137,36 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
     console.warn('[rewards] point_logs check failed:', err);
   }
 
+  try {
+    const profileInfo = await env.D1_DB.prepare("PRAGMA table_info('user_profiles')").all();
+    const columns = Array.isArray(profileInfo?.results) ? profileInfo.results : [];
+    hasScoreColumn = columns.some((col: any) => col.name === 'score');
+  } catch (err) {
+    console.warn('[rewards] user_profiles check failed:', err);
+    hasScoreColumn = false;
+  }
+
   if (action === 'giveup') {
+    // memberList 확인
+    let memberList: any[] = [];
+    try {
+      const members = await env.D1_DB
+        .prepare('SELECT u.user_id, u.username FROM challenge_members cm JOIN users u ON cm.user_id = u.user_id WHERE cm.challenge_id = ?')
+        .bind(challengeId)
+        .all();
+      memberList = Array.isArray(members?.results) ? members.results : [];
+    } catch (err) {
+      console.warn('[rewards] giveup members query failed:', err);
+    }
+
+    // 1명만 참여하면 포인트 지급 안 함
+    if (memberList.length <= 1) {
+      return new Response(
+        JSON.stringify({ success: true, applied: [], ranking: [], type, mode }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
     const reason = `challenge_reward:${challengeId}:giveup`;
     const already = pointLogColumn
       ? await env.D1_DB
@@ -153,9 +183,11 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
     }
 
     const now = new Date().toISOString();
+    
+    // 먼저 프로필이 없으면 생성
     await env.D1_DB
-      .prepare('INSERT OR IGNORE INTO user_profiles (user_id, tier, score, points) VALUES (?, ?, ?, ?)')
-      .bind(userId, 'bronze', 0, 0)
+      .prepare('INSERT OR IGNORE INTO user_profiles (user_id) VALUES (?)')
+      .bind(userId)
       .run();
 
     const profile = await env.D1_DB
@@ -259,33 +291,67 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
       return String(a.name).localeCompare(String(b.name));
     });
 
-    const otherCount = Math.max(base.length - 1, 0);
-    const ranking = base.map((item, idx) => {
-      let points = 0;
+    // 1명 참여 시 보상 없음 (점수, 포인트 모두 지급 안 함)
+    let ranking: any[] = [];
+    
+    if (base.length > 1) {
+      const otherCount = Math.max(base.length - 1, 0);
+      ranking = base.map((item, idx) => {
+        let points = 0;
+        let score = 0;
 
-      if (mode === 'practice') {
-        points = 0;
-      } else if (idx === 0) {
-        points = 500;
-      } else {
-        const otherIndex = idx - 1;
-        const tierRatio = otherCount > 0 ? otherIndex / otherCount : 0;
-        if (tierRatio < 0.3) points = 400;
-        else if (tierRatio < 0.7) points = 300;
-        else points = -200;
-      }
+        if (mode === 'practice') {
+          // 연습 모드는 보상 없음
+          points = 0;
+          score = 0;
+        } else if (idx === 0) {
+          // 1등: 항상 +150점, +150포인트
+          points = 150;
+          score = 150; // 1등은 고정 150점, 비율과 상관없이
+        } else if (base.length === 2) {
+          // 2명 참여: 2등 -30 포인트, 점수는 비율로
+          points = -30;
+          score = Math.round(item.ratio * 150);
+        } else if (base.length === 3) {
+          // 3명 참여: 2등 +100, 3등 -30 포인트, 점수는 비율로
+          points = idx === 1 ? 100 : -30;
+          score = Math.round(item.ratio * 150);
+        } else {
+          // 4명 이상: 1등 제외 인원을 상/중/하로 분배
+          const restCount = otherCount; // 1등 제외
+          const topPercent = Math.ceil(restCount * 0.3) || 1; // 최소 1명
+          const bottomPercent = Math.ceil(restCount * 0.3) || 1; // 최소 1명 (그런데 단순 비율이므로 조정 필요)
+          const middlePercent = restCount - topPercent - bottomPercent;
 
-      return {
-        rank: idx + 1,
-        name: item.name,
-        userId: item.userId,
-        points,
-        score: Math.round(item.ratio * 100),
-        ratio: item.ratio,
-        count: item.count,
-        totalDays
-      };
-    });
+          const otherIndex = idx - 1; // 1등을 제외한 순서 (0부터 시작)
+
+          if (otherIndex < topPercent) {
+            // 상위 30%
+            points = 100;
+          } else if (otherIndex < topPercent + middlePercent) {
+            // 중위 40%
+            points = 50;
+          } else {
+            // 하위 30%
+            points = -30;
+          }
+          
+          // 점수는 항상 비율로 계산
+          score = Math.round(item.ratio * 150);
+        }
+
+        return {
+          rank: idx + 1,
+          name: item.name,
+          userId: item.userId,
+          points,
+          score,
+          ratio: item.ratio,
+          count: item.count,
+          totalDays
+        };
+      });
+    }
 
     if (mode === 'practice') {
       return new Response(
@@ -308,7 +374,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
 
     try {
       for (const entry of ranking) {
-        if (!entry.userId || entry.points === 0) continue;
+        if (!entry.userId) continue;
 
         try {
           const reason = `challenge_reward:${challengeId}:${action}:${mode}`;
@@ -321,9 +387,10 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
 
           if (already) continue;
 
+          // 먼저 프로필이 없으면 생성
           await env.D1_DB
-            .prepare('INSERT OR IGNORE INTO user_profiles (user_id, tier, score, points) VALUES (?, ?, ?, ?)')
-            .bind(entry.userId, 'bronze', 0, 0)
+            .prepare('INSERT OR IGNORE INTO user_profiles (user_id) VALUES (?)')
+            .bind(entry.userId)
             .run();
 
           const profile = await env.D1_DB
@@ -350,7 +417,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
             }
           }
 
-          applied.push({ userId: entry.userId, points: entry.points });
+          applied.push({ userId: entry.userId, points: entry.points, score: entry.score });
         } catch (entryErr: any) {
           const message = entryErr?.message || String(entryErr);
           console.warn('[rewards] entry update failed:', entry.userId, message);

@@ -54,6 +54,12 @@ export const onRequestGet = async (context: { request: Request; env: any; userId
          WHERE u.username = ? AND p.deleted_at IS NULL`
       ).bind(username).first();
 
+
+    // 3. 포인트와 점수 조회
+    profileResult = await env.D1_DB.prepare(
+      "SELECT points, score FROM user_profiles WHERE user_id = ?"
+    ).bind(userId).first();
+
       commentCountResult = await env.D1_DB.prepare(
         `SELECT COUNT(*) as count
          FROM comments c
@@ -82,12 +88,14 @@ export const onRequestGet = async (context: { request: Request; env: any; userId
       ).bind(userId).first();
     }
 
+
     return Response.json({
       success: true,
       stats: {
         posts: postCountResult?.count || 0,
         comments: commentCountResult?.count || 0,
-        points: profileResult?.points || 0
+        points: profileResult?.points || 0,
+        score: profileResult?.score || 0
       }
     });
 

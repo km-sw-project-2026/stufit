@@ -850,7 +850,7 @@ function Community() {
             if (!response.ok) throw new Error(payload.message);
 
             await fetchPosts(); // 작성 후 목록 새로고침
-            window.dispatchEvent(new CustomEvent('communityActivityUpdated'));
+            window.dispatchEvent(new CustomEvent('communityActivityUpdated', { detail: { postsDelta: 1 } }));
             setNewPostModalOpen(false);
         } catch (error) {
             alert(error.message || '게시글 작성에 실패했습니다.');
@@ -889,7 +889,7 @@ function Community() {
 
             closeDetailView();
             await fetchPosts();
-            window.dispatchEvent(new CustomEvent('communityActivityUpdated'));
+            window.dispatchEvent(new CustomEvent('communityActivityUpdated', { detail: { postsDelta: -1 } }));
         } catch (error) {
             console.error('게시글 삭제 실패:', error);
             alert('게시글 삭제에 실패했습니다.');

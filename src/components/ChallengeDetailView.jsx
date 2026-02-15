@@ -389,13 +389,15 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
 
     const buildRankingData = (rows) => {
         const totalDays = getTotalDays();
+        
+        // rows에서 각 사용자의 진행도 계산
         const countsByUser = new Map();
-
         rows.forEach((row) => {
             if (!row?.username) return;
             countsByUser.set(row.username, (countsByUser.get(row.username) || 0) + 1);
         });
 
+        // members와 진행도를 합쳐서 순위 계산
         const base = members.map((member) => {
             const count = countsByUser.get(member.username) || 0;
             const ratio = totalDays > 0 ? Math.min(count / totalDays, 1) : 0;
@@ -407,27 +409,58 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
             };
         });
 
+        // 비율 기준으로 정렬
         const sorted = base.sort((a, b) => {
             if (b.ratio !== a.ratio) return b.ratio - a.ratio;
             return a.name.localeCompare(b.name);
         });
 
         const mode = getChallengeMode();
-        const otherCount = Math.max(sorted.length - 1, 0);
 
-        return sorted.map((item, idx) => {
+        // 1명 참여 시 보상 없음
+        if (sorted.length <= 1) {
+            return [];
+        }
+
+        // 모든 사용자에 대해 순위와 보상 계산
+        const result = sorted.map((item, idx) => {
             let points = 0;
+            let score = 0;
 
             if (mode === 'practice') {
+                // 연습 모드: 보상 없음
                 points = 0;
+                score = 0;
             } else if (idx === 0) {
-                points = 500;
+                // 1등: 포인트 150 고정, 점수 150 고정
+                points = 150;
+                score = 150;
+            } else if (sorted.length === 2) {
+                // 2명: 2등 -30 포인트, 점수는 비율로 계산 (최대 150)
+                points = -30;
+                score = Math.round(item.ratio * 150);
+            } else if (sorted.length === 3) {
+                // 3명: 2등 +100, 3등 -30 포인트, 점수는 비율로
+                points = idx === 1 ? 100 : -30;
+                score = Math.round(item.ratio * 150);
             } else {
+                // 4명 이상: 상/중/하 분배
+                const restCount = sorted.length - 1;
+                const topPercent = Math.ceil(restCount * 0.3) || 1;
+                const bottomPercent = Math.ceil(restCount * 0.3) || 1;
+                const middlePercent = restCount - topPercent - bottomPercent;
                 const otherIndex = idx - 1;
-                const tierRatio = otherCount > 0 ? otherIndex / otherCount : 0;
-                if (tierRatio < 0.3) points = 400;
-                else if (tierRatio < 0.7) points = 300;
-                else points = -200;
+
+                if (otherIndex < topPercent) {
+                    points = 100;
+                } else if (otherIndex < topPercent + middlePercent) {
+                    points = 50;
+                } else {
+                    points = -30;
+                }
+                
+                // 점수는 항상 비율로
+                score = Math.round(item.ratio * 150);
             }
 
             return {
@@ -435,12 +468,15 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
                 name: item.name,
                 userId: item.userId,
                 points,
-                score: Math.round(item.ratio * 100),
+                score,
                 ratio: item.ratio,
                 count: item.count,
                 totalDays
             };
         });
+
+        console.log('[buildRankingData] result:', result);
+        return result;
     };
 
 
@@ -577,17 +613,25 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
                 const headers = {};
                 if (username) headers['X-Username'] = username;
 
-                const response = await fetch(`/api/user/points?userId=${userId}&t=${Date.now()}`, {
+                const response = await fetch(`/api/user/stats?userId=${userId}&t=${Date.now()}`, {
                     headers
                 });
                 if (!response.ok) return;
 
                 const data = await response.json();
                 const nextPoints = Number(data?.points);
-                if (Number.isNaN(nextPoints)) return;
+                const nextScore = Number(data?.score);
+                
+                if (!Number.isNaN(nextPoints)) {
+                    localStorage.setItem('points', String(nextPoints));
+                }
+                if (!Number.isNaN(nextScore)) {
+                    localStorage.setItem('score', String(nextScore));
+                }
 
-                localStorage.setItem('points', String(nextPoints));
-                window.dispatchEvent(new CustomEvent('pointsUpdated', { detail: { points: nextPoints } }));
+                window.dispatchEvent(new CustomEvent('pointsUpdated', { 
+                    detail: { points: nextPoints, score: nextScore } 
+                }));
             } catch (error) {
                 console.warn('[syncPointsFromServer] failed:', error);
             }
@@ -619,7 +663,9 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
 
             if (rewardsResponse.ok) {
                 const payload = await rewardsResponse.json();
+                console.log('[finalizeChallenge] rewards success:', payload);
                 if (Array.isArray(payload?.ranking)) {
+                    console.log('[finalizeChallenge] ranking data:', payload.ranking);
                     setRankingData(payload.ranking);
                     await syncPointsFromServer();
                     return;
@@ -648,6 +694,7 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
             const result = await response.json();
             const rows = Array.isArray(result?.data) ? result.data : [];
             const rankings = buildRankingData(rows);
+            console.log('[finalizeChallenge] fallback ranking data:', rankings);
             setRankingData(rankings);
             await syncPointsFromServer();
         } catch (error) {
