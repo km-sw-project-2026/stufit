@@ -420,18 +420,14 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
 
             if (mode === 'practice') {
                 points = 0;
-            } else if (mode === 'daily') {
-                points = item.ratio >= 1 ? 100 : -30;
+            } else if (idx === 0) {
+                points = 500;
             } else {
-                if (idx === 0) {
-                    points = 150;
-                } else {
-                    const otherIndex = idx - 1;
-                    const tierRatio = otherCount > 0 ? otherIndex / otherCount : 0;
-                    if (tierRatio < 0.3) points = 100;
-                    else if (tierRatio < 0.7) points = 50;
-                    else points = -30;
-                }
+                const otherIndex = idx - 1;
+                const tierRatio = otherCount > 0 ? otherIndex / otherCount : 0;
+                if (tierRatio < 0.3) points = 400;
+                else if (tierRatio < 0.7) points = 300;
+                else points = -200;
             }
 
             return {
@@ -572,6 +568,31 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
     const finalizeChallenge = async () => {
         if (!challenge?.challenge_id) return;
 
+        const syncPointsFromServer = async () => {
+            const username = localStorage.getItem('username');
+            const userId = Number(localStorage.getItem('userId'));
+            if (!userId || Number.isNaN(userId)) return;
+
+            try {
+                const headers = {};
+                if (username) headers['X-Username'] = username;
+
+                const response = await fetch(`/api/user/points?userId=${userId}&t=${Date.now()}`, {
+                    headers
+                });
+                if (!response.ok) return;
+
+                const data = await response.json();
+                const nextPoints = Number(data?.points);
+                if (Number.isNaN(nextPoints)) return;
+
+                localStorage.setItem('points', String(nextPoints));
+                window.dispatchEvent(new CustomEvent('pointsUpdated', { detail: { points: nextPoints } }));
+            } catch (error) {
+                console.warn('[syncPointsFromServer] failed:', error);
+            }
+        };
+
         try {
             const username = localStorage.getItem('username');
             const headers = {};
@@ -600,6 +621,7 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
                 const payload = await rewardsResponse.json();
                 if (Array.isArray(payload?.ranking)) {
                     setRankingData(payload.ranking);
+                    await syncPointsFromServer();
                     return;
                 }
             } else {
@@ -610,7 +632,13 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
         }
 
         try {
-            const response = await fetch(`/api/challenges/${challenge.challenge_id}/progress`);
+            const username = localStorage.getItem('username');
+            const headers = {};
+            if (username) headers['X-Username'] = username;
+
+            const response = await fetch(`/api/challenges/${challenge.challenge_id}/progress`, {
+                headers
+            });
             if (!response.ok) {
                 console.warn('[finalizeChallenge] progress fetch failed:', response.status);
                 setRankingData([]);
@@ -621,6 +649,7 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
             const rows = Array.isArray(result?.data) ? result.data : [];
             const rankings = buildRankingData(rows);
             setRankingData(rankings);
+            await syncPointsFromServer();
         } catch (error) {
             console.error('[finalizeChallenge] error:', error);
         }

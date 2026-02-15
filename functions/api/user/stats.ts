@@ -22,9 +22,8 @@ export const onRequestGet = async (context: { request: Request; env: any; userId
       return Response.json({ error: 'DB not configured' }, { status: 500 });
     }
 
-    let userId: number | null = parsedUserId || resolvedMiddlewareUserId;
+    let userId: number | null = resolvedMiddlewareUserId;
 
-    // 만약 userId가 없으면 username으로 조회
     if (!userId && username) {
       const user = await env.D1_DB.prepare("SELECT user_id FROM users WHERE username = ?").bind(username).first();
       const resolved = Number(user?.user_id);
@@ -33,24 +32,55 @@ export const onRequestGet = async (context: { request: Request; env: any; userId
       }
     }
 
+    // fallback: username 해석이 안될 때만 query userId 사용
+    if (!userId) {
+      userId = parsedUserId;
+    }
+
     if (!userId) {
       return Response.json({ error: 'User ID or Username required' }, { status: 400 });
     }
 
-    // 1. 게시글 수 조회
-    const postCountResult = await env.D1_DB.prepare(
-      "SELECT COUNT(*) as count FROM posts WHERE user_id = ? AND deleted_at IS NULL"
-    ).bind(userId).first();
+    let postCountResult: any = null;
+    let commentCountResult: any = null;
+    let profileResult: any = null;
 
-    // 2. 댓글 수 조회
-    const commentCountResult = await env.D1_DB.prepare(
-      "SELECT COUNT(*) as count FROM comments WHERE user_id = ?"
-    ).bind(userId).first();
+    // username이 있으면 username 기반 집계를 우선 사용 (userId 불일치 방지)
+    if (username) {
+      postCountResult = await env.D1_DB.prepare(
+        `SELECT COUNT(*) as count
+         FROM posts p
+         JOIN users u ON u.user_id = p.user_id
+         WHERE u.username = ? AND p.deleted_at IS NULL`
+      ).bind(username).first();
 
-    // 3. 포인트 조회 (기존 /api/user/points 로직 통합)
-    const profileResult = await env.D1_DB.prepare(
-      "SELECT points FROM user_profiles WHERE user_id = ?"
-    ).bind(userId).first();
+      commentCountResult = await env.D1_DB.prepare(
+        `SELECT COUNT(*) as count
+         FROM comments c
+         JOIN users u ON u.user_id = c.user_id
+         WHERE u.username = ?`
+      ).bind(username).first();
+
+      profileResult = await env.D1_DB.prepare(
+        `SELECT up.points as points
+         FROM user_profiles up
+         JOIN users u ON u.user_id = up.user_id
+         WHERE u.username = ?`
+      ).bind(username).first();
+    } else {
+      // fallback: userId 기반 집계
+      postCountResult = await env.D1_DB.prepare(
+        "SELECT COUNT(*) as count FROM posts WHERE user_id = ? AND deleted_at IS NULL"
+      ).bind(userId).first();
+
+      commentCountResult = await env.D1_DB.prepare(
+        "SELECT COUNT(*) as count FROM comments WHERE user_id = ?"
+      ).bind(userId).first();
+
+      profileResult = await env.D1_DB.prepare(
+        "SELECT points FROM user_profiles WHERE user_id = ?"
+      ).bind(userId).first();
+    }
 
     return Response.json({
       success: true,
