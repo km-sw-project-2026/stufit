@@ -35,6 +35,23 @@ function ShopQuicklink() {
     pumpkin,
   ];
 
+  // Badge labels per image (localized)
+  const badges = [
+    '치아 배경',
+    '치킨 액자',
+    'VIP 액자',
+    '초록 해파리',
+    '레몬 배경',
+    '아보카도 배경',
+    '벚꽃 액자',
+    '레몬 액자',
+    '고스트',
+    '앵무새',
+    '오리',
+    '핑크 도트',
+    '호박',
+  ];
+
   const n = images.length;
 
   // State: which logical index is centered
@@ -233,7 +250,7 @@ function ShopQuicklink() {
         </div>
 
         <div className="shop-item-info" style={{ textAlign: 'center', marginTop: 16 }}>
-          <div className="shop-badge">프로필 액자</div>
+          <div className="shop-badge">{badges[centerIndex] || '아이템'}</div>
           <div className="shop-name">아이템 미리보기</div>
         </div>
 
