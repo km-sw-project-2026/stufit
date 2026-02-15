@@ -241,10 +241,10 @@ function ShopQuicklink() {
                           zIndex = 4;
                           opacity = 1;
                           pointerEvents = 'auto';
-                        } else {
+                          } else {
                           scale = 0.75;
                           zIndex = 1;
-                          opacity = 0; // hide extras so exactly VISIBLE items are seen
+                          opacity = 0.2; // dim extras so they remain visible for debugging
                           pointerEvents = 'none';
                         }
                       } else {
@@ -267,7 +267,7 @@ function ShopQuicklink() {
                         } else {
                           scale = 0.75;
                           zIndex = 1;
-                          opacity = 0; // hide extras
+                          opacity = 0.2; // dim extras so they remain visible for debugging
                           pointerEvents = 'none';
                         }
                       }
