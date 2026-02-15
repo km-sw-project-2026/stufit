@@ -195,19 +195,20 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
     });
   }
 
-  let members;
   try {
-    members = await env.D1_DB
-      .prepare('SELECT u.user_id, u.username FROM challenge_members cm JOIN users u ON cm.user_id = u.user_id WHERE cm.challenge_id = ?')
-      .bind(challengeId)
-      .all();
-  } catch (err) {
-    console.warn('[rewards] members query failed:', err);
-    return new Response(JSON.stringify({ message: '챌린지 멤버 조회에 실패했습니다.' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
-  }
+    let members;
+    try {
+      members = await env.D1_DB
+        .prepare('SELECT u.user_id, u.username FROM challenge_members cm JOIN users u ON cm.user_id = u.user_id WHERE cm.challenge_id = ?')
+        .bind(challengeId)
+        .all();
+    } catch (err) {
+      console.warn('[rewards] members query failed:', err);
+      return new Response(JSON.stringify({ message: '챌린지 멤버 조회에 실패했습니다.' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
 
   const memberList = Array.isArray(members?.results) ? members.results : [];
   if (memberList.length === 0) {
@@ -366,8 +367,16 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
     });
   }
 
-  return new Response(
-    JSON.stringify({ success: true, applied, ranking, type, mode, errors }),
-    { status: 200, headers: { 'Content-Type': 'application/json' } }
-  );
+    return new Response(
+      JSON.stringify({ success: true, applied, ranking, type, mode, errors }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } }
+    );
+  } catch (err: any) {
+    const message = err?.message || String(err);
+    console.error('[rewards] fatal error:', message);
+    return new Response(JSON.stringify({ message: '보상 처리 중 오류가 발생했습니다.', error: message }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
 };
