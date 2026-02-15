@@ -5,7 +5,15 @@ export async function onRequest(context) {
   const { request, env, next } = context;
   
   // X-Username 헤더 확인
-  const username = request.headers.get('X-Username');
+  const rawUsername = request.headers.get('X-Username');
+  let username = rawUsername;
+  if (rawUsername) {
+    try {
+      username = decodeURIComponent(rawUsername);
+    } catch {
+      username = rawUsername;
+    }
+  }
   
   let userId;
   
