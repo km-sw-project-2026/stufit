@@ -35,17 +35,31 @@ function ShopQuicklink() {
     pumpkin,
   ];
 
-  // duplicates for infinite illusion
+  // Badge labels per image (localized)
+  const badges = [
+    '치아 배경',
+    '치킨 액자',
+    'VIP 액자',
+    '초록 해파리',
+    '레몬 배경',
+    '아보카도 배경',
+    '벚꽃 액자',
+    '레몬 액자',
+    '고스트',
+    '앵무새',
+    '오리',
+    '핑크 도트',
+    '호박',
+  ];
+
   const n = images.length;
-  const displayImages = [...images, ...images, ...images];
 
-  const [virtualIndex, setVirtualIndex] = useState(n + Math.floor(n / 2));
-  const virtualRef = useRef(virtualIndex);
-  const [activeVirtual, setActiveVirtual] = useState(virtualIndex);
+  // State: which logical index is centered
+  const [centerIndex, setCenterIndex] = useState(0);
   const [isTranslating, setIsTranslating] = useState(false);
-  const [transitionEnabled, setTransitionEnabled] = useState(true);
-  const activeTimeoutRef = useRef(null);
+  const transitionRef = useRef(null);
 
+  // container sizing
   const containerRef = useRef(null);
   const rowRef = useRef(null);
   const [containerWidth, setContainerWidth] = useState(900);
@@ -62,90 +76,37 @@ function ShopQuicklink() {
     return () => window.removeEventListener('resize', update);
   }, []);
 
+  // visual constants
   const TRANS_DUR = 300; // ms
-  const VISIBLE = 5; // total visible
-  const half = Math.floor(VISIBLE / 2);
+  const VISIBLE = 5;
+  const gap = 16;
+  const CENTER_SCALE = 1.6;
+  const base = Math.max(56, Math.min(160, Math.floor((containerWidth - (VISIBLE - 1) * gap) / VISIBLE)));
+  const slot = base + gap;
+  const centerOverflow = Math.ceil(((CENTER_SCALE - 1) * base) / 2);
+  const sidePadding = Math.max(8, centerOverflow + 8);
+  // vertical offset to lower the whole row so items sit visually centered under the header
+  const VERTICAL_OFFSET = 110;
+  // small horizontal nudging (negative moves left)
+  const HORIZONTAL_SHIFT = -70;
 
-  // helpers to move
-  const moveBy = (d) => {
+  // navigation
+  const slideTo = (newCenter) => {
+    if (isTranslating) return;
     setIsTranslating(true);
-    setTransitionEnabled(true);
-    setVirtualIndex((v) => v + d);
-    if (activeTimeoutRef.current) window.clearTimeout(activeTimeoutRef.current);
-    activeTimeoutRef.current = window.setTimeout(() => {
-      setActiveVirtual((v) => virtualRef.current);
-      setIsTranslating(false);
-    }, TRANS_DUR + 20);
+    setCenterIndex(((newCenter % n) + n) % n);
+    if (transitionRef.current) clearTimeout(transitionRef.current);
+    transitionRef.current = setTimeout(() => setIsTranslating(false), TRANS_DUR + 20);
   };
-  const prev = () => moveBy(-1);
-  const next = () => moveBy(1);
-  const jumpTo = (logical) => {
-    setIsTranslating(true);
-    setTransitionEnabled(true);
-    setVirtualIndex(n + (logical % n));
-    if (activeTimeoutRef.current) window.clearTimeout(activeTimeoutRef.current);
-    activeTimeoutRef.current = window.setTimeout(() => {
-      setActiveVirtual((v) => virtualRef.current);
-      setIsTranslating(false);
-    }, TRANS_DUR + 20);
-  };
+  const prev = () => slideTo(centerIndex - 1);
+  const next = () => slideTo(centerIndex + 1);
+  const jumpTo = (logical) => slideTo(logical);
 
-  // ensure virtual index stays within middle copy to keep illusion
-  useEffect(() => {
-    virtualRef.current = virtualIndex;
-    if (virtualIndex >= 2 * n) {
-      const t = setTimeout(() => {
-        setTransitionEnabled(false);
-        setVirtualIndex((v) => v - n);
-        // re-enable next frame
-        requestAnimationFrame(() => requestAnimationFrame(() => setTransitionEnabled(true)));
-      }, TRANS_DUR);
-      return () => clearTimeout(t);
-    }
-    if (virtualIndex < n) {
-      const t = setTimeout(() => {
-        setTransitionEnabled(false);
-        setVirtualIndex((v) => v + n);
-        requestAnimationFrame(() => requestAnimationFrame(() => setTransitionEnabled(true)));
-      }, TRANS_DUR);
-      return () => clearTimeout(t);
-    }
-    return undefined;
-  }, [virtualIndex, n]);
-
-  // on transition end, mark active
-  useEffect(() => {
-    const el = rowRef.current;
-    if (!el) return undefined;
-    const onEnd = (e) => {
-      if (e.propertyName === 'transform') {
-        setIsTranslating(false);
-        setActiveVirtual(virtualRef.current);
-      }
-    };
-    el.addEventListener('transitionend', onEnd);
-    return () => el.removeEventListener('transitionend', onEnd);
-  }, []);
-
-  // clear active timeout on unmount
   useEffect(() => {
     return () => {
-      if (activeTimeoutRef.current) window.clearTimeout(activeTimeoutRef.current);
+      if (transitionRef.current) clearTimeout(transitionRef.current);
     };
   }, []);
-
-  // sizing
-  const gap = 16;
-  // Make center noticeably larger but keep 5 items fitting in container
-  const CENTER_SCALE = 1.6;
-  const base = Math.max(
-    72,
-    Math.min(160, Math.floor((containerWidth - gap * (VISIBLE - 1)) / ((VISIBLE - 1) + CENTER_SCALE)))
-  );
-  const slot = base + gap;
-  // center on activeVirtual when not translating, otherwise follow virtualIndex so motion is smooth
-  const centerIndexForTranslate = isTranslating ? virtualIndex : activeVirtual;
-  const translateX = Math.round(containerWidth / 2 - (centerIndexForTranslate * slot + base / 2));
 
   const placeholderSvg = `data:image/svg+xml;utf8,${encodeURIComponent(
     '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><rect width="100%" height="100%" fill="#f3f3f3"/><circle cx="50%" cy="50%" r="40" fill="#e6e6e6"/></svg>'
@@ -191,97 +152,64 @@ function ShopQuicklink() {
               width: '100%',
               height: 360,
               overflow: 'hidden',
-              padding: 0,
+              padding: `0 ${sidePadding}px`,
             }}
           >
             <div
               ref={rowRef}
               className="shop-items-row"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                transition: transitionEnabled ? `transform ${TRANS_DUR}ms ease` : 'none',
-                transform: `translateX(${translateX}px)`,
-                willChange: 'transform',
-              }}
+              style={{ position: 'relative', width: '100%', height: '100%' }}
             >
-              {displayImages.map((src, i) => {
-                  const posCurrent = i - virtualIndex;
-                  const absPosCurrent = Math.abs(posCurrent);
-                  const posActive = i - activeVirtual;
-                  const absPosActive = Math.abs(posActive);
+              {[-2, -1, 0, 1, 2].map((off) => {
+                const logical = (centerIndex + off + n) % n;
+                const src = images[logical];
+                const pos = off;
+                const x = pos * slot;
+                const leftPx = Math.round(containerWidth / 2 - base / 2 + x + HORIZONTAL_SHIFT);
+                const absPos = Math.abs(pos);
 
-                  // Only the 5 central items should be visible; others are hidden (not dimmed)
-                  const withinWindow = absPosCurrent <= half || absPosActive <= half;
-                  // keep layout spacing for hidden items but make them invisible
-                  const visibility = withinWindow ? 'visible' : 'hidden';
-                  const opacity = withinWindow ? 1 : 0;
+                let scale = 0.9;
+                let zIndex = 1;
+                let translateY = 0;
+                if (absPos === 0) {
+                  scale = CENTER_SCALE;
+                  zIndex = 12;
+                  translateY = -18;
+                } else if (absPos === 1) {
+                  scale = 1.18;
+                  zIndex = 7;
+                } else if (absPos === 2) {
+                  scale = 0.98;
+                  zIndex = 5;
+                }
 
-                  let scale = 0.9;
-                  let zIndex = 1;
-                  let translateY = 0;
-
-                  if (isTranslating) {
-                    if (absPosCurrent === 0) {
-                      scale = 1.45;
-                      zIndex = 8;
-                      translateY = -10;
-                    } else if (absPosCurrent === 1) {
-                      scale = 1.18;
-                      zIndex = 6;
-                    } else if (absPosCurrent === 2) {
-                      scale = 0.98;
-                      zIndex = 4;
-                    } else {
-                      scale = 0.9;
-                      zIndex = 1;
-                    }
-                  } else {
-                    if (absPosActive === 0) {
-                      scale = CENTER_SCALE;
-                      zIndex = 12;
-                      translateY = -18;
-                    } else if (absPosActive === 1) {
-                      scale = 1.18;
-                      zIndex = 7;
-                    } else if (absPosActive === 2) {
-                      scale = 0.98;
-                      zIndex = 5;
-                    } else {
-                      scale = 0.9;
-                      zIndex = 1;
-                    }
-                  }
-
-                  return (
-                    <div
-                      key={`${i}-${String(src)}`}
-                      onClick={() => jumpTo(i % n)}
+                return (
+                  <div
+                    key={`${logical}-${off}`}
+                    onClick={() => jumpTo(logical)}
                       style={{
-                        width: base,
-                        height: base,
-                        flex: `0 0 ${base}px`,
-                        borderRadius: '50%',
-                        overflow: 'hidden',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        transition: `transform ${TRANS_DUR}ms cubic-bezier(.22,.9,.28,1), box-shadow ${TRANS_DUR}ms, opacity ${TRANS_DUR}ms`,
-                        transform: `translateY(${translateY}px) scale(${scale})`,
-                        transformOrigin: 'center center',
-                        boxShadow: (isTranslating ? absPosCurrent : absPosActive) === 0 ? '0 28px 60px rgba(0,0,0,0.22)' : '0 8px 20px rgba(0,0,0,0.06)',
-                        zIndex,
-                        opacity,
-                        visibility,
-                        margin: `0 ${Math.round(gap / 2)}px`,
-                        background: '#fff',
-                        position: 'relative',
-                        cursor: withinWindow ? 'pointer' : 'default',
-                        pointerEvents: withinWindow ? 'auto' : 'none',
-                        willChange: 'transform',
-                        border: 'none',
-                      }}
-                    >
+                      width: base,
+                      height: base,
+                      position: 'absolute',
+                      left: `${leftPx}px`,
+                      transform: `translateY(${translateY + VERTICAL_OFFSET}px) scale(${scale})`,
+                      transition: `transform ${TRANS_DUR}ms cubic-bezier(.22,.9,.28,1), box-shadow ${TRANS_DUR}ms`,
+                      transformOrigin: 'center center',
+                      borderRadius: '50%',
+                      overflow: 'hidden',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      /* boxShadow removed as requested */
+                      zIndex,
+                      margin: `0 ${Math.round(gap / 2)}px`,
+                      background: '#fff',
+                      cursor: 'pointer',
+                      pointerEvents: 'auto',
+                      willChange: 'transform',
+                      border: 'none',
+                    }}
+                  >
                     <img
                       src={src}
                       alt="item"
@@ -322,13 +250,13 @@ function ShopQuicklink() {
         </div>
 
         <div className="shop-item-info" style={{ textAlign: 'center', marginTop: 16 }}>
-          <div className="shop-badge">프로필 액자</div>
+          <div className="shop-badge">{badges[centerIndex] || '아이템'}</div>
           <div className="shop-name">아이템 미리보기</div>
         </div>
 
         <div className="shop-pagination" style={{ display: 'flex', gap: 8, justifyContent: 'center', marginTop: 12 }}>
           {images.map((_, i) => (
-            <button key={i} onClick={() => jumpTo(i)} aria-label={`Go to item ${i + 1}`} style={{ width: 12, height: 12, borderRadius: '50%', border: 'none', background: i === ((activeVirtual % n) + n) % n ? '#176B5F' : '#ddd', cursor: 'pointer' }} />
+            <button key={i} onClick={() => jumpTo(i)} aria-label={`Go to item ${i + 1}`} style={{ width: 12, height: 12, borderRadius: '50%', border: 'none', background: i === centerIndex ? '#176B5F' : '#ddd', cursor: 'pointer' }} />
           ))}
         </div>
       </div>

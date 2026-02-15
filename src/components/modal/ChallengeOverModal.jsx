@@ -9,8 +9,8 @@ function ChallengeOverModal() {
                     <p className="subtitle">최종 점수입력</p>
                     <div className="score-card">
                         <p className="score-input-label">점수 입력하기</p>
-                        <input type="number" id="challenge-score-input" placeholder="예: 80점" />
-                        <button className="confirm-score-btn">재출하기</button>
+                        <input type="number" id="challenge-score-input" placeholder="예: 100" />
+                        <button className="confirm-score-btn">제출하기</button>
                     </div>
                 </div>
 
