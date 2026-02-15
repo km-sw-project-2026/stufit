@@ -414,6 +414,11 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
 
         const mode = getChallengeMode();
 
+        // 1명 참여 시 보상 없음 (점수, 포인트 모두 지급 안 함)
+        if (sorted.length <= 1) {
+            return [];
+        }
+
         return sorted.map((item, idx) => {
             let points = 0;
             let score = 0;
@@ -422,22 +427,18 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
                 // 연습 모드는 보상 없음
                 points = 0;
                 score = 0;
-            } else if (sorted.length <= 1) {
-                // 1명 참여: 보상 없음
-                points = 0;
-                score = 0;
             } else if (idx === 0) {
                 // 1등: 항상 +150점, +150포인트
                 points = 150;
-                score = 150;
+                score = 150; // 1등은 고정 150점, 비율과 상관없이
             } else if (sorted.length === 2) {
-                // 2명 참여: 2등 -30
+                // 2명 참여: 2등 -30 포인트, 점수는 비율로
                 points = -30;
-                score = -30;
+                score = Math.round(item.ratio * 150);
             } else if (sorted.length === 3) {
-                // 3명 참여: 2등 +100, 3등 -30
+                // 3명 참여: 2등 +100, 3등 -30 포인트, 점수는 비율로
                 points = idx === 1 ? 100 : -30;
-                score = idx === 1 ? 100 : -30;
+                score = Math.round(item.ratio * 150);
             } else {
                 // 4명 이상: 1등 제외 인원을 상/중/하로 분배
                 const restCount = sorted.length - 1; // 1등 제외
@@ -450,16 +451,16 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
                 if (otherIndex < topPercent) {
                     // 상위 30%
                     points = 100;
-                    score = 100;
                 } else if (otherIndex < topPercent + middlePercent) {
                     // 중위 40%
                     points = 50;
-                    score = 50;
                 } else {
                     // 하위 30%
                     points = -30;
-                    score = -30;
                 }
+                
+                // 점수는 항상 비율로 계산
+                score = Math.round(item.ratio * 150);
             }
 
             return {
