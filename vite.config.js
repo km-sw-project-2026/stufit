@@ -8,6 +8,14 @@ export default defineConfig({
   appType: 'spa',
   plugins: [react(), cloudflare()],
   server: {
-    host: true
+    host: true,
+    proxy: {
+      '/api': {
+        target: 'http://127.0.0.1:8787',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path
+      }
+    }
   }
 })
