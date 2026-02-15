@@ -1502,10 +1502,11 @@ body.modal-open {
 }
 
 .challenge-over-content {
-    width: 700px !important;
+    width: 800px !important;
     max-width: 90vw;
-    padding: 50px 80px !important;
+    padding: 50px 40px !important;
     align-items: center;
+    text-align: center;
 }
 
 .challenge-over-content h2 {
@@ -1957,18 +1958,19 @@ body.modal-open {
 
 /* 점수 입력 카드 디자인 */
 .score-card {
-    background-color: #f8f8f8;
-    border: 1px solid #e8e8e8;
-    border-radius: 20px;
-    padding: 40px 50px;
-    width: 80%;
-    max-width: 100%;
-    margin: 0 auto;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
-    text-align: center;
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
+    background-color: #f8f8f8 !important;
+    border: 1px solid #e8e8e8 !important;
+    border-radius: 20px !important;
+    padding: 35px 45px !important;
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 500px !important;
+    margin: 0 auto !important;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04) !important;
+    text-align: center !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    flex-direction: column !important;
 }
 
 .score-input-label {
@@ -2030,11 +2032,6 @@ body.modal-open {
 .confirm-score-btn:hover {
     background-color: #13554B;
     box-shadow: 0 4px 14px rgba(23, 107, 95, 0.35);
-}
-
-.challenge-over-content {
-    text-align: center;
-    padding: 40px;
 }
 
 /* Ranking View Styles */
@@ -2110,12 +2107,6 @@ body.modal-open {
     height: 35px;
     background-color: #ddd;
     margin: 0 5px;
-}
-
-.challenge-over-content {
-    width: 800px !important;
-    max-width: 95vw;
-    padding: 50px 40px !important; 
 }
 
 .ranking-item .score-info {
