@@ -15,6 +15,15 @@ function ChallengeOverModal({
     setShowRanking(!showScoreInput);
   }, [showScoreInput]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    try {
+      window.dispatchEvent(new CustomEvent('challengeCompleted', { detail: { delta: 1 } }));
+    } catch (err) {
+      console.warn('[ChallengeOverModal] failed to dispatch challengeCompleted', err);
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const handleSubmitScore = async () => {
