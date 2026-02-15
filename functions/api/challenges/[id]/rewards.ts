@@ -125,13 +125,25 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
 
   const mode = resolveMode(challenge);
   const type = resolveType(challenge);
+  let pointLogColumn: 'point' | 'points' | null = null;
+
+  try {
+    const pointLogInfo = await env.D1_DB.prepare("PRAGMA table_info('point_logs')").all();
+    const columns = Array.isArray(pointLogInfo?.results) ? pointLogInfo.results : [];
+    if (columns.some((col: any) => col.name === 'point')) pointLogColumn = 'point';
+    else if (columns.some((col: any) => col.name === 'points')) pointLogColumn = 'points';
+  } catch (err) {
+    console.warn('[rewards] point_logs check failed:', err);
+  }
 
   if (action === 'giveup') {
     const reason = `challenge_reward:${challengeId}:giveup`;
-    const already = await env.D1_DB
-      .prepare('SELECT 1 FROM point_logs WHERE user_id = ? AND reason = ?')
-      .bind(userId, reason)
-      .first();
+    const already = pointLogColumn
+      ? await env.D1_DB
+        .prepare('SELECT 1 FROM point_logs WHERE user_id = ? AND reason = ?')
+        .bind(userId, reason)
+        .first()
+      : null;
 
     if (already) {
       return new Response(JSON.stringify({ success: true, applied: [], ranking: [], type, mode }), {
@@ -159,19 +171,14 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
       .bind(nextPoints, userId)
       .run();
 
-    try {
-      await env.D1_DB
-        .prepare('INSERT INTO point_logs (user_id, point, reason, created_at) VALUES (?, ?, ?, ?)')
-        .bind(userId, -100, reason, now)
-        .run();
-    } catch (pointColumnErr: any) {
+    if (pointLogColumn) {
       try {
         await env.D1_DB
-          .prepare('INSERT INTO point_logs (user_id, points, reason, created_at) VALUES (?, ?, ?, ?)')
+          .prepare(`INSERT INTO point_logs (user_id, ${pointLogColumn}, reason, created_at) VALUES (?, ?, ?, ?)`) 
           .bind(userId, -100, reason, now)
           .run();
-      } catch (pointsColumnErr: any) {
-        console.warn('POINT LOG INSERT SKIPPED:', pointColumnErr?.message || String(pointColumnErr), '|', pointsColumnErr?.message || String(pointsColumnErr));
+      } catch (pointLogErr: any) {
+        console.warn('POINT LOG INSERT SKIPPED:', pointLogErr?.message || String(pointLogErr));
       }
     }
 
@@ -283,10 +290,12 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
       if (!entry.userId || entry.points === 0) continue;
 
       const reason = `challenge_reward:${challengeId}:${action}:${mode}`;
-      const already = await env.D1_DB
-        .prepare('SELECT 1 FROM point_logs WHERE user_id = ? AND reason = ?')
-        .bind(entry.userId, reason)
-        .first();
+      const already = pointLogColumn
+        ? await env.D1_DB
+          .prepare('SELECT 1 FROM point_logs WHERE user_id = ? AND reason = ?')
+          .bind(entry.userId, reason)
+          .first()
+        : null;
 
       if (already) continue;
 
@@ -308,19 +317,14 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
         .bind(nextPoints, entry.userId)
         .run();
 
-      try {
-        await env.D1_DB
-          .prepare('INSERT INTO point_logs (user_id, point, reason, created_at) VALUES (?, ?, ?, ?)')
-          .bind(entry.userId, entry.points, reason, now)
-          .run();
-      } catch (pointColumnErr: any) {
+      if (pointLogColumn) {
         try {
           await env.D1_DB
-            .prepare('INSERT INTO point_logs (user_id, points, reason, created_at) VALUES (?, ?, ?, ?)')
+            .prepare(`INSERT INTO point_logs (user_id, ${pointLogColumn}, reason, created_at) VALUES (?, ?, ?, ?)`) 
             .bind(entry.userId, entry.points, reason, now)
             .run();
-        } catch (pointsColumnErr: any) {
-          console.warn('POINT LOG INSERT SKIPPED:', pointColumnErr?.message || String(pointColumnErr), '|', pointsColumnErr?.message || String(pointsColumnErr));
+        } catch (pointLogErr: any) {
+          console.warn('POINT LOG INSERT SKIPPED:', pointLogErr?.message || String(pointLogErr));
         }
       }
 
