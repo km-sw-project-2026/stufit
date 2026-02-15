@@ -102,8 +102,9 @@ function MyPage({ isOpen, onClose }) {
         headers: {
           'Content-Type': 'application/json',
           'X-Username': encodeUsernameHeader(username),
+          ...(userId ? { 'X-User-Id': String(userId) } : {}),
         },
-        body: JSON.stringify({ amount: 100, userId }),
+        body: JSON.stringify({ amount: 100, ...(userId ? { userId } : {}) }),
       });
 
       const payload = await response.json().catch(() => null);
@@ -153,6 +154,7 @@ function MyPage({ isOpen, onClose }) {
     const cachedPoints = localStorage.getItem('points');
     const cachedScore = localStorage.getItem('score');
     const cachedCommunity = getCachedCommunityCounts();
+    const cachedSuccessful = Number(localStorage.getItem('successfulChallengesCount') || '0');
 
     const fetchStats = async () => {
       if (!userId && !username) {
@@ -166,7 +168,7 @@ function MyPage({ isOpen, onClose }) {
         joinDate: localStorage.getItem('joinDate') || '2024년 7월 1일',
         rank: '1위',
         currentRank: '1위',
-        challenges: '10개',
+        challenges: `${cachedSuccessful}개`,
         points: cachedPoints ? Number(cachedPoints) : 0,
         posts: `${cachedCommunity.posts}개`,
         comments: `${cachedCommunity.comments}개`,
@@ -194,7 +196,7 @@ function MyPage({ isOpen, onClose }) {
           joinDate: localStorage.getItem('joinDate') || '2024년 7월 1일',
           rank: '1위',
           currentRank: '1위',
-          challenges: '10개',
+          challenges: `${cachedSuccessful}개`,
           points: cachedPoints ? Number(cachedPoints) : 0,
           posts: `${cachedCommunity.posts}개`,
           comments: `${cachedCommunity.comments}개`,
@@ -540,11 +542,24 @@ function MyPage({ isOpen, onClose }) {
     window.addEventListener('purchasedItemsUpdated', handlePurchasedUpdated);
     window.addEventListener('storage', handlePurchasedUpdated);
     window.addEventListener('communityActivityUpdated', refreshCommunityStats);
+    const handleChallengeCompleted = (event) => {
+      const delta = Number(event?.detail?.delta ?? 1);
+      if (!delta) return;
+      setUserData((prev) => {
+        if (!prev) return prev;
+        const prevCount = parseCountText(prev.challenges);
+        const nextCount = Math.max(0, prevCount + delta);
+        try { localStorage.setItem('successfulChallengesCount', String(nextCount)); } catch (e) { }
+        return { ...prev, challenges: `${nextCount}개` };
+      });
+    };
+    window.addEventListener('challengeCompleted', handleChallengeCompleted);
     return () => {
       window.removeEventListener('pointsUpdated', handlePointsUpdated);
       window.removeEventListener('purchasedItemsUpdated', handlePurchasedUpdated);
       window.removeEventListener('storage', handlePurchasedUpdated);
       window.removeEventListener('communityActivityUpdated', refreshCommunityStats);
+      window.removeEventListener('challengeCompleted', handleChallengeCompleted);
     };
   }, [isOpen]);
 
