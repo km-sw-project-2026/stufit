@@ -541,6 +541,9 @@ function PostDetailView({ post, onClose, onDeletePost, onEditPost, onUpdatePostS
             const updatedPost = { ...postState, comments: newCommentCount };
             setPostState(updatedPost);
             if (onUpdatePostState) onUpdatePostState(updatedPost);
+            const currentComments = Number(localStorage.getItem('communityCommentsCount') || '0');
+            const nextComments = (Number.isNaN(currentComments) ? 0 : currentComments) + 1;
+            localStorage.setItem('communityCommentsCount', String(Math.max(0, nextComments)));
             window.dispatchEvent(new CustomEvent('communityActivityUpdated', { detail: { commentsDelta: 1 } }));
         } catch (error) {
             console.error('댓글 작성 실패:', error);
@@ -678,6 +681,9 @@ function PostDetailView({ post, onClose, onDeletePost, onEditPost, onUpdatePostS
                         const updated = { ...postState, comments: (postState?.comments || 1) - 1 };
                         setPostState(updated);
                         if (onUpdatePostState) onUpdatePostState(updated);
+                        const currentComments = Number(localStorage.getItem('communityCommentsCount') || '0');
+                        const nextComments = (Number.isNaN(currentComments) ? 0 : currentComments) - 1;
+                        localStorage.setItem('communityCommentsCount', String(Math.max(0, nextComments)));
                         window.dispatchEvent(new CustomEvent('communityActivityUpdated', { detail: { commentsDelta: -1 } }));
                         setConfirmModal({ show: false, message: '', onConfirm: null });
                         setAlertModal({ show: true, message: '댓글이 삭제되었습니다.' });

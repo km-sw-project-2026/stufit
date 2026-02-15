@@ -850,6 +850,9 @@ function Community() {
             if (!response.ok) throw new Error(payload.message);
 
             await fetchPosts(); // 작성 후 목록 새로고침
+            const currentPosts = Number(localStorage.getItem('communityPostsCount') || '0');
+            const nextPosts = (Number.isNaN(currentPosts) ? 0 : currentPosts) + 1;
+            localStorage.setItem('communityPostsCount', String(Math.max(0, nextPosts)));
             window.dispatchEvent(new CustomEvent('communityActivityUpdated', { detail: { postsDelta: 1 } }));
             setNewPostModalOpen(false);
         } catch (error) {
@@ -889,6 +892,9 @@ function Community() {
 
             closeDetailView();
             await fetchPosts();
+            const currentPosts = Number(localStorage.getItem('communityPostsCount') || '0');
+            const nextPosts = (Number.isNaN(currentPosts) ? 0 : currentPosts) - 1;
+            localStorage.setItem('communityPostsCount', String(Math.max(0, nextPosts)));
             window.dispatchEvent(new CustomEvent('communityActivityUpdated', { detail: { postsDelta: -1 } }));
         } catch (error) {
             console.error('게시글 삭제 실패:', error);
