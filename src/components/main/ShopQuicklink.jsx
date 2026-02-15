@@ -43,6 +43,8 @@ function ShopQuicklink() {
   const [virtualIndex, setVirtualIndex] = useState(n + Math.floor(n / 2));
   const virtualRef = useRef(virtualIndex);
   const [activeVirtual, setActiveVirtual] = useState(virtualIndex);
+  const resetTimeoutRef = useRef(null);
+  const transTimeoutRef = useRef(null);
   const logicalIndex = ((virtualIndex % n) + n) % n;
   const [transitionEnabled, setTransitionEnabled] = useState(true);
   const [mountedFlag, setMountedFlag] = useState(false);
@@ -67,10 +69,12 @@ function ShopQuicklink() {
 
   // move virtual index by delta (keyboard)
   const moveBy = (delta) => {
+    if (transTimeoutRef.current) window.clearTimeout(transTimeoutRef.current);
     setIsTranslating(true);
+    setTransitionEnabled(true);
     setVirtualIndex((prev) => prev + delta);
     // safety: ensure translating flag cleared after TRANS_DUR+200
-    window.setTimeout(() => setIsTranslating(false), TRANS_DUR + 200);
+    transTimeoutRef.current = window.setTimeout(() => setIsTranslating(false), TRANS_DUR + 200);
   };
 
   useEffect(() => {
@@ -86,9 +90,11 @@ function ShopQuicklink() {
 
   // navigation to a logical index (click/pagination)
   const jumpTo = (logical) => {
+    if (transTimeoutRef.current) window.clearTimeout(transTimeoutRef.current);
     setIsTranslating(true);
+    setTransitionEnabled(true);
     setVirtualIndex(n + (logical % n));
-    window.setTimeout(() => setIsTranslating(false), TRANS_DUR + 200);
+    transTimeoutRef.current = window.setTimeout(() => setIsTranslating(false), TRANS_DUR + 200);
   };
 
   const prev = () => moveBy(-1);
@@ -97,21 +103,26 @@ function ShopQuicklink() {
   // when virtualIndex moves beyond middle copy, reset without transition to keep infinite illusion
   useEffect(() => {
     virtualRef.current = virtualIndex;
+    if (resetTimeoutRef.current) {
+      window.clearTimeout(resetTimeoutRef.current);
+      resetTimeoutRef.current = null;
+    }
     if (virtualIndex >= 2 * n) {
-      const t = setTimeout(() => {
+      resetTimeoutRef.current = window.setTimeout(() => {
         setTransitionEnabled(false);
         setVirtualIndex((v) => v - n);
+        // allow DOM to paint without transition, then re-enable
         requestAnimationFrame(() => requestAnimationFrame(() => setTransitionEnabled(true)));
       }, TRANS_DUR);
-      return () => clearTimeout(t);
+      return undefined;
     }
     if (virtualIndex < n) {
-      const t = setTimeout(() => {
+      resetTimeoutRef.current = window.setTimeout(() => {
         setTransitionEnabled(false);
         setVirtualIndex((v) => v + n);
         requestAnimationFrame(() => requestAnimationFrame(() => setTransitionEnabled(true)));
       }, TRANS_DUR);
-      return () => clearTimeout(t);
+      return undefined;
     }
     return undefined;
   }, [virtualIndex, n]);
@@ -130,6 +141,14 @@ function ShopQuicklink() {
     el.addEventListener('transitionend', onEnd);
     return () => el.removeEventListener('transitionend', onEnd);
   }, [rowRef]);
+
+  // clear pending timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (resetTimeoutRef.current) window.clearTimeout(resetTimeoutRef.current);
+      if (transTimeoutRef.current) window.clearTimeout(transTimeoutRef.current);
+    };
+  }, []);
 
   return (
     <div className="shop-quicklink" style={{ padding: '40px 0' }}>
@@ -309,7 +328,7 @@ function ShopQuicklink() {
                           />
                           {showOutlines && (
                             <div style={{ position: 'absolute', left: 4, top: 4, fontSize: 10, background: 'rgba(255,255,255,0.8)', padding: '2px 4px', borderRadius: 4 }}>
-                              {`${i % n}:${pos}`}
+                              {`${i % n}:${posCurrent}`}
                             </div>
                           )}
                         </div>
