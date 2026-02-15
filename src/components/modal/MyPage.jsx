@@ -62,9 +62,22 @@ function MyPage({ isOpen, onClose }) {
 
     const handlePointsUpdated = (event) => {
       const nextPoints = Number(event?.detail?.points);
-      if (Number.isNaN(nextPoints)) return;
-      localStorage.setItem('points', String(nextPoints));
-      setUserData((prev) => (prev ? { ...prev, points: nextPoints } : prev));
+      const nextScore = Number(event?.detail?.score);
+      
+      if (!Number.isNaN(nextPoints)) {
+        localStorage.setItem('points', String(nextPoints));
+      }
+      if (!Number.isNaN(nextScore)) {
+        localStorage.setItem('score', String(nextScore));
+      }
+      
+      setUserData((prev) => {
+        if (!prev) return prev;
+        const updated = { ...prev };
+        if (!Number.isNaN(nextPoints)) updated.points = nextPoints;
+        if (!Number.isNaN(nextScore)) updated.score = nextScore;
+        return updated;
+      });
     };
 
     window.addEventListener('pointsUpdated', handlePointsUpdated);
@@ -72,6 +85,7 @@ function MyPage({ isOpen, onClose }) {
     const username = localStorage.getItem('username');
     const userId = getStoredUserId();
     const cachedPoints = localStorage.getItem('points');
+    const cachedScore = localStorage.getItem('score');
 
     const fetchStats = async () => {
       if (!userId && !username) {
@@ -81,7 +95,7 @@ function MyPage({ isOpen, onClose }) {
       // API 실패가 있어도 마이페이지는 열리도록 기본값을 먼저 세팅
       setUserData({
         username: username || '',
-        score: '0',
+        score: cachedScore ? Number(cachedScore) : 0,
         joinDate: localStorage.getItem('joinDate') || '2024년 7월 1일',
         rank: '1위',
         currentRank: '1위',
@@ -109,7 +123,7 @@ function MyPage({ isOpen, onClose }) {
         // 초기 userData 설정 (아이템 개수 포함)
         setUserData({
           username: username || '',
-          score: '0',
+          score: cachedScore ? Number(cachedScore) : 0,
           joinDate: localStorage.getItem('joinDate') || '2024년 7월 1일',
           rank: '1위',
           currentRank: '1위',
@@ -159,11 +173,15 @@ function MyPage({ isOpen, onClose }) {
           const posts = data.stats.posts;
           const comments = data.stats.comments;
           const nextPoints = Number(data.stats.points) || 0;
+          const nextScore = Number(data.stats.score) || 0;
+          
           localStorage.setItem('points', String(nextPoints));
+          localStorage.setItem('score', String(nextScore));
 
           setUserData((prev) => (prev ? {
             ...prev,
             points: nextPoints,
+            score: nextScore,
             posts: `${posts}개`,
             comments: `${comments}개`
           } : prev));
