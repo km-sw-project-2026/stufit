@@ -144,18 +144,22 @@ export async function onRequestPost(context: { request: Request; env: any; userI
             .bind(userId, 'bronze', 0, 0)
             .run();
 
-        await env.D1_DB
-            .prepare('UPDATE user_profiles SET score = score + ? WHERE user_id = ?')
-            .bind(amount, userId)
-            .run();
-
-        const profile = await env.D1_DB
+        // 현재 점수 조회
+        const currentProfile = await env.D1_DB
             .prepare('SELECT score FROM user_profiles WHERE user_id = ?')
             .bind(userId)
             .first();
 
+        const currentScore = Number(currentProfile?.score) || 0;
+        const newScore = Math.max(0, currentScore + amount); // 0 미만으로 떨어지지 않도록
+
+        await env.D1_DB
+            .prepare('UPDATE user_profiles SET score = ? WHERE user_id = ?')
+            .bind(newScore, userId)
+            .run();
+
         return new Response(
-            JSON.stringify({ success: true, score: Number(profile?.score) || 0 }),
+            JSON.stringify({ success: true, score: newScore }),
             { status: 200, headers: { 'Content-Type': 'application/json' } }
         );
     } catch (err: any) {
