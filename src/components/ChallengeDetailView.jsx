@@ -200,6 +200,7 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
     const [ongoingAlertOpen, setOngoingAlertOpen] = useState(false);
     const [isChallengeOverOpen, setIsChallengeOverOpen] = useState(false);
     const [rankingData, setRankingData] = useState([]);
+    const [studyScore, setStudyScore] = useState(null);
 
     // props로 받은 challenge가 변경되면 state 업데이트
     useEffect(() => {
@@ -658,10 +659,14 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
             const headers = { 'Content-Type': 'application/json' };
             if (username) headers['X-Username'] = username;
 
+            const rewardsBody = { action: 'complete' };
+            if (getChallengeType() === 'study' && studyScore !== null) {
+                rewardsBody.score = studyScore;
+            }
             const rewardsResponse = await fetch(`/api/challenges/${challenge.challenge_id}/rewards`, {
                 method: 'POST',
                 headers,
-                body: JSON.stringify({ action: 'complete' })
+                body: JSON.stringify(rewardsBody)
             });
 
             if (rewardsResponse.ok) {
@@ -713,24 +718,9 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
             return false;
         }
 
-        try {
-            const response = await fetch(`/api/challenges/${challenge.challenge_id}/scores`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId, score })
-            });
-
-            if (!response.ok) {
-                alert('점수 제출에 실패했습니다.');
-                return false;
-            }
-
-            return true;
-        } catch (error) {
-            console.error('[handleSubmitStudyScore] error:', error);
-            alert('점수 제출 중 오류가 발생했습니다.');
-            return false;
-        }
+        // 점수를 state에 저장
+        setStudyScore(score);
+        return true;
     };
 
     // Props 기본값 설정
