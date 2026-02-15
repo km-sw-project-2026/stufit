@@ -96,18 +96,31 @@ function MyPage({ isOpen, onClose }) {
       return;
     }
 
+    const commonHeaders = {
+      'Content-Type': 'application/json',
+      'X-Username': encodeUsernameHeader(username),
+      ...(userId ? { 'X-User-Id': String(userId) } : {}),
+    };
+
+    const commonBody = { amount: 100, ...(userId ? { userId } : {}) };
+
     try {
-      const response = await fetch('/api/user/score', {
+      let response = await fetch('/api/user/score', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Username': encodeUsernameHeader(username),
-          ...(userId ? { 'X-User-Id': String(userId) } : {}),
-        },
-        body: JSON.stringify({ amount: 100, ...(userId ? { userId } : {}) }),
+        headers: commonHeaders,
+        body: JSON.stringify(commonBody),
       });
 
-      const payload = await response.json().catch(() => null);
+      let payload = await response.json().catch(() => null);
+      if (!response.ok || !payload?.success) {
+        response = await fetch('/api/user/points', {
+          method: 'POST',
+          headers: commonHeaders,
+          body: JSON.stringify({ scoreAmount: 100, ...(userId ? { userId } : {}) }),
+        });
+        payload = await response.json().catch(() => null);
+      }
+
       if (!response.ok || !payload?.success) {
         throw new Error(payload?.message || '점수 저장 실패');
       }
