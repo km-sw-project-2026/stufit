@@ -38,6 +38,11 @@ export default async function onRequest(request, { env, params, userId }) {
 
         if (request.method === 'DELETE') {
             // 게시글 삭제 시 연관 데이터(댓글, 좋아요 등) 먼저 삭제 (Cascade)
+            const commentCountRow = await env.D1_DB
+                .prepare('SELECT COUNT(*) as count FROM comments WHERE post_id = ?')
+                .bind(id)
+                .first();
+            const deletedCommentsCount = Number(commentCountRow?.count) || 0;
             
             // 1. 댓글의 좋아요 삭제
             await env.D1_DB.prepare(`
@@ -54,7 +59,7 @@ export default async function onRequest(request, { env, params, userId }) {
             // 4. 게시글 삭제
             await env.D1_DB.prepare('DELETE FROM posts WHERE post_id = ?').bind(id).run();
             
-            return Response.json({ success: true, data: { postId: id }, message: '게시글 삭제 완료' });
+            return Response.json({ success: true, data: { postId: id, deletedCommentsCount }, message: '게시글 삭제 완료' });
         }
 
         if (request.method === 'PUT' || request.method === 'PATCH') {

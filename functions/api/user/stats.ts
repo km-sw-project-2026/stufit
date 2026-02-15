@@ -43,9 +43,8 @@ export const onRequestGet = async (context: { request: Request; env: any; userId
 
     let postCountResult: any = null;
     let commentCountResult: any = null;
-    let profileResult: any = null;
+    let profileResult: any = { points: 0, score: 0 };
 
-    // username이 있으면 username 기반 집계를 우선 사용 (userId 불일치 방지)
     if (username) {
       try {
         postCountResult = await env.D1_DB.prepare(
@@ -68,31 +67,26 @@ export const onRequestGet = async (context: { request: Request; env: any; userId
         }
       }
 
-
-    // 3. 포인트와 점수 조회
-    profileResult = await env.D1_DB.prepare(
-      "SELECT points, score FROM user_profiles WHERE user_id = ?"
-    ).bind(userId).first();
-
+      // 댓글 수 기준: 내가 작성한 글들에 달린 댓글 총합
       commentCountResult = await env.D1_DB.prepare(
         `SELECT COUNT(*) as count
          FROM comments c
-         JOIN users u ON u.user_id = c.user_id
+         JOIN posts p ON p.post_id = c.post_id
+         JOIN users u ON u.user_id = p.user_id
          WHERE u.username = ?`
       ).bind(username).first();
 
       try {
         profileResult = await env.D1_DB.prepare(
-          `SELECT up.points as points
+          `SELECT up.points as points, up.score as score
            FROM user_profiles up
            JOIN users u ON u.user_id = up.user_id
            WHERE u.username = ?`
         ).bind(username).first();
       } catch {
-        profileResult = { points: 0 };
+        profileResult = { points: 0, score: 0 };
       }
     } else {
-      // fallback: userId 기반 집계
       try {
         postCountResult = await env.D1_DB.prepare(
           "SELECT COUNT(*) as count FROM posts WHERE user_id = ? AND deleted_at IS NULL"
@@ -108,19 +102,22 @@ export const onRequestGet = async (context: { request: Request; env: any; userId
         }
       }
 
+      // 댓글 수 기준: 내 글에 달린 댓글 총합
       commentCountResult = await env.D1_DB.prepare(
-        "SELECT COUNT(*) as count FROM comments WHERE user_id = ?"
+        `SELECT COUNT(*) as count
+         FROM comments c
+         JOIN posts p ON p.post_id = c.post_id
+         WHERE p.user_id = ?`
       ).bind(userId).first();
 
       try {
         profileResult = await env.D1_DB.prepare(
-          "SELECT points FROM user_profiles WHERE user_id = ?"
+          "SELECT points, score FROM user_profiles WHERE user_id = ?"
         ).bind(userId).first();
       } catch {
-        profileResult = { points: 0 };
+        profileResult = { points: 0, score: 0 };
       }
     }
-
 
     return Response.json({
       success: true,

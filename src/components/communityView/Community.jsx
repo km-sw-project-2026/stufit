@@ -890,12 +890,18 @@ function Community() {
                 return alert(payload.message || '게시글 삭제에 실패했습니다.');
             }
 
+            const payload = await response.json().catch(() => ({}));
+
             closeDetailView();
             await fetchPosts();
             const currentPosts = Number(localStorage.getItem('communityPostsCount') || '0');
             const nextPosts = (Number.isNaN(currentPosts) ? 0 : currentPosts) - 1;
             localStorage.setItem('communityPostsCount', String(Math.max(0, nextPosts)));
-            window.dispatchEvent(new CustomEvent('communityActivityUpdated', { detail: { postsDelta: -1 } }));
+            const deletedCommentsCount = Number(payload?.data?.deletedCommentsCount) || 0;
+            const currentComments = Number(localStorage.getItem('communityCommentsCount') || '0');
+            const nextComments = (Number.isNaN(currentComments) ? 0 : currentComments) - deletedCommentsCount;
+            localStorage.setItem('communityCommentsCount', String(Math.max(0, nextComments)));
+            window.dispatchEvent(new CustomEvent('communityActivityUpdated', { detail: { postsDelta: -1, commentsDelta: -deletedCommentsCount } }));
         } catch (error) {
             console.error('게시글 삭제 실패:', error);
             alert('게시글 삭제에 실패했습니다.');
