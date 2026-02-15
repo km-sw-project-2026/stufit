@@ -123,18 +123,49 @@ function MyPage({ isOpen, onClose }) {
   };
 
   useEffect(() => {
+    // 전역 이벤트 리스너: MyPage가 닫혀있어도 localStorage는 업데이트
+    const globalPointsUpdater = (event) => {
+      console.log('🌍 전역: pointsUpdated 이벤트 수신!', event.detail);
+      const nextPoints = Number(event?.detail?.points);
+      const nextScore = Number(event?.detail?.score);
+      
+      if (!Number.isNaN(nextPoints)) {
+        const oldPoints = localStorage.getItem('points');
+        console.log('🌍 전역: 포인트 localStorage 업데이트', { oldPoints, nextPoints });
+        localStorage.setItem('points', String(nextPoints));
+      }
+      if (!Number.isNaN(nextScore)) {
+        const oldScore = localStorage.getItem('score');
+        console.log('🌍 전역: 점수 localStorage 업데이트', { oldScore, nextScore });
+        localStorage.setItem('score', String(nextScore));
+      }
+    };
+
+    window.addEventListener('pointsUpdated', globalPointsUpdater);
+
+    return () => {
+      window.removeEventListener('pointsUpdated', globalPointsUpdater);
+    };
+  }, []); // 마운트 시 한 번만
+
+  useEffect(() => {
     if (!isOpen) {
       return;
     }
 
     const handlePointsUpdated = (event) => {
+      console.log('🟢 MyPage: pointsUpdated 이벤트 수신!', event.detail);
       const nextPoints = Number(event?.detail?.points);
       const nextScore = Number(event?.detail?.score);
       
       if (!Number.isNaN(nextPoints)) {
+        const oldPoints = localStorage.getItem('points');
+        console.log('🟢 MyPage: 포인트 업데이트', { oldPoints, nextPoints });
         localStorage.setItem('points', String(nextPoints));
       }
       if (!Number.isNaN(nextScore)) {
+        const oldScore = localStorage.getItem('score');
+        console.log('🟢 MyPage: 점수 업데이트', { oldScore, nextScore });
         localStorage.setItem('score', String(nextScore));
       }
       
@@ -143,6 +174,7 @@ function MyPage({ isOpen, onClose }) {
         const updated = { ...prev };
         if (!Number.isNaN(nextPoints)) updated.points = nextPoints;
         if (!Number.isNaN(nextScore)) updated.score = nextScore;
+        console.log('🟢 MyPage: userData 업데이트 완료', updated);
         return updated;
       });
     };
