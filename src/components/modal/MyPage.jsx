@@ -96,17 +96,31 @@ function MyPage({ isOpen, onClose }) {
       return;
     }
 
+    const commonHeaders = {
+      'Content-Type': 'application/json',
+      'X-Username': encodeUsernameHeader(username),
+      ...(userId ? { 'X-User-Id': String(userId) } : {}),
+    };
+
+    const commonBody = { amount: 100, ...(userId ? { userId } : {}) };
+
     try {
-      const response = await fetch('/api/user/score', {
+      let response = await fetch('/api/user/score', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Username': encodeUsernameHeader(username),
-        },
-        body: JSON.stringify({ amount: 100, userId }),
+        headers: commonHeaders,
+        body: JSON.stringify(commonBody),
       });
 
-      const payload = await response.json().catch(() => null);
+      let payload = await response.json().catch(() => null);
+      if (!response.ok || !payload?.success) {
+        response = await fetch('/api/user/points', {
+          method: 'POST',
+          headers: commonHeaders,
+          body: JSON.stringify({ scoreAmount: 100, ...(userId ? { userId } : {}) }),
+        });
+        payload = await response.json().catch(() => null);
+      }
+
       if (!response.ok || !payload?.success) {
         throw new Error(payload?.message || '점수 저장 실패');
       }
@@ -122,18 +136,49 @@ function MyPage({ isOpen, onClose }) {
   };
 
   useEffect(() => {
+    // 전역 이벤트 리스너: MyPage가 닫혀있어도 localStorage는 업데이트
+    const globalPointsUpdater = (event) => {
+      console.log('🌍 전역: pointsUpdated 이벤트 수신!', event.detail);
+      const nextPoints = Number(event?.detail?.points);
+      const nextScore = Number(event?.detail?.score);
+      
+      if (!Number.isNaN(nextPoints)) {
+        const oldPoints = localStorage.getItem('points');
+        console.log('🌍 전역: 포인트 localStorage 업데이트', { oldPoints, nextPoints });
+        localStorage.setItem('points', String(nextPoints));
+      }
+      if (!Number.isNaN(nextScore)) {
+        const oldScore = localStorage.getItem('score');
+        console.log('🌍 전역: 점수 localStorage 업데이트', { oldScore, nextScore });
+        localStorage.setItem('score', String(nextScore));
+      }
+    };
+
+    window.addEventListener('pointsUpdated', globalPointsUpdater);
+
+    return () => {
+      window.removeEventListener('pointsUpdated', globalPointsUpdater);
+    };
+  }, []); // 마운트 시 한 번만
+
+  useEffect(() => {
     if (!isOpen) {
       return;
     }
 
     const handlePointsUpdated = (event) => {
+      console.log('🟢 MyPage: pointsUpdated 이벤트 수신!', event.detail);
       const nextPoints = Number(event?.detail?.points);
       const nextScore = Number(event?.detail?.score);
       
       if (!Number.isNaN(nextPoints)) {
+        const oldPoints = localStorage.getItem('points');
+        console.log('🟢 MyPage: 포인트 업데이트', { oldPoints, nextPoints });
         localStorage.setItem('points', String(nextPoints));
       }
       if (!Number.isNaN(nextScore)) {
+        const oldScore = localStorage.getItem('score');
+        console.log('🟢 MyPage: 점수 업데이트', { oldScore, nextScore });
         localStorage.setItem('score', String(nextScore));
       }
       
@@ -142,6 +187,7 @@ function MyPage({ isOpen, onClose }) {
         const updated = { ...prev };
         if (!Number.isNaN(nextPoints)) updated.points = nextPoints;
         if (!Number.isNaN(nextScore)) updated.score = nextScore;
+        console.log('🟢 MyPage: userData 업데이트 완료', updated);
         return updated;
       });
     };

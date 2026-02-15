@@ -31,12 +31,15 @@ function HostGiveUpModal({ setModalOpen, setFinalModalOpen, challenge, onLeave }
                 const result = await response.json();
 
                 if (response.ok) {
+                    console.log('🔵 서버 응답 성공! 데이터:', result);
                     // 응답에서 받은 포인트만 업데이트
                     if (result.points !== undefined) {
+                        const oldPoints = localStorage.getItem('points');
                         const newPoints = Number(result.points);
+                        console.log('🔵 포인트 변경:', { oldPoints, newPoints, diff: newPoints - Number(oldPoints) });
                         localStorage.setItem('points', String(newPoints));
                         window.dispatchEvent(new CustomEvent('pointsUpdated', { detail: { points: newPoints } }));
-                        console.log('✅ 포인트 즉시 업데이트:', newPoints);
+                        console.log('✅ 포인트 즉시 업데이트 완료 + 이벤트 발생:', newPoints);
                     } else {
                         // 응답에 없으면 다시 조회
                         try {
