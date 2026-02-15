@@ -36,6 +36,29 @@ function MyPage({ isOpen, onClose }) {
     return numeric;
   };
 
+  const fetchCommunityCountsFromPosts = async (username) => {
+    if (!username) {
+      return { posts: 0, comments: 0 };
+    }
+
+    try {
+      const response = await fetch('/api/posts', {
+        headers: { 'X-Username': encodeUsernameHeader(username) },
+      });
+      const payload = await response.json().catch(() => null);
+      if (!response.ok || !payload?.data) {
+        return null;
+      }
+
+      const myPosts = (payload.data || []).filter((post) => String(post?.username || '') === String(username));
+      const posts = myPosts.length;
+      const comments = myPosts.reduce((sum, post) => sum + (Number(post?.comment_count) || 0), 0);
+      return { posts, comments };
+    } catch {
+      return null;
+    }
+  };
+
   const getCachedCommunityCounts = () => {
     const posts = Number(localStorage.getItem('communityPostsCount') || '0');
     const comments = Number(localStorage.getItem('communityCommentsCount') || '0');
@@ -176,6 +199,16 @@ function MyPage({ isOpen, onClose }) {
 
         if (!response.ok) {
           debugStatsLog('initial stats failed', { status: response.status, data });
+          const fallbackCounts = await fetchCommunityCountsFromPosts(username);
+          if (fallbackCounts) {
+            localStorage.setItem('communityPostsCount', String(fallbackCounts.posts));
+            localStorage.setItem('communityCommentsCount', String(fallbackCounts.comments));
+            setUserData((prev) => (prev ? {
+              ...prev,
+              posts: `${fallbackCounts.posts}개`,
+              comments: `${fallbackCounts.comments}개`
+            } : prev));
+          }
           return;
         }
 
@@ -199,10 +232,30 @@ function MyPage({ isOpen, onClose }) {
           } : prev));
         } else {
           debugStatsLog('initial stats missing payload', data);
+          const fallbackCounts = await fetchCommunityCountsFromPosts(username);
+          if (fallbackCounts) {
+            localStorage.setItem('communityPostsCount', String(fallbackCounts.posts));
+            localStorage.setItem('communityCommentsCount', String(fallbackCounts.comments));
+            setUserData((prev) => (prev ? {
+              ...prev,
+              posts: `${fallbackCounts.posts}개`,
+              comments: `${fallbackCounts.comments}개`
+            } : prev));
+          }
         }
       } catch (err) {
         console.error('Stats fetch error:', err);
         debugStatsLog('initial stats exception', err);
+        const fallbackCounts = await fetchCommunityCountsFromPosts(username);
+        if (fallbackCounts) {
+          localStorage.setItem('communityPostsCount', String(fallbackCounts.posts));
+          localStorage.setItem('communityCommentsCount', String(fallbackCounts.comments));
+          setUserData((prev) => (prev ? {
+            ...prev,
+            posts: `${fallbackCounts.posts}개`,
+            comments: `${fallbackCounts.comments}개`
+          } : prev));
+        }
       }
     };
 
@@ -379,9 +432,21 @@ function MyPage({ isOpen, onClose }) {
           });
           return response.json().then((data) => ({ ok: response.ok, status: response.status, data })).catch(() => ({ ok: response.ok, status: response.status, data: null }));
         })
-        .then(({ ok, status, data }) => {
+        .then(async ({ ok, status, data }) => {
           debugStatsLog('event stats response', { ok, status, data });
-          if (!ok || !data?.success || !data?.stats) return;
+          if (!ok || !data?.success || !data?.stats) {
+            const fallbackCounts = await fetchCommunityCountsFromPosts(username);
+            if (fallbackCounts) {
+              localStorage.setItem('communityPostsCount', String(fallbackCounts.posts));
+              localStorage.setItem('communityCommentsCount', String(fallbackCounts.comments));
+              setUserData((prev) => (prev ? {
+                ...prev,
+                posts: `${fallbackCounts.posts}개`,
+                comments: `${fallbackCounts.comments}개`
+              } : prev));
+            }
+            return;
+          }
           const posts = data.stats.posts;
           const comments = data.stats.comments;
           const nextPoints = Number(data.stats.points) || 0;
@@ -395,8 +460,18 @@ function MyPage({ isOpen, onClose }) {
             comments: `${comments}개`
           } : prev));
         })
-        .catch((err) => {
+        .catch(async (err) => {
           debugStatsLog('event stats exception', err);
+          const fallbackCounts = await fetchCommunityCountsFromPosts(username);
+          if (fallbackCounts) {
+            localStorage.setItem('communityPostsCount', String(fallbackCounts.posts));
+            localStorage.setItem('communityCommentsCount', String(fallbackCounts.comments));
+            setUserData((prev) => (prev ? {
+              ...prev,
+              posts: `${fallbackCounts.posts}개`,
+              comments: `${fallbackCounts.comments}개`
+            } : prev));
+          }
         });
     };
 
