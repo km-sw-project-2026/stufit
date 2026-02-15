@@ -82,7 +82,7 @@ export async function onRequestPost(context) {
     
     let promoted = false;
     // 좋아요가 200개 이상이고, 아직 이 게시글로 보상을 받은 적이 없는 경우
-    if (count >= 200 && post && post.popular_reward_paid === 0) {
+    if (count >= 1 && post && post.popular_reward_paid === 0) {
       // (1) 작성자에게 300포인트 지급
       // (2) 보상 지급 완료 표시(1) 및 카테고리를 'popular'로 변경
       await env.D1_DB.batch([
