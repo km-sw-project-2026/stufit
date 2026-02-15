@@ -610,7 +610,13 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
         }
 
         try {
-            const response = await fetch(`/api/challenges/${challenge.challenge_id}/progress`);
+            const username = localStorage.getItem('username');
+            const headers = {};
+            if (username) headers['X-Username'] = username;
+
+            const response = await fetch(`/api/challenges/${challenge.challenge_id}/progress`, {
+                headers
+            });
             if (!response.ok) {
                 console.warn('[finalizeChallenge] progress fetch failed:', response.status);
                 setRankingData([]);

@@ -64,7 +64,7 @@ function MyPage({ isOpen, onClose }) {
 
       try {
         // 사용자 아이템 정보 가져오기
-        const itemsUrl = userId ? `/api/user/items?userId=${userId}` : '/api/user/items';
+        const itemsUrl = username ? '/api/user/items' : (userId ? `/api/user/items?userId=${userId}` : '/api/user/items');
         const itemsResponse = await fetch(itemsUrl, {
           headers: { 'X-Username': username || '' },
         });
@@ -92,7 +92,7 @@ function MyPage({ isOpen, onClose }) {
 
         // 통계 정보 가져오기
         const statsParams = new URLSearchParams({ t: String(Date.now()) });
-        if (userId) {
+        if (!username && userId) {
           statsParams.set('userId', String(userId));
         }
 
@@ -215,7 +215,7 @@ function MyPage({ isOpen, onClose }) {
       }
 
       try {
-        const itemsUrl = userId ? `/api/user/items?userId=${userId}` : '/api/user/items';
+        const itemsUrl = username ? '/api/user/items' : (userId ? `/api/user/items?userId=${userId}` : '/api/user/items');
         const response = await fetch(itemsUrl, {
           headers: { 'X-Username': username || '' },
         });
@@ -258,7 +258,7 @@ function MyPage({ isOpen, onClose }) {
       if (!userId && !username) return;
 
       const statsParams = new URLSearchParams({ t: String(Date.now()) });
-      if (userId) {
+      if (!username && userId) {
         statsParams.set('userId', String(userId));
       }
 
@@ -301,7 +301,7 @@ function MyPage({ isOpen, onClose }) {
       const username = localStorage.getItem('username');
       if (!userId && !username) return;
 
-      const itemsUrl = userId ? `/api/user/items?userId=${userId}` : '/api/user/items';
+      const itemsUrl = username ? '/api/user/items' : (userId ? `/api/user/items?userId=${userId}` : '/api/user/items');
 
       fetch(itemsUrl, {
         headers: { 'X-Username': username || '' },

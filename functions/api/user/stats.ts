@@ -22,15 +22,19 @@ export const onRequestGet = async (context: { request: Request; env: any; userId
       return Response.json({ error: 'DB not configured' }, { status: 500 });
     }
 
-    let userId: number | null = parsedUserId || resolvedMiddlewareUserId;
+    let userId: number | null = resolvedMiddlewareUserId;
 
-    // 만약 userId가 없으면 username으로 조회
     if (!userId && username) {
       const user = await env.D1_DB.prepare("SELECT user_id FROM users WHERE username = ?").bind(username).first();
       const resolved = Number(user?.user_id);
       if (Number.isInteger(resolved) && resolved > 0) {
         userId = resolved;
       }
+    }
+
+    // fallback: username 해석이 안될 때만 query userId 사용
+    if (!userId) {
+      userId = parsedUserId;
     }
 
     if (!userId) {
