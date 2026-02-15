@@ -93,6 +93,7 @@ function PostDetailView({ post, onClose, onDeletePost, onEditPost, onUpdatePostS
             const updatedPost = { ...postState, comments: newCommentCount };
             setPostState(updatedPost);
             if (onUpdatePostState) onUpdatePostState(updatedPost);
+            window.dispatchEvent(new CustomEvent('communityActivityUpdated'));
         } catch (error) {
             console.error('댓글 작성 실패:', error);
             alert('댓글 작성에 실패했습니다.');
@@ -214,6 +215,7 @@ function PostDetailView({ post, onClose, onDeletePost, onEditPost, onUpdatePostS
                         const updated = { ...postState, comments: (postState?.comments || 1) - 1 };
                         setPostState(updated);
                         if (onUpdatePostState) onUpdatePostState(updated);
+                        window.dispatchEvent(new CustomEvent('communityActivityUpdated'));
                         setConfirmModal({ show: false, message: '', onConfirm: null });
                         setAlertModal({ show: true, message: '댓글이 삭제되었습니다.' });
                     } catch (error) {

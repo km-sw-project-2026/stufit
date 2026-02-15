@@ -243,6 +243,41 @@ function MyPage({ isOpen, onClose }) {
       return;
     }
 
+    const refreshCommunityStats = () => {
+      const userId = localStorage.getItem('userId');
+      const username = localStorage.getItem('username');
+      if (!userId && !username) return;
+
+      const statsParams = new URLSearchParams({ t: String(Date.now()) });
+      if (userId) {
+        statsParams.set('userId', String(userId));
+      }
+
+      fetch(`/api/user/stats?${statsParams.toString()}`, {
+        headers: {
+          'X-Username': username || '',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        },
+      })
+        .then((response) => response.json().then((data) => ({ ok: response.ok, data })).catch(() => ({ ok: response.ok, data: null })))
+        .then(({ ok, data }) => {
+          if (!ok || !data?.success || !data?.stats) return;
+          const posts = data.stats.posts;
+          const comments = data.stats.comments;
+          const nextPoints = Number(data.stats.points) || 0;
+          localStorage.setItem('points', String(nextPoints));
+          setUserData((prev) => (prev ? {
+            ...prev,
+            points: nextPoints,
+            posts: `${posts}개`,
+            comments: `${comments}개`
+          } : prev));
+        })
+        .catch(() => {});
+    };
+
     const handlePointsUpdated = (event) => {
       const nextPoints = event?.detail?.points;
       if (typeof nextPoints === 'number') {
@@ -273,10 +308,12 @@ function MyPage({ isOpen, onClose }) {
 
     window.addEventListener('purchasedItemsUpdated', handlePurchasedUpdated);
     window.addEventListener('storage', handlePurchasedUpdated);
+    window.addEventListener('communityActivityUpdated', refreshCommunityStats);
     return () => {
       window.removeEventListener('pointsUpdated', handlePointsUpdated);
       window.removeEventListener('purchasedItemsUpdated', handlePurchasedUpdated);
       window.removeEventListener('storage', handlePurchasedUpdated);
+      window.removeEventListener('communityActivityUpdated', refreshCommunityStats);
     };
   }, [isOpen]);
 
