@@ -4089,7 +4089,7 @@ body.modal-open {
 
 .score-help-btn span {
     display: inline-block;
-    transform: translateY(-0.5px);
+    transform: translate(0.5px, -0.5px);
 }
 
 .score-value {
