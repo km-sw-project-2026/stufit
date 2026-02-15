@@ -44,9 +44,16 @@ function ChallengeOverModal({
               <p className="score-input-label">점수 입력하기</p>
               <input
                 type="number"
-                placeholder="예: 80"
+                placeholder="예: 100"
                 value={score}
-                onChange={(e) => setScore(e.target.value)}
+                min="0"
+                max="999"
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === '' || (Number(val) >= 0 && Number(val) <= 999)) {
+                    setScore(val);
+                  }
+                }}
               />
               <button className="confirm-score-btn" onClick={handleSubmitScore}>제출하기</button>
             </div>

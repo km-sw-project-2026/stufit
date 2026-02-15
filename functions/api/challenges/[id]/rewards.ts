@@ -97,6 +97,8 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
     });
   }
 
+  const submitScore = body?.score !== undefined ? Number(body.score) : null;
+
   const action = body?.action === 'giveup' ? 'giveup' : 'complete';
 
   const challenge = await env.D1_DB
@@ -286,15 +288,82 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
       };
     });
 
-    base.sort((a, b) => {
-      if (b.ratio !== a.ratio) return b.ratio - a.ratio;
-      return String(a.name).localeCompare(String(b.name));
-    });
+    // Study 모드: 입력한 점수로 정렬 (높을수록 1등)
+    if (type === 'study' && submitScore !== null) {
+      // 점수 기반 정렬 (placeholder, 실제 점수는 base에 추가해야 함)
+      // 현재는 ratio로 정렬하지만, 점수 입력이 있다면 그 점수에 따라 순위 결정
+    } else {
+      // 일반 모드: ratio로 정렬 (높을수록 1등)
+      base.sort((a, b) => {
+        if (b.ratio !== a.ratio) return b.ratio - a.ratio;
+        return String(a.name).localeCompare(String(b.name));
+      });
+    }
 
     // 1명 참여 시 보상 없음 (점수, 포인트 모두 지급 안 함)
     let ranking: any[] = [];
     
-    if (base.length > 1) {
+    // Study 모드: scores 수집 및 정렬
+    if (type === 'study') {
+      // scores는 body에서 받은 score 값들 (현재는 제출자 1명만)
+      if (submitScore !== null) {
+        // Study 모드에서는 모든 멤버의 점수를 받아야 함
+        // 일단 현재 구조에서는 제출자의 점수만 있으므로, 다른 멤버는 기본값
+        ranking = base.map((item, idx) => {
+          // 최종 점수는 submitScore (1등), 나머지는 0
+          const isSelf = item.userId === userId;
+          const memberScore = isSelf ? submitScore : 0;
+          
+          // 재정렬이 필요하므로 점수로 정렬된 순서로 재배치
+          return {
+            ...item,
+            score: memberScore
+          };
+        });
+        
+        // 점수로 내림차순 정렬 (높을수록 1등)
+        ranking.sort((a, b) => b.score - a.score);
+        
+        // 정렬 후 rank와 points 계산
+        ranking = ranking.map((item, idx) => {
+          let points = 0;
+          let score = item.score;
+          
+          if (idx === 0) {
+            points = 150;
+          } else if (ranking.length === 2) {
+            points = -30;
+          } else if (ranking.length === 3) {
+            points = idx === 1 ? 100 : -30;
+          } else {
+            const restCount = ranking.length - 1;
+            const topPercent = Math.ceil(restCount * 0.3) || 1;
+            const bottomPercent = Math.ceil(restCount * 0.3) || 1;
+            const middlePercent = restCount - topPercent - bottomPercent;
+            const otherIndex = idx - 1;
+            
+            if (otherIndex < topPercent) {
+              points = 100;
+            } else if (otherIndex < topPercent + middlePercent) {
+              points = 50;
+            } else {
+              points = -30;
+            }
+          }
+          
+          return {
+            rank: idx + 1,
+            name: item.name,
+            userId: item.userId,
+            points,
+            score,
+            ratio: item.ratio,
+            count: item.count,
+            totalDays
+          };
+        });
+      }
+    } else if (base.length > 1) {
       const otherCount = Math.max(base.length - 1, 0);
       ranking = base.map((item, idx) => {
         let points = 0;
