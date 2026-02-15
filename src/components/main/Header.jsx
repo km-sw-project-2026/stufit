@@ -5,25 +5,45 @@ import MyPage from "../modal/MyPage";
 function Header() {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [isMyPageOpen, setIsMyPageOpen] = useState(false);
+    const [points, setPoints] = useState(0);
 
     useEffect(() => {
         // 로그인 상태 확인
         const checkLoginStatus = () => {
             const username = localStorage.getItem('username');
             setIsLoggedIn(!!username);
+            
+            // 로그인 상태면 포인트도 로드
+            if (username) {
+                const storedPoints = localStorage.getItem('points');
+                setPoints(storedPoints ? Number(storedPoints) : 0);
+            } else {
+                setPoints(0);
+            }
         };
 
         checkLoginStatus();
+
+        // 포인트 업데이트 이벤트 리스너
+        const handlePointsUpdate = (event) => {
+            const newPoints = Number(event?.detail?.points);
+            if (!Number.isNaN(newPoints)) {
+                console.log('🟢 Header: 포인트 업데이트 감지!', newPoints);
+                setPoints(newPoints);
+            }
+        };
 
         // storage 이벤트 리스너 추가 (다른 탭에서의 변경 감지)
         window.addEventListener('storage', checkLoginStatus);
         
         // 커스텀 이벤트 리스너 추가 (같은 탭에서의 변경 감지)
         window.addEventListener('loginStatusChanged', checkLoginStatus);
+        window.addEventListener('pointsUpdated', handlePointsUpdate);
 
         return () => {
             window.removeEventListener('storage', checkLoginStatus);
             window.removeEventListener('loginStatusChanged', checkLoginStatus);
+            window.removeEventListener('pointsUpdated', handlePointsUpdate);
         };
     }, []);
 
@@ -49,7 +69,17 @@ function Header() {
                 {/* 사용자 인증 영역: 로그인 및 회원가입 링크 */}
                 <div className="auth">
                     {isLoggedIn ? (
-                        <button onClick={handleMyPageClick} id="mypage-btn" className="mypage-link">마이페이지</button>
+                        <>
+                            <span style={{ 
+                                marginRight: '15px', 
+                                color: '#70c1b3', 
+                                fontWeight: 'bold',
+                                fontSize: '14px'
+                            }}>
+                                {points.toLocaleString()}P
+                            </span>
+                            <button onClick={handleMyPageClick} id="mypage-btn" className="mypage-link">마이페이지</button>
+                        </>
                     ) : (
                         <>
                             <Link to="/login" id="login-link">로그인</Link> | <Link to="/signup" id="signup-link">회원가입</Link>
