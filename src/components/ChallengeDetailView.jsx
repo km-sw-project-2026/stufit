@@ -572,6 +572,31 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
     const finalizeChallenge = async () => {
         if (!challenge?.challenge_id) return;
 
+        const syncPointsFromServer = async () => {
+            const username = localStorage.getItem('username');
+            const userId = Number(localStorage.getItem('userId'));
+            if (!userId || Number.isNaN(userId)) return;
+
+            try {
+                const headers = {};
+                if (username) headers['X-Username'] = username;
+
+                const response = await fetch(`/api/user/points?userId=${userId}&t=${Date.now()}`, {
+                    headers
+                });
+                if (!response.ok) return;
+
+                const data = await response.json();
+                const nextPoints = Number(data?.points);
+                if (Number.isNaN(nextPoints)) return;
+
+                localStorage.setItem('points', String(nextPoints));
+                window.dispatchEvent(new CustomEvent('pointsUpdated', { detail: { points: nextPoints } }));
+            } catch (error) {
+                console.warn('[syncPointsFromServer] failed:', error);
+            }
+        };
+
         try {
             const username = localStorage.getItem('username');
             const headers = {};
@@ -600,6 +625,7 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
                 const payload = await rewardsResponse.json();
                 if (Array.isArray(payload?.ranking)) {
                     setRankingData(payload.ranking);
+                    await syncPointsFromServer();
                     return;
                 }
             } else {

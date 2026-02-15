@@ -241,18 +241,14 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
 
     if (mode === 'practice') {
       points = 0;
-    } else if (mode === 'daily') {
-      points = item.ratio >= 1 ? 100 : -30;
+    } else if (idx === 0) {
+      points = 500;
     } else {
-      if (idx === 0) {
-        points = 150;
-      } else {
-        const otherIndex = idx - 1;
-        const tierRatio = otherCount > 0 ? otherIndex / otherCount : 0;
-        if (tierRatio < 0.3) points = 100;
-        else if (tierRatio < 0.7) points = 50;
-        else points = -30;
-      }
+      const otherIndex = idx - 1;
+      const tierRatio = otherCount > 0 ? otherIndex / otherCount : 0;
+      if (tierRatio < 0.3) points = 400;
+      else if (tierRatio < 0.7) points = 300;
+      else points = -200;
     }
 
     return {

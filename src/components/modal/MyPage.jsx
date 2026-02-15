@@ -39,6 +39,15 @@ function MyPage({ isOpen, onClose }) {
       return;
     }
 
+    const handlePointsUpdated = (event) => {
+      const nextPoints = Number(event?.detail?.points);
+      if (Number.isNaN(nextPoints)) return;
+      localStorage.setItem('points', String(nextPoints));
+      setUserData((prev) => (prev ? { ...prev, points: nextPoints } : prev));
+    };
+
+    window.addEventListener('pointsUpdated', handlePointsUpdated);
+
     const username = localStorage.getItem('username');
     const userId = getStoredUserId();
     const cachedPoints = localStorage.getItem('points');
@@ -134,6 +143,10 @@ function MyPage({ isOpen, onClose }) {
     };
 
     fetchStats();
+
+    return () => {
+      window.removeEventListener('pointsUpdated', handlePointsUpdated);
+    };
   }, [isOpen]);
 
   // activeItems: currently applied items (frame/bg/image)
