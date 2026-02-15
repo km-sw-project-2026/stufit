@@ -212,6 +212,21 @@ function Shop() {
     }, [isLoggedIn, userId]);
 
     useEffect(() => {
+        const handlePointsUpdated = (event) => {
+            const nextPoints = Number(event?.detail?.points);
+            if (!Number.isNaN(nextPoints)) {
+                setPoints(nextPoints);
+            }
+        };
+
+        window.addEventListener('pointsUpdated', handlePointsUpdated);
+
+        return () => {
+            window.removeEventListener('pointsUpdated', handlePointsUpdated);
+        };
+    }, []);
+
+    useEffect(() => {
         const fetchPurchasedItems = async () => {
             if (!isLoggedIn || !userId) {
                 setPurchasedItemsByKey({});

@@ -1,3 +1,5 @@
+import { resolveTierFromScore } from '../utils/tier';
+
 export async function onRequestGet(context: { request: Request; env: any; userId?: number }) {
     try {
         const { request, env, userId: authenticatedUserId } = context;
@@ -50,12 +52,12 @@ export async function onRequestGet(context: { request: Request; env: any; userId
         }
 
         const profile = await env.D1_DB
-            .prepare('SELECT score FROM user_profiles WHERE user_id = ?')
+            .prepare('SELECT score, tier FROM user_profiles WHERE user_id = ?')
             .bind(userId)
             .first();
 
         return new Response(
-            JSON.stringify({ success: true, score: Number(profile?.score) || 0 }),
+            JSON.stringify({ success: true, score: Number(profile?.score) || 0, tier: profile?.tier || 'bronze' }),
             { status: 200, headers: { 'Content-Type': 'application/json' } }
         );
     } catch (err: any) {
@@ -153,13 +155,15 @@ export async function onRequestPost(context: { request: Request; env: any; userI
         const currentScore = Number(currentProfile?.score) || 0;
         const newScore = Math.max(0, currentScore + amount); // 0 미만으로 떨어지지 않도록
 
+        const nextTier = resolveTierFromScore(newScore);
+
         await env.D1_DB
-            .prepare('UPDATE user_profiles SET score = ? WHERE user_id = ?')
-            .bind(newScore, userId)
+            .prepare('UPDATE user_profiles SET score = ?, tier = ? WHERE user_id = ?')
+            .bind(newScore, nextTier, userId)
             .run();
 
         return new Response(
-            JSON.stringify({ success: true, score: newScore }),
+            JSON.stringify({ success: true, score: newScore, tier: nextTier }),
             { status: 200, headers: { 'Content-Type': 'application/json' } }
         );
     } catch (err: any) {

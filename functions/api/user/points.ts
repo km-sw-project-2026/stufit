@@ -1,3 +1,5 @@
+import { resolveTierFromScore } from '../utils/tier';
+
 export async function onRequestGet(context: { request: Request; env: any; userId?: number }) {
     try {
         const { request, env, userId: authenticatedUserId } = context;
@@ -154,9 +156,17 @@ export async function onRequestPost(context: { request: Request; env: any; userI
         }
 
         if (hasScoreDelta) {
+            const currentProfileForScore = await env.D1_DB
+                .prepare('SELECT score FROM user_profiles WHERE user_id = ?')
+                .bind(userId)
+                .first();
+            const currentScore = Number(currentProfileForScore?.score) || 0;
+            const nextScore = Math.max(0, currentScore + scoreAmount);
+            const nextTier = resolveTierFromScore(nextScore);
+
             await env.D1_DB
-                .prepare('UPDATE user_profiles SET score = score + ? WHERE user_id = ?')
-                .bind(scoreAmount, userId)
+                .prepare('UPDATE user_profiles SET score = ?, tier = ? WHERE user_id = ?')
+                .bind(nextScore, nextTier, userId)
                 .run();
         }
 

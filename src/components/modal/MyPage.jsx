@@ -183,8 +183,25 @@ function MyPage({ isOpen, onClose }) {
       }
       
       setUserData((prev) => {
-        if (!prev) return prev;
-        const updated = { ...prev };
+        const cachedCommunity = getCachedCommunityCounts();
+        const cachedSuccessful = Number(localStorage.getItem('successfulChallengesCount') || '0');
+        const cachedPoints = localStorage.getItem('points');
+        const cachedScore = localStorage.getItem('score');
+
+        const base = prev || {
+          username: localStorage.getItem('username') || '',
+          score: cachedScore ? Number(cachedScore) : 0,
+          joinDate: localStorage.getItem('joinDate') || '2024년 7월 1일',
+          rank: '1위',
+          currentRank: '1위',
+          challenges: `${cachedSuccessful}개`,
+          points: cachedPoints ? Number(cachedPoints) : 0,
+          posts: `${cachedCommunity.posts}개`,
+          comments: `${cachedCommunity.comments}개`,
+          items: '0개'
+        };
+
+        const updated = { ...base };
         if (!Number.isNaN(nextPoints)) updated.points = nextPoints;
         if (!Number.isNaN(nextScore)) updated.score = nextScore;
         console.log('🟢 MyPage: userData 업데이트 완료', updated);
