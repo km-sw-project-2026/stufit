@@ -25,6 +25,7 @@ import * as commentLike from '../functions/api/comment/[id]/like';
 import * as shopPurchase from '../functions/api/shop/purchase';
 import * as userPoints from '../functions/api/user/points';
 import * as userItems from '../functions/api/user/items';
+import * as userStats from '../functions/api/user/stats';
 import * as userResolve from '../functions/api/user/resolve';
 
 // challenges extra
@@ -329,6 +330,17 @@ export default {
 
         if (request.method === 'PUT') {
           return userItems.onRequestPut({ request, env, userId });
+        }
+
+        return new Response(JSON.stringify({ message: 'Method Not Allowed' }), {
+          status: 405,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+
+      if (pathname === '/api/user/stats' || pathname.startsWith('/api/user/stats')) {
+        if (request.method === 'GET') {
+          return userStats.onRequestGet({ request, env, userId });
         }
 
         return new Response(JSON.stringify({ message: 'Method Not Allowed' }), {
