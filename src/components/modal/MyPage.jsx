@@ -35,22 +35,7 @@ function MyPage({ isOpen, onClose }) {
     const cachedPoints = localStorage.getItem('points');
 
     const fetchStats = async () => {
-      if (!userId) {
-        // 로그인 안 된 경우 기본값 설정
-        if (username) {
-          setUserData({
-            username: username,
-            score: '0',
-            joinDate: localStorage.getItem('joinDate') || '2024년 7월 1일',
-            rank: '1위',
-            currentRank: '1위',
-            challenges: '10개',
-            points: cachedPoints ? Number(cachedPoints) : 0,
-            posts: '0개',
-            comments: '0개',
-            items: '0개'
-          });
-        }
+      if (!userId && !username) {
         return;
       }
 
@@ -70,7 +55,8 @@ function MyPage({ isOpen, onClose }) {
 
       try {
         // 사용자 아이템 정보 가져오기
-        const itemsResponse = await fetch(`/api/user/items?userId=${userId}`, {
+        const itemsUrl = userId ? `/api/user/items?userId=${userId}` : '/api/user/items';
+        const itemsResponse = await fetch(itemsUrl, {
           headers: { 'X-Username': username || '' },
         });
         let itemsData = null;
@@ -96,7 +82,12 @@ function MyPage({ isOpen, onClose }) {
         });
 
         // 통계 정보 가져오기
-        const response = await fetch(`/api/user/stats?userId=${userId}&t=${Date.now()}`, {
+        const statsParams = new URLSearchParams({ t: String(Date.now()) });
+        if (userId) {
+          statsParams.set('userId', String(userId));
+        }
+
+        const response = await fetch(`/api/user/stats?${statsParams.toString()}`, {
           headers: { 
             'X-Username': username || '',
             'Cache-Control': 'no-cache, no-store, must-revalidate',
@@ -210,12 +201,13 @@ function MyPage({ isOpen, onClose }) {
         }
       };
 
-      if (!userId) {
+      if (!userId && !username) {
         return;
       }
 
       try {
-        const response = await fetch(`/api/user/items?userId=${userId}`, {
+        const itemsUrl = userId ? `/api/user/items?userId=${userId}` : '/api/user/items';
+        const response = await fetch(itemsUrl, {
           headers: { 'X-Username': username || '' },
         });
         let data = null;
@@ -263,9 +255,11 @@ function MyPage({ isOpen, onClose }) {
     const handlePurchasedUpdated = () => {
       const userId = localStorage.getItem('userId');
       const username = localStorage.getItem('username');
-      if (!userId) return;
+      if (!userId && !username) return;
 
-      fetch(`/api/user/items?userId=${userId}`, {
+      const itemsUrl = userId ? `/api/user/items?userId=${userId}` : '/api/user/items';
+
+      fetch(itemsUrl, {
         headers: { 'X-Username': username || '' },
       })
         .then((response) => response.json().then((data) => ({ ok: response.ok, data })).catch(() => ({ ok: response.ok, data: null })))
