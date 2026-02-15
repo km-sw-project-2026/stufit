@@ -24,6 +24,12 @@ function MyPage({ isOpen, onClose }) {
     }
   };
 
+  const isStatsDebugEnabled = () => localStorage.getItem('debugMyPageStats') === '1';
+  const debugStatsLog = (...args) => {
+    if (!isStatsDebugEnabled()) return;
+    console.info('[MyPageStatsDebug]', ...args);
+  };
+
   const formatPoints = (value) => {
     const numeric = Number(value);
     if (Number.isNaN(numeric)) {
@@ -122,14 +128,24 @@ function MyPage({ isOpen, onClose }) {
             'Expires': '0'
           },
         });
+        debugStatsLog('initial stats request', {
+          username,
+          userId,
+          url: `/api/user/stats?${statsParams.toString()}`,
+          encodedUsername: encodeUsernameHeader(username),
+          ok: response.ok,
+          status: response.status,
+        });
         let data = null;
         try {
           data = await response.json();
         } catch {
           data = null;
         }
+        debugStatsLog('initial stats response', data);
 
         if (!response.ok) {
+          debugStatsLog('initial stats failed', { status: response.status, data });
           return;
         }
 
@@ -145,9 +161,12 @@ function MyPage({ isOpen, onClose }) {
             posts: `${posts}개`,
             comments: `${comments}개`
           } : prev));
+        } else {
+          debugStatsLog('initial stats missing payload', data);
         }
       } catch (err) {
         console.error('Stats fetch error:', err);
+        debugStatsLog('initial stats exception', err);
       }
     };
 
@@ -292,8 +311,19 @@ function MyPage({ isOpen, onClose }) {
           'Expires': '0'
         },
       })
-        .then((response) => response.json().then((data) => ({ ok: response.ok, data })).catch(() => ({ ok: response.ok, data: null })))
-        .then(({ ok, data }) => {
+        .then((response) => {
+          debugStatsLog('event stats request', {
+            username,
+            userId,
+            url: `/api/user/stats?${statsParams.toString()}`,
+            encodedUsername: encodeUsernameHeader(username),
+            ok: response.ok,
+            status: response.status,
+          });
+          return response.json().then((data) => ({ ok: response.ok, status: response.status, data })).catch(() => ({ ok: response.ok, status: response.status, data: null }));
+        })
+        .then(({ ok, status, data }) => {
+          debugStatsLog('event stats response', { ok, status, data });
           if (!ok || !data?.success || !data?.stats) return;
           const posts = data.stats.posts;
           const comments = data.stats.comments;
@@ -306,7 +336,9 @@ function MyPage({ isOpen, onClose }) {
             comments: `${comments}개`
           } : prev));
         })
-        .catch(() => {});
+        .catch((err) => {
+          debugStatsLog('event stats exception', err);
+        });
     };
 
     const handlePointsUpdated = (event) => {
