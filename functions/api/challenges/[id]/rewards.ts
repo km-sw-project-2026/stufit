@@ -262,17 +262,23 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
     const otherCount = Math.max(base.length - 1, 0);
     const ranking = base.map((item, idx) => {
       let points = 0;
+      let score = 0;
 
       if (mode === 'practice') {
         points = 0;
+        score = 0;
       } else if (idx === 0) {
         points = 500;
+        score = 150; // 1등은 무조건 150점
       } else {
         const otherIndex = idx - 1;
         const tierRatio = otherCount > 0 ? otherIndex / otherCount : 0;
         if (tierRatio < 0.3) points = 400;
         else if (tierRatio < 0.7) points = 300;
         else points = -200;
+        
+        // 나머지는 비율에 따라 점수 계산 (최대 150점)
+        score = Math.round(item.ratio * 150);
       }
 
       return {
@@ -280,7 +286,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
         name: item.name,
         userId: item.userId,
         points,
-        score: Math.round(item.ratio * 100),
+        score,
         ratio: item.ratio,
         count: item.count,
         totalDays
@@ -308,7 +314,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
 
     try {
       for (const entry of ranking) {
-        if (!entry.userId || entry.points === 0) continue;
+        if (!entry.userId) continue;
 
         try {
           const reason = `challenge_reward:${challengeId}:${action}:${mode}`;
@@ -327,16 +333,18 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
             .run();
 
           const profile = await env.D1_DB
-            .prepare('SELECT points FROM user_profiles WHERE user_id = ?')
+            .prepare('SELECT points, score FROM user_profiles WHERE user_id = ?')
             .bind(entry.userId)
             .first();
 
           const currentPoints = Number(profile?.points) || 0;
+          const currentScore = Number(profile?.score) || 0;
           const nextPoints = Math.max(0, currentPoints + entry.points);
+          const nextScore = Math.max(0, currentScore + entry.score);
 
           await env.D1_DB
-            .prepare('UPDATE user_profiles SET points = ? WHERE user_id = ?')
-            .bind(nextPoints, entry.userId)
+            .prepare('UPDATE user_profiles SET points = ?, score = ? WHERE user_id = ?')
+            .bind(nextPoints, nextScore, entry.userId)
             .run();
 
           if (pointLogColumn) {
@@ -350,7 +358,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
             }
           }
 
-          applied.push({ userId: entry.userId, points: entry.points });
+          applied.push({ userId: entry.userId, points: entry.points, score: entry.score });
         } catch (entryErr: any) {
           const message = entryErr?.message || String(entryErr);
           console.warn('[rewards] entry update failed:', entry.userId, message);

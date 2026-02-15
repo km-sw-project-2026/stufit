@@ -51,9 +51,9 @@ export const onRequestGet = async (context: { request: Request; env: any; userId
       "SELECT COUNT(*) as count FROM comments WHERE user_id = ?"
     ).bind(userId).first();
 
-    // 3. 포인트 조회 (기존 /api/user/points 로직 통합)
+    // 3. 포인트와 점수 조회
     const profileResult = await env.D1_DB.prepare(
-      "SELECT points FROM user_profiles WHERE user_id = ?"
+      "SELECT points, score FROM user_profiles WHERE user_id = ?"
     ).bind(userId).first();
 
     return Response.json({
@@ -61,7 +61,8 @@ export const onRequestGet = async (context: { request: Request; env: any; userId
       stats: {
         posts: postCountResult?.count || 0,
         comments: commentCountResult?.count || 0,
-        points: profileResult?.points || 0
+        points: profileResult?.points || 0,
+        score: profileResult?.score || 0
       }
     });
 

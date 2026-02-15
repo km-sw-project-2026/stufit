@@ -417,17 +417,23 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
 
         return sorted.map((item, idx) => {
             let points = 0;
+            let score = 0;
 
             if (mode === 'practice') {
                 points = 0;
+                score = 0;
             } else if (idx === 0) {
                 points = 500;
+                score = 150; // 1등은 무조건 150점
             } else {
                 const otherIndex = idx - 1;
                 const tierRatio = otherCount > 0 ? otherIndex / otherCount : 0;
                 if (tierRatio < 0.3) points = 400;
                 else if (tierRatio < 0.7) points = 300;
                 else points = -200;
+                
+                // 나머지는 비율에 따라 점수 계산 (최대 150점)
+                score = Math.round(item.ratio * 150);
             }
 
             return {
@@ -435,7 +441,7 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
                 name: item.name,
                 userId: item.userId,
                 points,
-                score: Math.round(item.ratio * 100),
+                score,
                 ratio: item.ratio,
                 count: item.count,
                 totalDays
@@ -577,17 +583,25 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
                 const headers = {};
                 if (username) headers['X-Username'] = username;
 
-                const response = await fetch(`/api/user/points?userId=${userId}&t=${Date.now()}`, {
+                const response = await fetch(`/api/user/stats?userId=${userId}&t=${Date.now()}`, {
                     headers
                 });
                 if (!response.ok) return;
 
                 const data = await response.json();
                 const nextPoints = Number(data?.points);
-                if (Number.isNaN(nextPoints)) return;
+                const nextScore = Number(data?.score);
+                
+                if (!Number.isNaN(nextPoints)) {
+                    localStorage.setItem('points', String(nextPoints));
+                }
+                if (!Number.isNaN(nextScore)) {
+                    localStorage.setItem('score', String(nextScore));
+                }
 
-                localStorage.setItem('points', String(nextPoints));
-                window.dispatchEvent(new CustomEvent('pointsUpdated', { detail: { points: nextPoints } }));
+                window.dispatchEvent(new CustomEvent('pointsUpdated', { 
+                    detail: { points: nextPoints, score: nextScore } 
+                }));
             } catch (error) {
                 console.warn('[syncPointsFromServer] failed:', error);
             }
