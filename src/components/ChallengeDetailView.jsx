@@ -200,6 +200,7 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
     const [ongoingAlertOpen, setOngoingAlertOpen] = useState(false);
     const [isChallengeOverOpen, setIsChallengeOverOpen] = useState(false);
     const [rankingData, setRankingData] = useState([]);
+    const [studyScore, setStudyScore] = useState(null);
 
     // props로 받은 challenge가 변경되면 state 업데이트
     useEffect(() => {
@@ -389,13 +390,15 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
 
     const buildRankingData = (rows) => {
         const totalDays = getTotalDays();
+        
+        // rows에서 각 사용자의 진행도 계산
         const countsByUser = new Map();
-
         rows.forEach((row) => {
             if (!row?.username) return;
             countsByUser.set(row.username, (countsByUser.get(row.username) || 0) + 1);
         });
 
+        // members와 진행도를 합쳐서 순위 계산
         const base = members.map((member) => {
             const count = countsByUser.get(member.username) || 0;
             const ratio = totalDays > 0 ? Math.min(count / totalDays, 1) : 0;
@@ -407,27 +410,61 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
             };
         });
 
+        // 비율 기준으로 정렬
         const sorted = base.sort((a, b) => {
             if (b.ratio !== a.ratio) return b.ratio - a.ratio;
             return a.name.localeCompare(b.name);
         });
 
         const mode = getChallengeMode();
-        const otherCount = Math.max(sorted.length - 1, 0);
 
-        return sorted.map((item, idx) => {
+        // 1명 참여 시 보상 없음
+        if (sorted.length <= 1) {
+            return [];
+        }
+
+        // 모든 사용자에 대해 순위와 보상 계산
+        const result = sorted.map((item, idx) => {
             let points = 0;
+            let score = 0;
 
             if (mode === 'practice') {
+                // 연습 모드: 보상 없음
                 points = 0;
+                score = 0;
             } else if (idx === 0) {
-                points = 500;
+                // 1등: 포인트 150 고정, 점수 150 고정
+                points = 150;
+                score = 150;
+            } else if (sorted.length === 2) {
+                // 2명: 2등 -30 포인트, 100점수 (고정)
+                points = -30;
+                score = 100;
+            } else if (sorted.length === 3) {
+                // 3명: 2등 +100, 3등 -30 포인트 / 2등 100점수, 3등 50점수 (고정)
+                points = idx === 1 ? 100 : -30;
+                score = idx === 1 ? 100 : 50;
             } else {
+                // 4명 이상: 상/중/하 분배
+                const restCount = sorted.length - 1;
+                const topPercent = Math.ceil(restCount * 0.3) || 1;
+                const bottomPercent = Math.ceil(restCount * 0.3) || 1;
+                const middlePercent = restCount - topPercent - bottomPercent;
                 const otherIndex = idx - 1;
-                const tierRatio = otherCount > 0 ? otherIndex / otherCount : 0;
-                if (tierRatio < 0.3) points = 400;
-                else if (tierRatio < 0.7) points = 300;
-                else points = -200;
+
+                if (otherIndex < topPercent) {
+                    // 상위 30%: +100 포인트, 100점수
+                    points = 100;
+                    score = 100;
+                } else if (otherIndex < topPercent + middlePercent) {
+                    // 중위 40%: +50 포인트, 50점수
+                    points = 50;
+                    score = 50;
+                } else {
+                    // 하위 30%: -30 포인트, 0점수
+                    points = -30;
+                    score = 0;
+                }
             }
 
             return {
@@ -435,12 +472,15 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
                 name: item.name,
                 userId: item.userId,
                 points,
-                score: Math.round(item.ratio * 100),
+                score,
                 ratio: item.ratio,
                 count: item.count,
                 totalDays
             };
         });
+
+        console.log('[buildRankingData] result:', result);
+        return result;
     };
 
 
@@ -577,17 +617,25 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
                 const headers = {};
                 if (username) headers['X-Username'] = username;
 
-                const response = await fetch(`/api/user/points?userId=${userId}&t=${Date.now()}`, {
+                const response = await fetch(`/api/user/stats?userId=${userId}&t=${Date.now()}`, {
                     headers
                 });
                 if (!response.ok) return;
 
                 const data = await response.json();
                 const nextPoints = Number(data?.points);
-                if (Number.isNaN(nextPoints)) return;
+                const nextScore = Number(data?.score);
+                
+                if (!Number.isNaN(nextPoints)) {
+                    localStorage.setItem('points', String(nextPoints));
+                }
+                if (!Number.isNaN(nextScore)) {
+                    localStorage.setItem('score', String(nextScore));
+                }
 
-                localStorage.setItem('points', String(nextPoints));
-                window.dispatchEvent(new CustomEvent('pointsUpdated', { detail: { points: nextPoints } }));
+                window.dispatchEvent(new CustomEvent('pointsUpdated', { 
+                    detail: { points: nextPoints, score: nextScore } 
+                }));
             } catch (error) {
                 console.warn('[syncPointsFromServer] failed:', error);
             }
@@ -611,15 +659,21 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
             const headers = { 'Content-Type': 'application/json' };
             if (username) headers['X-Username'] = username;
 
+            const rewardsBody = { action: 'complete' };
+            if (getChallengeType() === 'study' && studyScore !== null) {
+                rewardsBody.score = studyScore;
+            }
             const rewardsResponse = await fetch(`/api/challenges/${challenge.challenge_id}/rewards`, {
                 method: 'POST',
                 headers,
-                body: JSON.stringify({ action: 'complete' })
+                body: JSON.stringify(rewardsBody)
             });
 
             if (rewardsResponse.ok) {
                 const payload = await rewardsResponse.json();
+                console.log('[finalizeChallenge] rewards success:', payload);
                 if (Array.isArray(payload?.ranking)) {
+                    console.log('[finalizeChallenge] ranking data:', payload.ranking);
                     setRankingData(payload.ranking);
                     await syncPointsFromServer();
                     return;
@@ -648,6 +702,7 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
             const result = await response.json();
             const rows = Array.isArray(result?.data) ? result.data : [];
             const rankings = buildRankingData(rows);
+            console.log('[finalizeChallenge] fallback ranking data:', rankings);
             setRankingData(rankings);
             await syncPointsFromServer();
         } catch (error) {
@@ -663,24 +718,9 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
             return false;
         }
 
-        try {
-            const response = await fetch(`/api/challenges/${challenge.challenge_id}/scores`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId, score })
-            });
-
-            if (!response.ok) {
-                alert('점수 제출에 실패했습니다.');
-                return false;
-            }
-
-            return true;
-        } catch (error) {
-            console.error('[handleSubmitStudyScore] error:', error);
-            alert('점수 제출 중 오류가 발생했습니다.');
-            return false;
-        }
+        // 점수를 state에 저장
+        setStudyScore(score);
+        return true;
     };
 
     // Props 기본값 설정

@@ -97,6 +97,8 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
     });
   }
 
+  const submitScore = body?.score !== undefined ? Number(body.score) : null;
+
   const action = body?.action === 'giveup' ? 'giveup' : 'complete';
 
   const challenge = await env.D1_DB
@@ -126,6 +128,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
   const mode = resolveMode(challenge);
   const type = resolveType(challenge);
   let pointLogColumn: 'point' | 'points' | null = null;
+  let hasScoreColumn = false;
 
   try {
     const pointLogInfo = await env.D1_DB.prepare("PRAGMA table_info('point_logs')").all();
@@ -136,7 +139,36 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
     console.warn('[rewards] point_logs check failed:', err);
   }
 
+  try {
+    const profileInfo = await env.D1_DB.prepare("PRAGMA table_info('user_profiles')").all();
+    const columns = Array.isArray(profileInfo?.results) ? profileInfo.results : [];
+    hasScoreColumn = columns.some((col: any) => col.name === 'score');
+  } catch (err) {
+    console.warn('[rewards] user_profiles check failed:', err);
+    hasScoreColumn = false;
+  }
+
   if (action === 'giveup') {
+    // memberList 확인
+    let memberList: any[] = [];
+    try {
+      const members = await env.D1_DB
+        .prepare('SELECT u.user_id, u.username FROM challenge_members cm JOIN users u ON cm.user_id = u.user_id WHERE cm.challenge_id = ?')
+        .bind(challengeId)
+        .all();
+      memberList = Array.isArray(members?.results) ? members.results : [];
+    } catch (err) {
+      console.warn('[rewards] giveup members query failed:', err);
+    }
+
+    // 1명만 참여하면 포인트 지급 안 함
+    if (memberList.length <= 1) {
+      return new Response(
+        JSON.stringify({ success: true, applied: [], ranking: [], type, mode }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
     const reason = `challenge_reward:${challengeId}:giveup`;
     const already = pointLogColumn
       ? await env.D1_DB
@@ -153,9 +185,11 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
     }
 
     const now = new Date().toISOString();
+    
+    // 먼저 프로필이 없으면 생성
     await env.D1_DB
-      .prepare('INSERT OR IGNORE INTO user_profiles (user_id, tier, score, points) VALUES (?, ?, ?, ?)')
-      .bind(userId, 'bronze', 0, 0)
+      .prepare('INSERT OR IGNORE INTO user_profiles (user_id) VALUES (?)')
+      .bind(userId)
       .run();
 
     const profile = await env.D1_DB
@@ -254,38 +288,139 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
       };
     });
 
-    base.sort((a, b) => {
-      if (b.ratio !== a.ratio) return b.ratio - a.ratio;
-      return String(a.name).localeCompare(String(b.name));
-    });
+    // Study 모드: 입력한 점수로 정렬 (높을수록 1등)
+    if (type === 'study' && submitScore !== null) {
+      // 점수 기반 정렬 (placeholder, 실제 점수는 base에 추가해야 함)
+      // 현재는 ratio로 정렬하지만, 점수 입력이 있다면 그 점수에 따라 순위 결정
+    } else {
+      // 일반 모드: ratio로 정렬 (높을수록 1등)
+      base.sort((a, b) => {
+        if (b.ratio !== a.ratio) return b.ratio - a.ratio;
+        return String(a.name).localeCompare(String(b.name));
+      });
+    }
 
-    const otherCount = Math.max(base.length - 1, 0);
-    const ranking = base.map((item, idx) => {
-      let points = 0;
-
-      if (mode === 'practice') {
-        points = 0;
-      } else if (idx === 0) {
-        points = 500;
-      } else {
-        const otherIndex = idx - 1;
-        const tierRatio = otherCount > 0 ? otherIndex / otherCount : 0;
-        if (tierRatio < 0.3) points = 400;
-        else if (tierRatio < 0.7) points = 300;
-        else points = -200;
+    // 1명 참여 시 보상 없음 (점수, 포인트 모두 지급 안 함)
+    let ranking: any[] = [];
+    
+    // Study 모드: scores 수집 및 정렬
+    if (type === 'study') {
+      // scores는 body에서 받은 score 값들 (현재는 제출자 1명만)
+      if (submitScore !== null) {
+        // Study 모드에서는 모든 멤버의 점수를 받아야 함
+        // 일단 현재 구조에서는 제출자의 점수만 있으므로, 다른 멤버는 기본값
+        ranking = base.map((item, idx) => {
+          // 최종 점수는 submitScore (1등), 나머지는 0
+          const isSelf = item.userId === userId;
+          const memberScore = isSelf ? submitScore : 0;
+          
+          // 재정렬이 필요하므로 점수로 정렬된 순서로 재배치
+          return {
+            ...item,
+            score: memberScore
+          };
+        });
+        
+        // 점수로 내림차순 정렬 (높을수록 1등)
+        ranking.sort((a, b) => b.score - a.score);
+        
+        // 정렬 후 rank와 points 계산
+        ranking = ranking.map((item, idx) => {
+          let points = 0;
+          let score = item.score;
+          
+          if (idx === 0) {
+            points = 150;
+          } else if (ranking.length === 2) {
+            points = -30;
+          } else if (ranking.length === 3) {
+            points = idx === 1 ? 100 : -30;
+          } else {
+            const restCount = ranking.length - 1;
+            const topPercent = Math.ceil(restCount * 0.3) || 1;
+            const bottomPercent = Math.ceil(restCount * 0.3) || 1;
+            const middlePercent = restCount - topPercent - bottomPercent;
+            const otherIndex = idx - 1;
+            
+            if (otherIndex < topPercent) {
+              points = 100;
+            } else if (otherIndex < topPercent + middlePercent) {
+              points = 50;
+            } else {
+              points = -30;
+            }
+          }
+          
+          return {
+            rank: idx + 1,
+            name: item.name,
+            userId: item.userId,
+            points,
+            score,
+            ratio: item.ratio,
+            count: item.count,
+            totalDays
+          };
+        });
       }
+    } else if (base.length > 1) {
+      const otherCount = Math.max(base.length - 1, 0);
+      ranking = base.map((item, idx) => {
+        let points = 0;
+        let score = 0;
 
-      return {
-        rank: idx + 1,
-        name: item.name,
-        userId: item.userId,
-        points,
-        score: Math.round(item.ratio * 100),
-        ratio: item.ratio,
-        count: item.count,
-        totalDays
-      };
-    });
+        if (mode === 'practice') {
+          // 연습 모드는 보상 없음
+          points = 0;
+          score = 0;
+        } else if (idx === 0) {
+          // 1등: 항상 +150점, +150포인트
+          points = 150;
+          score = 150;
+        } else if (base.length === 2) {
+          // 2명 참여: 2등 -30 포인트, 100점수 (고정)
+          points = -30;
+          score = 100;
+        } else if (base.length === 3) {
+          // 3명 참여: 2등 +100, 3등 -30 포인트 / 2등 100점, 3등 50점 (고정)
+          points = idx === 1 ? 100 : -30;
+          score = idx === 1 ? 100 : 50;
+        } else {
+          // 4명 이상: 1등 제외 인원을 상/중/하로 분배
+          const restCount = otherCount; // 1등 제외
+          const topPercent = Math.ceil(restCount * 0.3) || 1; // 최소 1명
+          const bottomPercent = Math.ceil(restCount * 0.3) || 1; // 최소 1명
+          const middlePercent = restCount - topPercent - bottomPercent;
+
+          const otherIndex = idx - 1; // 1등을 제외한 순서 (0부터 시작)
+
+          if (otherIndex < topPercent) {
+            // 상위 30%: +100 포인트, 100점수
+            points = 100;
+            score = 100;
+          } else if (otherIndex < topPercent + middlePercent) {
+            // 중위 40%: +50 포인트, 50점수
+            points = 50;
+            score = 50;
+          } else {
+            // 하위 30%: -30 포인트, 0점수
+            points = -30;
+            score = 0;
+          }
+        }
+
+        return {
+          rank: idx + 1,
+          name: item.name,
+          userId: item.userId,
+          points,
+          score,
+          ratio: item.ratio,
+          count: item.count,
+          totalDays
+        };
+      });
+    }
 
     if (mode === 'practice') {
       return new Response(
@@ -308,7 +443,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
 
     try {
       for (const entry of ranking) {
-        if (!entry.userId || entry.points === 0) continue;
+        if (!entry.userId) continue;
 
         try {
           const reason = `challenge_reward:${challengeId}:${action}:${mode}`;
@@ -321,9 +456,10 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
 
           if (already) continue;
 
+          // 먼저 프로필이 없으면 생성
           await env.D1_DB
-            .prepare('INSERT OR IGNORE INTO user_profiles (user_id, tier, score, points) VALUES (?, ?, ?, ?)')
-            .bind(entry.userId, 'bronze', 0, 0)
+            .prepare('INSERT OR IGNORE INTO user_profiles (user_id) VALUES (?)')
+            .bind(entry.userId)
             .run();
 
           const profile = await env.D1_DB
@@ -350,7 +486,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
             }
           }
 
-          applied.push({ userId: entry.userId, points: entry.points });
+          applied.push({ userId: entry.userId, points: entry.points, score: entry.score });
         } catch (entryErr: any) {
           const message = entryErr?.message || String(entryErr);
           console.warn('[rewards] entry update failed:', entry.userId, message);

@@ -30,6 +30,44 @@ function MyPage({ isOpen, onClose }) {
     console.info('[MyPageStatsDebug]', ...args);
   };
 
+  const parseCountText = (value) => {
+    const numeric = Number(String(value ?? '').replace(/[^0-9-]/g, ''));
+    if (Number.isNaN(numeric)) return 0;
+    return numeric;
+  };
+
+  const fetchCommunityCountsFromPosts = async (username) => {
+    if (!username) {
+      return { posts: 0, comments: 0 };
+    }
+
+    try {
+      const response = await fetch('/api/posts', {
+        headers: { 'X-Username': encodeUsernameHeader(username) },
+      });
+      const payload = await response.json().catch(() => null);
+      if (!response.ok || !payload?.data) {
+        return null;
+      }
+
+      const myPosts = (payload.data || []).filter((post) => String(post?.username || '') === String(username));
+      const posts = myPosts.length;
+      const comments = myPosts.reduce((sum, post) => sum + (Number(post?.comment_count) || 0), 0);
+      return { posts, comments };
+    } catch {
+      return null;
+    }
+  };
+
+  const getCachedCommunityCounts = () => {
+    const posts = Number(localStorage.getItem('communityPostsCount') || '0');
+    const comments = Number(localStorage.getItem('communityCommentsCount') || '0');
+    return {
+      posts: Number.isNaN(posts) ? 0 : Math.max(0, posts),
+      comments: Number.isNaN(comments) ? 0 : Math.max(0, comments),
+    };
+  };
+
   const formatPoints = (value) => {
     const numeric = Number(value);
     if (Number.isNaN(numeric)) {
@@ -56,9 +94,22 @@ function MyPage({ isOpen, onClose }) {
 
     const handlePointsUpdated = (event) => {
       const nextPoints = Number(event?.detail?.points);
-      if (Number.isNaN(nextPoints)) return;
-      localStorage.setItem('points', String(nextPoints));
-      setUserData((prev) => (prev ? { ...prev, points: nextPoints } : prev));
+      const nextScore = Number(event?.detail?.score);
+      
+      if (!Number.isNaN(nextPoints)) {
+        localStorage.setItem('points', String(nextPoints));
+      }
+      if (!Number.isNaN(nextScore)) {
+        localStorage.setItem('score', String(nextScore));
+      }
+      
+      setUserData((prev) => {
+        if (!prev) return prev;
+        const updated = { ...prev };
+        if (!Number.isNaN(nextPoints)) updated.points = nextPoints;
+        if (!Number.isNaN(nextScore)) updated.score = nextScore;
+        return updated;
+      });
     };
 
     window.addEventListener('pointsUpdated', handlePointsUpdated);
@@ -66,6 +117,8 @@ function MyPage({ isOpen, onClose }) {
     const username = localStorage.getItem('username');
     const userId = getStoredUserId();
     const cachedPoints = localStorage.getItem('points');
+    const cachedScore = localStorage.getItem('score');
+    const cachedCommunity = getCachedCommunityCounts();
 
     const fetchStats = async () => {
       if (!userId && !username) {
@@ -75,14 +128,14 @@ function MyPage({ isOpen, onClose }) {
       // API 실패가 있어도 마이페이지는 열리도록 기본값을 먼저 세팅
       setUserData({
         username: username || '',
-        score: '0',
+        score: cachedScore ? Number(cachedScore) : 0,
         joinDate: localStorage.getItem('joinDate') || '2024년 7월 1일',
         rank: '1위',
         currentRank: '1위',
         challenges: '10개',
         points: cachedPoints ? Number(cachedPoints) : 0,
-        posts: '0개',
-        comments: '0개',
+        posts: `${cachedCommunity.posts}개`,
+        comments: `${cachedCommunity.comments}개`,
         items: '0개'
       });
 
@@ -103,14 +156,14 @@ function MyPage({ isOpen, onClose }) {
         // 초기 userData 설정 (아이템 개수 포함)
         setUserData({
           username: username || '',
-          score: '0',
+          score: cachedScore ? Number(cachedScore) : 0,
           joinDate: localStorage.getItem('joinDate') || '2024년 7월 1일',
           rank: '1위',
           currentRank: '1위',
           challenges: '10개',
           points: cachedPoints ? Number(cachedPoints) : 0,
-          posts: '0개',
-          comments: '0개',
+          posts: `${cachedCommunity.posts}개`,
+          comments: `${cachedCommunity.comments}개`,
           items: `${ownedCount}개`
         });
 
@@ -146,6 +199,16 @@ function MyPage({ isOpen, onClose }) {
 
         if (!response.ok) {
           debugStatsLog('initial stats failed', { status: response.status, data });
+          const fallbackCounts = await fetchCommunityCountsFromPosts(username);
+          if (fallbackCounts) {
+            localStorage.setItem('communityPostsCount', String(fallbackCounts.posts));
+            localStorage.setItem('communityCommentsCount', String(fallbackCounts.comments));
+            setUserData((prev) => (prev ? {
+              ...prev,
+              posts: `${fallbackCounts.posts}개`,
+              comments: `${fallbackCounts.comments}개`
+            } : prev));
+          }
           return;
         }
 
@@ -153,20 +216,46 @@ function MyPage({ isOpen, onClose }) {
           const posts = data.stats.posts;
           const comments = data.stats.comments;
           const nextPoints = Number(data.stats.points) || 0;
+          const nextScore = Number(data.stats.score) || 0;
+          
           localStorage.setItem('points', String(nextPoints));
+          localStorage.setItem('score', String(nextScore));
+          localStorage.setItem('communityPostsCount', String(Number(posts) || 0));
+          localStorage.setItem('communityCommentsCount', String(Number(comments) || 0));
 
           setUserData((prev) => (prev ? {
             ...prev,
             points: nextPoints,
+            score: nextScore,
             posts: `${posts}개`,
             comments: `${comments}개`
           } : prev));
         } else {
           debugStatsLog('initial stats missing payload', data);
+          const fallbackCounts = await fetchCommunityCountsFromPosts(username);
+          if (fallbackCounts) {
+            localStorage.setItem('communityPostsCount', String(fallbackCounts.posts));
+            localStorage.setItem('communityCommentsCount', String(fallbackCounts.comments));
+            setUserData((prev) => (prev ? {
+              ...prev,
+              posts: `${fallbackCounts.posts}개`,
+              comments: `${fallbackCounts.comments}개`
+            } : prev));
+          }
         }
       } catch (err) {
         console.error('Stats fetch error:', err);
         debugStatsLog('initial stats exception', err);
+        const fallbackCounts = await fetchCommunityCountsFromPosts(username);
+        if (fallbackCounts) {
+          localStorage.setItem('communityPostsCount', String(fallbackCounts.posts));
+          localStorage.setItem('communityCommentsCount', String(fallbackCounts.comments));
+          setUserData((prev) => (prev ? {
+            ...prev,
+            posts: `${fallbackCounts.posts}개`,
+            comments: `${fallbackCounts.comments}개`
+          } : prev));
+        }
       }
     };
 
@@ -293,10 +382,31 @@ function MyPage({ isOpen, onClose }) {
       return;
     }
 
-    const refreshCommunityStats = () => {
+    const refreshCommunityStats = (event) => {
       const userId = getStoredUserId();
       const username = localStorage.getItem('username');
       if (!userId && !username) return;
+
+      const postsDelta = Number(event?.detail?.postsDelta || 0);
+      const commentsDelta = Number(event?.detail?.commentsDelta || 0);
+      if (postsDelta || commentsDelta) {
+        setUserData((prev) => {
+          if (!prev) return prev;
+          const prevPosts = parseCountText(prev.posts);
+          const prevComments = parseCountText(prev.comments);
+          const nextPosts = Math.max(0, prevPosts + postsDelta);
+          const nextComments = Math.max(0, prevComments + commentsDelta);
+          return {
+            ...prev,
+            posts: `${nextPosts}개`,
+            comments: `${nextComments}개`
+          };
+        });
+
+        const cached = getCachedCommunityCounts();
+        localStorage.setItem('communityPostsCount', String(Math.max(0, cached.posts + postsDelta)));
+        localStorage.setItem('communityCommentsCount', String(Math.max(0, cached.comments + commentsDelta)));
+      }
 
       const statsParams = new URLSearchParams({ t: String(Date.now()) });
       if (userId) {
@@ -322,13 +432,27 @@ function MyPage({ isOpen, onClose }) {
           });
           return response.json().then((data) => ({ ok: response.ok, status: response.status, data })).catch(() => ({ ok: response.ok, status: response.status, data: null }));
         })
-        .then(({ ok, status, data }) => {
+        .then(async ({ ok, status, data }) => {
           debugStatsLog('event stats response', { ok, status, data });
-          if (!ok || !data?.success || !data?.stats) return;
+          if (!ok || !data?.success || !data?.stats) {
+            const fallbackCounts = await fetchCommunityCountsFromPosts(username);
+            if (fallbackCounts) {
+              localStorage.setItem('communityPostsCount', String(fallbackCounts.posts));
+              localStorage.setItem('communityCommentsCount', String(fallbackCounts.comments));
+              setUserData((prev) => (prev ? {
+                ...prev,
+                posts: `${fallbackCounts.posts}개`,
+                comments: `${fallbackCounts.comments}개`
+              } : prev));
+            }
+            return;
+          }
           const posts = data.stats.posts;
           const comments = data.stats.comments;
           const nextPoints = Number(data.stats.points) || 0;
           localStorage.setItem('points', String(nextPoints));
+          localStorage.setItem('communityPostsCount', String(Number(posts) || 0));
+          localStorage.setItem('communityCommentsCount', String(Number(comments) || 0));
           setUserData((prev) => (prev ? {
             ...prev,
             points: nextPoints,
@@ -336,8 +460,18 @@ function MyPage({ isOpen, onClose }) {
             comments: `${comments}개`
           } : prev));
         })
-        .catch((err) => {
+        .catch(async (err) => {
           debugStatsLog('event stats exception', err);
+          const fallbackCounts = await fetchCommunityCountsFromPosts(username);
+          if (fallbackCounts) {
+            localStorage.setItem('communityPostsCount', String(fallbackCounts.posts));
+            localStorage.setItem('communityCommentsCount', String(fallbackCounts.comments));
+            setUserData((prev) => (prev ? {
+              ...prev,
+              posts: `${fallbackCounts.posts}개`,
+              comments: `${fallbackCounts.comments}개`
+            } : prev));
+          }
         });
     };
 

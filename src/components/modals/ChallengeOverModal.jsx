@@ -44,9 +44,16 @@ function ChallengeOverModal({
               <p className="score-input-label">점수 입력하기</p>
               <input
                 type="number"
-                placeholder="예: 80"
+                placeholder="예: 100"
                 value={score}
-                onChange={(e) => setScore(e.target.value)}
+                min="0"
+                max="999"
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === '' || (Number(val) >= 0 && Number(val) <= 999)) {
+                    setScore(val);
+                  }
+                }}
               />
               <button className="confirm-score-btn" onClick={handleSubmitScore}>제출하기</button>
             </div>
@@ -59,28 +66,31 @@ function ChallengeOverModal({
             <div className="ranking-list">
               {rankingData.length === 0 ? (
                 <div className="ranking-item">
-                  <span className="name">랭킹 데이터가 없습니다.</span>
+                  <span className="name">혼자하는 챌린지는 점수와 포인트 제공이 제한됩니다! (악용 방지)</span>
                 </div>
               ) : (
-                rankingData.map((item) => (
-                  <div key={item.rank} className="ranking-item">
-                    <span className="rank">{item.rank}</span>
-                    <span className="name">{item.name}</span>
-                    <div className="score-info">
-                      <div className="score-group">
-                        <span className="label">포인트</span>
-                        <span className="value">
-                          {item.points > 0 ? `+${item.points}` : `${item.points}`}
-                        </span>
-                      </div>
-                      <div className="divider" />
-                      <div className="score-group">
-                        <span className="label">점수</span>
-                        <span className="value">{item.score}</span>
+                rankingData.map((item) => {
+                  console.log('[ChallengeOverModal] render item:', item);
+                  return (
+                    <div key={item.rank} className="ranking-item">
+                      <span className="rank">{item.rank}</span>
+                      <span className="name">{item.name}</span>
+                      <div className="score-info">
+                        <div className="score-group">
+                          <span className="label">포인트</span>
+                          <span className="value">
+                            {item.points > 0 ? `+${item.points}` : `${item.points}`}
+                          </span>
+                        </div>
+                        <div className="divider" />
+                        <div className="score-group">
+                          <span className="label">점수</span>
+                          <span className="value">{item.score}</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           </div>
