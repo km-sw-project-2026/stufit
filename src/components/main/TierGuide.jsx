@@ -1,18 +1,8 @@
 import React from 'react';
 import Footer from './Footer';
+import { TIER_GUIDE } from '../../constants/tiers';
 
 function TierGuide() {
-  const tiers = [
-    { name: 'Bronze', score: 0, image: '/img/Bronze.png' },
-    { name: 'Silver', score: 200, image: '/img/Silver.png' },
-    { name: 'Gold', score: 500, image: '/img/Gold.png' },
-    { name: 'Platinum', score: 800, image: '/img/Platinum.png' },
-    { name: 'Emerald', score: 1200, image: '/img/Emerald.png' },
-    { name: 'Diamond', score: 1600, image: '/img/Diamond.png' },
-    { name: 'Master', score: 3000, image: '/img/Master.png' },
-    { name: 'Challenger', score: 6000, image: '/img/Challenger.png' }
-  ];
-
   return (
     <>
       <div className="tier-guide-view">
@@ -20,10 +10,10 @@ function TierGuide() {
           <h1 className="tier-guide-title">티어 전척도 가이드</h1>
           
           <div className="tier-icons-row">
-            {tiers.map((tier, index) => (
+            {TIER_GUIDE.map((tier, index) => (
               <div key={index} className="tier-item">
                 <img src={tier.image} alt={tier.name} className="tier-icon-img" />
-                <p className="tier-score">{tier.score.toLocaleString()}</p>
+                <p className="tier-score">{tier.minScore.toLocaleString()}</p>
               </div>
             ))}
           </div>
