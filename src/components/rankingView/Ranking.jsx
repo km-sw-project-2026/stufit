@@ -20,11 +20,24 @@ function Ranking() {
     const [searchTerm, setSearchTerm] = useState(""); 
     const [searchResult, setSearchResult] = useState(null); 
 
-    // 1. 확인용 로직: 처음 실행될 때 테스트 데이터를 상태에 저장합니다.
+    // Fetch users from API (fallback to dummyData)
     useEffect(() => {
-        // 나중에 서버를 연결할 때는 이 부분을 fetch 코드로 바꾸면 됩니다.
-        const sorted = [...dummyData].sort((a, b) => b.score - a.score);
-        setRankings(sorted);
+        let cancelled = false;
+        (async () => {
+            try {
+                const res = await fetch('/api/users');
+                const payload = await res.json().catch(() => null);
+                if (!res.ok || !payload?.success || !Array.isArray(payload.users)) {
+                    if (!cancelled) setRankings([...dummyData].sort((a,b)=>b.score-a.score));
+                    return;
+                }
+                const users = payload.users.map((u) => ({ id: u.userId || u.username, username: u.username, score: Number(u.score) || 0 }));
+                if (!cancelled) setRankings(users);
+            } catch (e) {
+                if (!cancelled) setRankings([...dummyData].sort((a,b)=>b.score-a.score));
+            }
+        })();
+        return () => { cancelled = true; };
     }, []);
 
     // 2. 검색 기능 확인 함수
@@ -35,7 +48,7 @@ function Ranking() {
         }
 
         const found = rankings.find(user => 
-            user.author.toLowerCase().includes(searchTerm.toLowerCase())
+            String(user.username || '').toLowerCase().includes(searchTerm.toLowerCase())
         );
         
         if (found) {
