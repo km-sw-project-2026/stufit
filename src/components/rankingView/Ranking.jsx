@@ -3,16 +3,17 @@
 
 // 사람들의 데이터를 받은 후 (예시)
 import React, { useState, useEffect } from 'react';
+import { getTierByScore } from '../../constants/tiers';
 
 function Ranking() {
     // 실제 서버 데이터 대신 사용할 테스트용 가짜 데이터
     const dummyData = [
-        { id: 1, author: "김예선", likes: 3447 },
-        { id: 2, author: "박현서", likes: 1998 },
-        { id: 3, author: "유태민", likes: 1358 },
-        { id: 4, author: "신유빈", likes: 985 },
-        { id: 5, author: "이도현", likes: 820 },
-        { id: 6, author: "최지우", likes: 750 },
+        { id: 1, username: "김예선", score: 3447 },
+        { id: 2, username: "박현서", score: 1998 },
+        { id: 3, username: "유태민", score: 1358 },
+        { id: 4, username: "신유빈", score: 985 },
+        { id: 5, username: "이도현", score: 820 },
+        { id: 6, username: "최지우", score: 750 },
     ];
 
     const [rankings, setRankings] = useState([]); 
@@ -22,7 +23,7 @@ function Ranking() {
     // 1. 확인용 로직: 처음 실행될 때 테스트 데이터를 상태에 저장합니다.
     useEffect(() => {
         // 나중에 서버를 연결할 때는 이 부분을 fetch 코드로 바꾸면 됩니다.
-        const sorted = [...dummyData].sort((a, b) => b.likes - a.likes);
+        const sorted = [...dummyData].sort((a, b) => b.score - a.score);
         setRankings(sorted);
     }, []);
 
@@ -49,39 +50,45 @@ function Ranking() {
     const top1 = rankings[0];
     const top2 = rankings[1];
     const top3 = rankings[2];
+    const top1Tier = top1 ? getTierByScore(top1.score) : null;
+    const top2Tier = top2 ? getTierByScore(top2.score) : null;
+    const top3Tier = top3 ? getTierByScore(top3.score) : null;
 
     return (
         <div id="ranking-view" className="ranking-view">
             {/* 상단 TOP 3 섹션 */}
             <div className="ranking-header-section">
                 {/* 2등 */}
-                <div className="rank-card rank-2">
+                    <div className="rank-card rank-2">
                     <div className="rank-icon-wrapper">
                         <img src="/img/rank2.png" alt="2위" className="rank-img" />
                     </div>
-                    <div className="rank-user-name">{top2?.author || "데이터 없음"}</div>
+                    <div className="rank-user-name">{top2?.username || "데이터 없음"}</div>
                     <div className="rank-user-label">점수</div>
-                    <div className="rank-user-score">{top2?.likes.toLocaleString() || 0}</div>
+                    <div className="rank-user-score">{top2?.score.toLocaleString() || 0}</div>
+                    {top2Tier && <img src={top2Tier.image} alt={top2Tier.name} style={{ width: 28, marginLeft: 8 }} />}
                 </div>
 
                 {/* 1등 */}
-                <div className="rank-card rank-1">
+                    <div className="rank-card rank-1">
                     <div className="rank-icon-wrapper">
                         <img src="/img/rank1.png" alt="1위" className="rank-img" />
                     </div>
-                    <div className="rank-user-name">{top1?.author || "데이터 없음"}</div>
+                    <div className="rank-user-name">{top1?.username || "데이터 없음"}</div>
                     <div className="rank-user-label">점수</div>
-                    <div className="rank-user-score">{top1?.likes.toLocaleString() || 0}</div>
+                    <div className="rank-user-score">{top1?.score.toLocaleString() || 0}</div>
+                    {top1Tier && <img src={top1Tier.image} alt={top1Tier.name} style={{ width: 28, marginLeft: 8 }} />}
                 </div>
 
                 {/* 3등 */}
-                <div className="rank-card rank-3">
+                    <div className="rank-card rank-3">
                     <div className="rank-icon-wrapper">
                         <img src="/img/rank3.png" alt="3위" className="rank-img" />
                     </div>
-                    <div className="rank-user-name">{top3?.author || "데이터 없음"}</div>
+                    <div className="rank-user-name">{top3?.username || "데이터 없음"}</div>
                     <div className="rank-user-label">점수</div>
-                    <div className="rank-user-score">{top3?.likes.toLocaleString() || 0}</div>
+                    <div className="rank-user-score">{top3?.score.toLocaleString() || 0}</div>
+                    {top3Tier && <img src={top3Tier.image} alt={top3Tier.name} style={{ width: 28, marginLeft: 8 }} />}
                 </div>
             </div>
 
@@ -108,24 +115,30 @@ function Ranking() {
                     {searchResult ? (
                         <div className="ranking-list-item" style={{ border: '2px solid #005a44' }}>
                             <div className="r-left">
-                                <span className="r-rank">{rankings.indexOf(searchResult) + 1}</span> 
-                                <span className="r-name">{searchResult.author}</span>
+                                <span className="r-rank">{rankings.indexOf(searchResult) + 1}</span>
+                                <span className="r-name">{searchResult.username}</span>
                             </div>
                             <div className="r-right">
-                                <span className="r-label">점수</span> 
-                                <span className="r-score">{searchResult.likes.toLocaleString()}</span>
+                                <span className="r-label">점수</span>
+                                <span className="r-score">{searchResult.score.toLocaleString()}</span>
+                                {getTierByScore(searchResult.score) && (
+                                  <img src={getTierByScore(searchResult.score).image} alt={getTierByScore(searchResult.score).name} style={{ width: 22, marginLeft: 8 }} />
+                                )}
                             </div>
                         </div>
                     ) : (
                         rankings.slice(3).map((user, index) => (
                             <div key={user.id} className="ranking-list-item">
                                 <div className="r-left">
-                                    <span className="r-rank">{index + 4}</span> 
-                                    <span className="r-name">{user.author}</span>
+                                    <span className="r-rank">{index + 4}</span>
+                                    <span className="r-name">{user.username}</span>
                                 </div>
                                 <div className="r-right">
-                                    <span className="r-label">점수</span> 
-                                    <span className="r-score">{user.likes.toLocaleString()}</span>
+                                    <span className="r-label">점수</span>
+                                    <span className="r-score">{user.score.toLocaleString()}</span>
+                                    {getTierByScore(user.score) && (
+                                      <img src={getTierByScore(user.score).image} alt={getTierByScore(user.score).name} style={{ width: 22, marginLeft: 8 }} />
+                                    )}
                                 </div>
                             </div>
                         ))
