@@ -6,6 +6,15 @@ function MyPage({ isOpen, onClose }) {
   const [userData, setUserData] = useState(null);
   const navigate = useNavigate();
 
+  const getStoredUserId = () => {
+    const rawUserId = localStorage.getItem('userId');
+    const parsedUserId = Number(rawUserId);
+    if (!Number.isInteger(parsedUserId) || parsedUserId <= 0) {
+      return null;
+    }
+    return parsedUserId;
+  };
+
   const formatPoints = (value) => {
     const numeric = Number(value);
     if (Number.isNaN(numeric)) {
@@ -31,26 +40,11 @@ function MyPage({ isOpen, onClose }) {
     }
 
     const username = localStorage.getItem('username');
-    const userId = localStorage.getItem('userId');
+    const userId = getStoredUserId();
     const cachedPoints = localStorage.getItem('points');
 
     const fetchStats = async () => {
-      if (!userId) {
-        // 로그인 안 된 경우 기본값 설정
-        if (username) {
-          setUserData({
-            username: username,
-            score: '0',
-            joinDate: localStorage.getItem('joinDate') || '2024년 7월 1일',
-            rank: '1위',
-            currentRank: '1위',
-            challenges: '10개',
-            points: cachedPoints ? Number(cachedPoints) : 0,
-            posts: '0개',
-            comments: '0개',
-            items: '0개'
-          });
-        }
+      if (!userId && !username) {
         return;
       }
 
@@ -70,7 +64,8 @@ function MyPage({ isOpen, onClose }) {
 
       try {
         // 사용자 아이템 정보 가져오기
-        const itemsResponse = await fetch(`/api/user/items?userId=${userId}`, {
+        const itemsUrl = userId ? `/api/user/items?userId=${userId}` : '/api/user/items';
+        const itemsResponse = await fetch(itemsUrl, {
           headers: { 'X-Username': username || '' },
         });
         let itemsData = null;
@@ -96,7 +91,12 @@ function MyPage({ isOpen, onClose }) {
         });
 
         // 통계 정보 가져오기
-        const response = await fetch(`/api/user/stats?userId=${userId}&t=${Date.now()}`, {
+        const statsParams = new URLSearchParams({ t: String(Date.now()) });
+        if (userId) {
+          statsParams.set('userId', String(userId));
+        }
+
+        const response = await fetch(`/api/user/stats?${statsParams.toString()}`, {
           headers: { 
             'X-Username': username || '',
             'Cache-Control': 'no-cache, no-store, must-revalidate',
@@ -141,7 +141,7 @@ function MyPage({ isOpen, onClose }) {
     if (!isOpen) return;
 
     const applyActiveToUI = async () => {
-      const userId = localStorage.getItem('userId');
+      const userId = getStoredUserId();
       const username = localStorage.getItem('username');
 
       const applyFromActive = (active) => {
@@ -165,13 +165,15 @@ function MyPage({ isOpen, onClose }) {
 
         const profileImgEl = document.querySelector('.mypage-modal .profile-img img:not(.profile-frame-overlay)');
         if (profileImgEl) {
-          if (imageItem && imageItem.image) profileImgEl.src = imageItem.image;
-          else profileImgEl.src = '/img/Profile2.png';
-          try {
-            profileImgEl.style.objectFit = 'contain';
-            profileImgEl.style.width = profileImgEl.style.width || profileImgEl.width ? '' : '';
-          } catch (e) {
-            // ignore
+          profileImgEl.src = (imageItem?.image) ? imageItem.image : '/img/Profile2.png';
+          profileImgEl.style.objectFit = 'contain';
+
+          if (frameItem?.myPageImageFront) {
+            profileImgEl.style.position = 'relative';
+            profileImgEl.style.zIndex = '1020';
+          } else {
+            profileImgEl.style.position = '';
+            profileImgEl.style.zIndex = '';
           }
         }
 
@@ -195,10 +197,7 @@ function MyPage({ isOpen, onClose }) {
             frameOverlay.style.height = widthPct;
             frameOverlay.style.left = `-${leftOffset.toFixed(2)}%`;
             frameOverlay.style.top = `-${topOffset.toFixed(2)}%`;
-            frameOverlay.style.objectFit = 'contain';
-            frameOverlay.style.pointerEvents = 'none';
-            frameOverlay.style.zIndex = '1015';
-            frameOverlay.style.transformOrigin = 'center center';
+            frameOverlay.style.zIndex = frameItem.myPageImageFront ? '1005' : '1015';
           } else {
             frameOverlay.style.display = 'none';
             frameOverlay.style.position = '';
@@ -211,12 +210,13 @@ function MyPage({ isOpen, onClose }) {
         }
       };
 
-      if (!userId) {
+      if (!userId && !username) {
         return;
       }
 
       try {
-        const response = await fetch(`/api/user/items?userId=${userId}`, {
+        const itemsUrl = userId ? `/api/user/items?userId=${userId}` : '/api/user/items';
+        const response = await fetch(itemsUrl, {
           headers: { 'X-Username': username || '' },
         });
         let data = null;
@@ -252,6 +252,41 @@ function MyPage({ isOpen, onClose }) {
       return;
     }
 
+    const refreshCommunityStats = () => {
+      const userId = getStoredUserId();
+      const username = localStorage.getItem('username');
+      if (!userId && !username) return;
+
+      const statsParams = new URLSearchParams({ t: String(Date.now()) });
+      if (userId) {
+        statsParams.set('userId', String(userId));
+      }
+
+      fetch(`/api/user/stats?${statsParams.toString()}`, {
+        headers: {
+          'X-Username': username || '',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        },
+      })
+        .then((response) => response.json().then((data) => ({ ok: response.ok, data })).catch(() => ({ ok: response.ok, data: null })))
+        .then(({ ok, data }) => {
+          if (!ok || !data?.success || !data?.stats) return;
+          const posts = data.stats.posts;
+          const comments = data.stats.comments;
+          const nextPoints = Number(data.stats.points) || 0;
+          localStorage.setItem('points', String(nextPoints));
+          setUserData((prev) => (prev ? {
+            ...prev,
+            points: nextPoints,
+            posts: `${posts}개`,
+            comments: `${comments}개`
+          } : prev));
+        })
+        .catch(() => {});
+    };
+
     const handlePointsUpdated = (event) => {
       const nextPoints = event?.detail?.points;
       if (typeof nextPoints === 'number') {
@@ -262,11 +297,13 @@ function MyPage({ isOpen, onClose }) {
 
     window.addEventListener('pointsUpdated', handlePointsUpdated);
     const handlePurchasedUpdated = () => {
-      const userId = localStorage.getItem('userId');
+      const userId = getStoredUserId();
       const username = localStorage.getItem('username');
-      if (!userId) return;
+      if (!userId && !username) return;
 
-      fetch(`/api/user/items?userId=${userId}`, {
+      const itemsUrl = userId ? `/api/user/items?userId=${userId}` : '/api/user/items';
+
+      fetch(itemsUrl, {
         headers: { 'X-Username': username || '' },
       })
         .then((response) => response.json().then((data) => ({ ok: response.ok, data })).catch(() => ({ ok: response.ok, data: null })))
@@ -280,10 +317,12 @@ function MyPage({ isOpen, onClose }) {
 
     window.addEventListener('purchasedItemsUpdated', handlePurchasedUpdated);
     window.addEventListener('storage', handlePurchasedUpdated);
+    window.addEventListener('communityActivityUpdated', refreshCommunityStats);
     return () => {
       window.removeEventListener('pointsUpdated', handlePointsUpdated);
       window.removeEventListener('purchasedItemsUpdated', handlePurchasedUpdated);
       window.removeEventListener('storage', handlePurchasedUpdated);
+      window.removeEventListener('communityActivityUpdated', refreshCommunityStats);
     };
   }, [isOpen]);
 
