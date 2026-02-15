@@ -66,8 +66,8 @@ export default async function handler(
           "DELETE FROM challenge_members WHERE challenge_id = ? AND user_id = ?"
         ).bind(challengeId, userId).run();
         
-        // 포인트 차감 (방장도 포기 시 무조건 100점 차감)
-        console.log("📝 방장 포인트 차감 (100점)");
+        // 포인트만 차감 (방장도 포기 시 무조건 100P 차감)
+        console.log("📝 방장 포인트 차감 (-100P)");
         
         // user_profiles 레코드가 없으면 생성
         await env.D1_DB.prepare(
@@ -84,7 +84,7 @@ export default async function handler(
         
         console.log(`📝 방장 포인트 차감: ${currentPoints} -> ${newPoints}`);
         
-        // 포인트 차감
+        // 포인트만 차감
         await env.D1_DB.prepare(
           "UPDATE user_profiles SET points = ? WHERE user_id = ?"
         ).bind(newPoints, userId).run();
@@ -110,8 +110,8 @@ export default async function handler(
     } else {
       console.log("📝 Removing member from challenge");
       
-      // 포인트 차감을 먼저 수행 (멤버 삭제 전)
-      console.log("📝 Reducing points (100 points)");
+      // 포인트만 차감 (멤버 삭제 전)
+      console.log("📝 일반 멤버 포인트 차감 (-100P)");
       
       // user_profiles 레코드가 없으면 생성
       await env.D1_DB.prepare(
@@ -128,7 +128,7 @@ export default async function handler(
       
       console.log(`📝 포인트 차감 진행: ${currentPoints} -> ${newPoints}`);
       
-      // 포인트 차감
+      // 포인트만 차감
       await env.D1_DB.prepare(
         "UPDATE user_profiles SET points = ? WHERE user_id = ?"
       ).bind(newPoints, userId).run();
@@ -138,7 +138,7 @@ export default async function handler(
         "INSERT INTO point_logs (user_id, point, reason) VALUES (?, ?, ?)"
       ).bind(userId, -100, "챌린지 포기").run();
       
-      console.log(`✅ 포인트 차감 완료: ${currentPoints} -> ${newPoints}`);
+      console.log(`✅ 포인트 차감 완료: ${newPoints}`);
       
       // 포인트 차감 후 멤버 삭제
       await env.D1_DB.prepare(
@@ -172,11 +172,11 @@ export default async function handler(
     ).bind(challengeId).first();
 
     // 업데이트된 포인트 정보 가져오기
-    const updatedPoints = await env.D1_DB.prepare(
+    const updatedProfile = await env.D1_DB.prepare(
       'SELECT points FROM user_profiles WHERE user_id = ?'
     ).bind(userId).first();
 
-    console.log(`✅ 최종 응답 준비 - 포인트: ${updatedPoints?.points}`);
+    console.log(`✅ 최종 응답 준비 - points: ${updatedProfile?.points}`);
 
     return new Response(
       JSON.stringify({ 
@@ -184,7 +184,7 @@ export default async function handler(
         message: 'Successfully left challenge', 
         members: members.results || [],
         challenge: updatedChallenge,
-        points: updatedPoints?.points || 0
+        points: updatedProfile?.points || 0
       }),
       { status: 200, headers: { 'Content-Type': 'application/json' } }
     );

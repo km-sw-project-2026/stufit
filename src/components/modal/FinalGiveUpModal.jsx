@@ -25,14 +25,14 @@ function FinalGiveUpModal({ setModalOpen, challengeId, onLeave }) {
             console.log("🟡 API 응답 데이터:", data);
 
             if (response.ok) {
-                // 응답에서 받은 포인트를 바로 업데이트
+                // 응답에서 받은 포인트만 업데이트
                 if (data.points !== undefined) {
                     const newPoints = Number(data.points);
                     localStorage.setItem('points', String(newPoints));
                     window.dispatchEvent(new CustomEvent('pointsUpdated', { detail: { points: newPoints } }));
                     console.log('✅ 포인트 즉시 업데이트:', newPoints);
                 } else {
-                    // 응답에 포인트가 없으면 다시 조회
+                    // 응답에 없으면 다시 조회
                     try {
                         const pointsResponse = await fetch('/api/user/points', {
                             headers: { 'X-Username': username }
