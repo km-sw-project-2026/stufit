@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { shopItems } from '../shopView/shopItems';
+import { getTierProgress } from '../../constants/tiers';
 
 function MyPage({ isOpen, onClose }) {
   const [userData, setUserData] = useState(null);
@@ -545,6 +546,13 @@ function MyPage({ isOpen, onClose }) {
 
   if (!isOpen || !userData) return null;
 
+  const scoreValue = Number(userData.score) || 0;
+  const { currentTier, progressPercent } = getTierProgress(scoreValue);
+  const progressFillStyle = {
+    width: `${progressPercent}%`,
+    backgroundColor: currentTier.progressColor,
+  };
+
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="mypage-modal" onClick={(e) => e.stopPropagation()}>
@@ -561,7 +569,7 @@ function MyPage({ isOpen, onClose }) {
             <div className="profile-name-score">
               <h3>{userData.username}</h3>
               <div className="score-container">
-                <img src="/img/Bronze.png" alt="브론즈" className="score-icon" />
+                <img src={currentTier.image} alt={currentTier.name} className="score-icon" title={currentTier.name} />
                 <div className="score-right-section">
                   <div className="score-bottom">
                     <span className="score-value">{userData.score}</span>
@@ -570,7 +578,7 @@ function MyPage({ isOpen, onClose }) {
                     </button>
                   </div>
                   <div className="score-progress-bar">
-                    <div className="score-progress-fill" style={{width: '70%'}}></div>
+                    <div className="score-progress-fill" style={progressFillStyle}></div>
                   </div>
                 </div>
               </div>

@@ -127,7 +127,16 @@ function ShopQuicklink() {
             e.preventDefault();
             navigate('/shop');
           }}
-          style={{ position: 'absolute', right: 40, top: 40 }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              navigate('/shop');
+            }
+          }}
+          role="button"
+          tabIndex={0}
+          title="상점으로 이동"
+          style={{ position: 'absolute', right: 40, top: 40, zIndex: 1000, cursor: 'pointer' }}
         >
           <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#222" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="10"></circle>

@@ -31,6 +31,24 @@ function HostGiveUpModal({ setModalOpen, setFinalModalOpen, challenge, onLeave }
                 const result = await response.json();
 
                 if (response.ok) {
+                    // 포인트 새로고침
+                    try {
+                        const pointsResponse = await fetch('/api/user/points', {
+                            headers: { 'X-Username': username }
+                        });
+                        if (pointsResponse.ok) {
+                            const pointsData = await pointsResponse.json();
+                            const newPoints = Number(pointsData?.points);
+                            if (!Number.isNaN(newPoints)) {
+                                localStorage.setItem('points', String(newPoints));
+                                window.dispatchEvent(new CustomEvent('pointsUpdated', { detail: { points: newPoints } }));
+                                console.log('✅ 포인트 업데이트:', newPoints);
+                            }
+                        }
+                    } catch (pointsErr) {
+                        console.error('포인트 새로고침 실패:', pointsErr);
+                    }
+                    
                     // 챌린지 업데이트 이벤트 발생
                     if (result.challenge && result.members) {
                         const event = new CustomEvent('challenge-updated', {
