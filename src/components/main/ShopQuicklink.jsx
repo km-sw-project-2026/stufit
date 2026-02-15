@@ -183,7 +183,7 @@ function ShopQuicklink() {
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      boxShadow: absPos === 0 ? '0 28px 60px rgba(0,0,0,0.22)' : '0 8px 20px rgba(0,0,0,0.06)',
+                      /* boxShadow removed as requested */
                       zIndex,
                       margin: `0 ${Math.round(gap / 2)}px`,
                       background: '#fff',
