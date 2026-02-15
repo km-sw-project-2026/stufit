@@ -59,7 +59,7 @@ function ChallengeOverModal({
             <div className="ranking-list">
               {rankingData.length === 0 ? (
                 <div className="ranking-item">
-                  <span className="name">랭킹 데이터가 없습니다.</span>
+                  <span className="name">혼자하는 챘린지는 점수와 포인트 제공이 제한 됩니다! (악용방지)</span>
                 </div>
               ) : (
                 rankingData.map((item) => {
