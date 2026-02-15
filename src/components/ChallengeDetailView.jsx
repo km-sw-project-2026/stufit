@@ -708,6 +708,11 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
         } catch (error) {
             console.error('[finalizeChallenge] error:', error);
         }
+        try {
+            window.dispatchEvent(new CustomEvent('challengeCompleted', { detail: { delta: 1 } }));
+        } catch (e) {
+            console.warn('[finalizeChallenge] challengeCompleted dispatch failed', e);
+        }
     };
 
     const handleSubmitStudyScore = async (score) => {
