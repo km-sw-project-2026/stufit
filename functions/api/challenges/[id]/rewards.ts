@@ -307,37 +307,37 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
         } else if (idx === 0) {
           // 1등: 항상 +150점, +150포인트
           points = 150;
-          score = 150; // 1등은 고정 150점, 비율과 상관없이
+          score = 150;
         } else if (base.length === 2) {
-          // 2명 참여: 2등 -30 포인트, 점수는 비율로
+          // 2명 참여: 2등 -30 포인트, 100점수 (고정)
           points = -30;
-          score = Math.round(item.ratio * 150);
+          score = 100;
         } else if (base.length === 3) {
-          // 3명 참여: 2등 +100, 3등 -30 포인트, 점수는 비율로
+          // 3명 참여: 2등 +100, 3등 -30 포인트 / 2등 100점, 3등 50점 (고정)
           points = idx === 1 ? 100 : -30;
-          score = Math.round(item.ratio * 150);
+          score = idx === 1 ? 100 : 50;
         } else {
           // 4명 이상: 1등 제외 인원을 상/중/하로 분배
           const restCount = otherCount; // 1등 제외
           const topPercent = Math.ceil(restCount * 0.3) || 1; // 최소 1명
-          const bottomPercent = Math.ceil(restCount * 0.3) || 1; // 최소 1명 (그런데 단순 비율이므로 조정 필요)
+          const bottomPercent = Math.ceil(restCount * 0.3) || 1; // 최소 1명
           const middlePercent = restCount - topPercent - bottomPercent;
 
           const otherIndex = idx - 1; // 1등을 제외한 순서 (0부터 시작)
 
           if (otherIndex < topPercent) {
-            // 상위 30%
+            // 상위 30%: +100 포인트, 100점수
             points = 100;
+            score = 100;
           } else if (otherIndex < topPercent + middlePercent) {
-            // 중위 40%
+            // 중위 40%: +50 포인트, 50점수
             points = 50;
+            score = 50;
           } else {
-            // 하위 30%
+            // 하위 30%: -30 포인트, 0점수
             points = -30;
+            score = 0;
           }
-          
-          // 점수는 항상 비율로 계산
-          score = Math.round(item.ratio * 150);
         }
 
         return {

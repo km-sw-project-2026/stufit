@@ -436,13 +436,13 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
                 points = 150;
                 score = 150;
             } else if (sorted.length === 2) {
-                // 2명: 2등 -30 포인트, 점수는 비율로 계산 (최대 150)
+                // 2명: 2등 -30 포인트, 100점수 (고정)
                 points = -30;
-                score = Math.round(item.ratio * 150);
+                score = 100;
             } else if (sorted.length === 3) {
-                // 3명: 2등 +100, 3등 -30 포인트, 점수는 비율로
+                // 3명: 2등 +100, 3등 -30 포인트 / 2등 100점수, 3등 50점수 (고정)
                 points = idx === 1 ? 100 : -30;
-                score = Math.round(item.ratio * 150);
+                score = idx === 1 ? 100 : 50;
             } else {
                 // 4명 이상: 상/중/하 분배
                 const restCount = sorted.length - 1;
@@ -452,15 +452,18 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
                 const otherIndex = idx - 1;
 
                 if (otherIndex < topPercent) {
+                    // 상위 30%: +100 포인트, 100점수
                     points = 100;
+                    score = 100;
                 } else if (otherIndex < topPercent + middlePercent) {
+                    // 중위 40%: +50 포인트, 50점수
                     points = 50;
+                    score = 50;
                 } else {
+                    // 하위 30%: -30 포인트, 0점수
                     points = -30;
+                    score = 0;
                 }
-                
-                // 점수는 항상 비율로
-                score = Math.round(item.ratio * 150);
             }
 
             return {
