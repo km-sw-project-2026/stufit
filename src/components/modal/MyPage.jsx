@@ -36,6 +36,15 @@ function MyPage({ isOpen, onClose }) {
     return numeric;
   };
 
+  const getCachedCommunityCounts = () => {
+    const posts = Number(localStorage.getItem('communityPostsCount') || '0');
+    const comments = Number(localStorage.getItem('communityCommentsCount') || '0');
+    return {
+      posts: Number.isNaN(posts) ? 0 : Math.max(0, posts),
+      comments: Number.isNaN(comments) ? 0 : Math.max(0, comments),
+    };
+  };
+
   const formatPoints = (value) => {
     const numeric = Number(value);
     if (Number.isNaN(numeric)) {
@@ -86,6 +95,7 @@ function MyPage({ isOpen, onClose }) {
     const userId = getStoredUserId();
     const cachedPoints = localStorage.getItem('points');
     const cachedScore = localStorage.getItem('score');
+    const cachedCommunity = getCachedCommunityCounts();
 
     const fetchStats = async () => {
       if (!userId && !username) {
@@ -101,8 +111,8 @@ function MyPage({ isOpen, onClose }) {
         currentRank: '1위',
         challenges: '10개',
         points: cachedPoints ? Number(cachedPoints) : 0,
-        posts: '0개',
-        comments: '0개',
+        posts: `${cachedCommunity.posts}개`,
+        comments: `${cachedCommunity.comments}개`,
         items: '0개'
       });
 
@@ -129,8 +139,8 @@ function MyPage({ isOpen, onClose }) {
           currentRank: '1위',
           challenges: '10개',
           points: cachedPoints ? Number(cachedPoints) : 0,
-          posts: '0개',
-          comments: '0개',
+          posts: `${cachedCommunity.posts}개`,
+          comments: `${cachedCommunity.comments}개`,
           items: `${ownedCount}개`
         });
 
@@ -177,6 +187,8 @@ function MyPage({ isOpen, onClose }) {
           
           localStorage.setItem('points', String(nextPoints));
           localStorage.setItem('score', String(nextScore));
+          localStorage.setItem('communityPostsCount', String(Number(posts) || 0));
+          localStorage.setItem('communityCommentsCount', String(Number(comments) || 0));
 
           setUserData((prev) => (prev ? {
             ...prev,
@@ -337,6 +349,10 @@ function MyPage({ isOpen, onClose }) {
             comments: `${nextComments}개`
           };
         });
+
+        const cached = getCachedCommunityCounts();
+        localStorage.setItem('communityPostsCount', String(Math.max(0, cached.posts + postsDelta)));
+        localStorage.setItem('communityCommentsCount', String(Math.max(0, cached.comments + commentsDelta)));
       }
 
       const statsParams = new URLSearchParams({ t: String(Date.now()) });
@@ -370,6 +386,8 @@ function MyPage({ isOpen, onClose }) {
           const comments = data.stats.comments;
           const nextPoints = Number(data.stats.points) || 0;
           localStorage.setItem('points', String(nextPoints));
+          localStorage.setItem('communityPostsCount', String(Number(posts) || 0));
+          localStorage.setItem('communityCommentsCount', String(Number(comments) || 0));
           setUserData((prev) => (prev ? {
             ...prev,
             points: nextPoints,
