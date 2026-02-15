@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { getTierByScore } from '../../constants/tiers';
 
 function RankingModal({ onClose }) {
   const [rankingList, setRankingList] = useState([]);
@@ -32,7 +31,6 @@ function RankingModal({ onClose }) {
     <div className="ranking-view">
       <div className="ranking-header-section">
         {topRankers.map((ranker) => {
-          const tier = getTierByScore(ranker.score);
           return (
             <div key={ranker.rank} className={`rank-card rank-${ranker.rank}`}>
               <div className="rank-icon-wrapper">
@@ -41,7 +39,6 @@ function RankingModal({ onClose }) {
               <div className="rank-user-name">{ranker.username}</div>
               <div className="rank-user-label">점수</div>
               <div className="rank-user-score">{ranker.score.toLocaleString()}</div>
-              {tier && <img src={tier.image} alt={tier.name} style={{ width: 28, marginLeft: 8 }} />}
             </div>
           );
         })}
