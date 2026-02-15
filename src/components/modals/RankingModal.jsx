@@ -1,22 +1,32 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { getTierByScore } from '../../constants/tiers';
 
 function RankingModal({ onClose }) {
-  const topRankers = [
-    { rank: 2, username: '박현서', score: 1998, img: '/img/rank2.png' },
-    { rank: 1, username: '김예선', score: 3447, img: '/img/rank1.png' },
-    { rank: 3, username: '유태민', score: 1358, img: '/img/rank3.png' }
-  ];
+  const [rankingList, setRankingList] = useState([]);
+  const topRankers = rankingList.slice(0, 3).map((u, idx) => ({ rank: idx + 1, username: u.username, score: u.score, img: `/img/rank${idx+1}.png` }));
 
-  const rankingList = Array.from({ length: 47 }, (_, i) => ({
-    rank: i + 4,
-    username: ['신유빈', '송헌', '최백령', '박상진', '김민성', '정자연', '김예선', '유태민', '박현서', '이정민'][i % 10],
-    score: 1000 - (i * 15)
-  }));
+  // load users from API for the list
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch('/api/users');
+        const payload = await res.json().catch(() => null);
+        if (!res.ok || !payload?.success || !Array.isArray(payload.users)) return;
+        const users = payload.users.map((u, i) => ({ rank: i + 1, username: u.username, score: Number(u.score) || 0 }));
+        if (!cancelled) {
+          // top 3 handled separately in header; keep full list for body
+          setRankingList(users);
+        }
+      } catch (e) { /* ignore */ }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   const [searchName, setSearchName] = useState('');
 
-  const filteredList = rankingList.filter(item => item.name.includes(searchName));
+  const filteredList = rankingList.filter(item => item.username.includes(searchName));
+  const bodyList = searchName.trim() ? filteredList : rankingList.slice(3);
 
   return (
     <div className="ranking-view">
@@ -51,7 +61,7 @@ function RankingModal({ onClose }) {
         </div>
 
         <div className="ranking-grid-list">
-          {filteredList.map((item) => {
+          {bodyList.map((item) => {
             const tier = getTierByScore(item.score);
             return (
               <div key={item.rank} className="ranking-list-item">
