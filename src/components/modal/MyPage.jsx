@@ -15,6 +15,15 @@ function MyPage({ isOpen, onClose }) {
     return parsedUserId;
   };
 
+  const encodeUsernameHeader = (username) => {
+    if (!username) return '';
+    try {
+      return encodeURIComponent(username);
+    } catch {
+      return username;
+    }
+  };
+
   const formatPoints = (value) => {
     const numeric = Number(value);
     if (Number.isNaN(numeric)) {
@@ -75,7 +84,7 @@ function MyPage({ isOpen, onClose }) {
         // 사용자 아이템 정보 가져오기
         const itemsUrl = userId ? `/api/user/items?userId=${userId}` : '/api/user/items';
         const itemsResponse = await fetch(itemsUrl, {
-          headers: { 'X-Username': username || '' },
+          headers: { 'X-Username': encodeUsernameHeader(username) },
         });
         let itemsData = null;
         try {
@@ -107,7 +116,7 @@ function MyPage({ isOpen, onClose }) {
 
         const response = await fetch(`/api/user/stats?${statsParams.toString()}`, {
           headers: { 
-            'X-Username': username || '',
+            'X-Username': encodeUsernameHeader(username),
             'Cache-Control': 'no-cache, no-store, must-revalidate',
             'Pragma': 'no-cache',
             'Expires': '0'
@@ -230,7 +239,7 @@ function MyPage({ isOpen, onClose }) {
       try {
         const itemsUrl = userId ? `/api/user/items?userId=${userId}` : '/api/user/items';
         const response = await fetch(itemsUrl, {
-          headers: { 'X-Username': username || '' },
+          headers: { 'X-Username': encodeUsernameHeader(username) },
         });
         let data = null;
         try {
@@ -277,7 +286,7 @@ function MyPage({ isOpen, onClose }) {
 
       fetch(`/api/user/stats?${statsParams.toString()}`, {
         headers: {
-          'X-Username': username || '',
+          'X-Username': encodeUsernameHeader(username),
           'Cache-Control': 'no-cache, no-store, must-revalidate',
           'Pragma': 'no-cache',
           'Expires': '0'
@@ -317,7 +326,7 @@ function MyPage({ isOpen, onClose }) {
       const itemsUrl = userId ? `/api/user/items?userId=${userId}` : '/api/user/items';
 
       fetch(itemsUrl, {
-        headers: { 'X-Username': username || '' },
+        headers: { 'X-Username': encodeUsernameHeader(username) },
       })
         .then((response) => response.json().then((data) => ({ ok: response.ok, data })).catch(() => ({ ok: response.ok, data: null })))
         .then(({ ok, data }) => {
