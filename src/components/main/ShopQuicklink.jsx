@@ -44,6 +44,7 @@ function ShopQuicklink() {
   const [activeVirtual, setActiveVirtual] = useState(virtualIndex);
   const [isTranslating, setIsTranslating] = useState(false);
   const [transitionEnabled, setTransitionEnabled] = useState(true);
+  const activeTimeoutRef = useRef(null);
 
   const containerRef = useRef(null);
   const rowRef = useRef(null);
@@ -70,6 +71,11 @@ function ShopQuicklink() {
     setIsTranslating(true);
     setTransitionEnabled(true);
     setVirtualIndex((v) => v + d);
+    if (activeTimeoutRef.current) window.clearTimeout(activeTimeoutRef.current);
+    activeTimeoutRef.current = window.setTimeout(() => {
+      setActiveVirtual((v) => virtualRef.current);
+      setIsTranslating(false);
+    }, TRANS_DUR + 20);
   };
   const prev = () => moveBy(-1);
   const next = () => moveBy(1);
@@ -77,6 +83,11 @@ function ShopQuicklink() {
     setIsTranslating(true);
     setTransitionEnabled(true);
     setVirtualIndex(n + (logical % n));
+    if (activeTimeoutRef.current) window.clearTimeout(activeTimeoutRef.current);
+    activeTimeoutRef.current = window.setTimeout(() => {
+      setActiveVirtual((v) => virtualRef.current);
+      setIsTranslating(false);
+    }, TRANS_DUR + 20);
   };
 
   // ensure virtual index stays within middle copy to keep illusion
@@ -116,11 +127,25 @@ function ShopQuicklink() {
     return () => el.removeEventListener('transitionend', onEnd);
   }, []);
 
+  // clear active timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (activeTimeoutRef.current) window.clearTimeout(activeTimeoutRef.current);
+    };
+  }, []);
+
   // sizing
-  const gap = 24;
-  const base = Math.max(100, Math.min(160, Math.round(containerWidth * 0.16)));
+  const gap = 16;
+  // Make center noticeably larger but keep 5 items fitting in container
+  const CENTER_SCALE = 1.6;
+  const base = Math.max(
+    72,
+    Math.min(160, Math.floor((containerWidth - gap * (VISIBLE - 1)) / ((VISIBLE - 1) + CENTER_SCALE)))
+  );
   const slot = base + gap;
-  const translateX = Math.round(containerWidth / 2 - (virtualIndex * slot + base / 2));
+  // center on activeVirtual when not translating, otherwise follow virtualIndex so motion is smooth
+  const centerIndexForTranslate = isTranslating ? virtualIndex : activeVirtual;
+  const translateX = Math.round(containerWidth / 2 - (centerIndexForTranslate * slot + base / 2));
 
   const placeholderSvg = `data:image/svg+xml;utf8,${encodeURIComponent(
     '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><rect width="100%" height="100%" fill="#f3f3f3"/><circle cx="50%" cy="50%" r="40" fill="#e6e6e6"/></svg>'
@@ -156,7 +181,19 @@ function ShopQuicklink() {
             </svg>
           </button>
 
-          <div ref={containerRef} className="shop-items-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: 260, overflow: 'hidden' }}>
+          <div
+            ref={containerRef}
+            className="shop-items-container"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '100%',
+              height: 360,
+              overflow: 'hidden',
+              padding: 0,
+            }}
+          >
             <div
               ref={rowRef}
               className="shop-items-row"
@@ -169,73 +206,82 @@ function ShopQuicklink() {
               }}
             >
               {displayImages.map((src, i) => {
-                const posCurrent = i - virtualIndex;
-                const absPosCurrent = Math.abs(posCurrent);
-                const posActive = i - activeVirtual;
-                const absPosActive = Math.abs(posActive);
+                  const posCurrent = i - virtualIndex;
+                  const absPosCurrent = Math.abs(posCurrent);
+                  const posActive = i - activeVirtual;
+                  const absPosActive = Math.abs(posActive);
 
-                // compute visibility and scale
-                const within = absPosCurrent <= half || absPosActive <= half;
-                let scale = 0.75;
-                let zIndex = 1;
-                // keep images visible but dim non-visible slides so user never sees an empty gap
-                let opacity = within ? 1 : 0.25;
-                let pointerEvents = within ? 'auto' : 'none';
+                  // Only the 5 central items should be visible; others are hidden (not dimmed)
+                  const withinWindow = absPosCurrent <= half || absPosActive <= half;
+                  // keep layout spacing for hidden items but make them invisible
+                  const visibility = withinWindow ? 'visible' : 'hidden';
+                  const opacity = withinWindow ? 1 : 0;
 
-                if (isTranslating) {
-                  // during translation base on moving position
-                  if (absPosCurrent === 0) {
-                    scale = 1.2;
-                    zIndex = 6;
-                  } else if (absPosCurrent === 1) {
-                    scale = 1.05;
-                    zIndex = 5;
-                  } else if (absPosCurrent === 2) {
-                    scale = 0.9;
-                    zIndex = 4;
+                  let scale = 0.9;
+                  let zIndex = 1;
+                  let translateY = 0;
+
+                  if (isTranslating) {
+                    if (absPosCurrent === 0) {
+                      scale = 1.45;
+                      zIndex = 8;
+                      translateY = -10;
+                    } else if (absPosCurrent === 1) {
+                      scale = 1.18;
+                      zIndex = 6;
+                    } else if (absPosCurrent === 2) {
+                      scale = 0.98;
+                      zIndex = 4;
+                    } else {
+                      scale = 0.9;
+                      zIndex = 1;
+                    }
+                  } else {
+                    if (absPosActive === 0) {
+                      scale = CENTER_SCALE;
+                      zIndex = 12;
+                      translateY = -18;
+                    } else if (absPosActive === 1) {
+                      scale = 1.18;
+                      zIndex = 7;
+                    } else if (absPosActive === 2) {
+                      scale = 0.98;
+                      zIndex = 5;
+                    } else {
+                      scale = 0.9;
+                      zIndex = 1;
+                    }
                   }
-                } else {
-                  // after finished, base on activeVirtual so center is biggest
-                  if (absPosActive === 0) {
-                    scale = 1.6;
-                    zIndex = 6;
-                  } else if (absPosActive === 1) {
-                    scale = 1.1;
-                    zIndex = 5;
-                  } else if (absPosActive === 2) {
-                    scale = 0.9;
-                    zIndex = 4;
-                  }
-                }
 
-                return (
-                  <div
-                    key={`${i}-${String(src)}`}
-                    onClick={() => jumpTo(i % n)}
-                    style={{
-                      width: base,
-                      height: base,
-                      flex: `0 0 ${base}px`,
-                      borderRadius: '50%',
-                      overflow: 'hidden',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      transition: `transform ${TRANS_DUR}ms cubic-bezier(.22,.9,.28,1), box-shadow ${TRANS_DUR}ms, opacity ${TRANS_DUR}ms`,
-                      transform: `scale(${scale})`,
-                      transformOrigin: 'center center',
-                      boxShadow: (isTranslating ? absPosCurrent : absPosActive) === 0 ? '0 18px 40px rgba(0,0,0,0.18)' : 'none',
-                      zIndex,
-                      opacity,
-                      margin: `0 ${Math.round(gap / 2)}px`,
-                      background: '#fff',
-                      position: 'relative',
-                      cursor: pointerEvents === 'none' ? 'default' : 'pointer',
-                      pointerEvents,
-                      willChange: 'transform',
-                      border: 'none',
-                    }}
-                  >
+                  return (
+                    <div
+                      key={`${i}-${String(src)}`}
+                      onClick={() => jumpTo(i % n)}
+                      style={{
+                        width: base,
+                        height: base,
+                        flex: `0 0 ${base}px`,
+                        borderRadius: '50%',
+                        overflow: 'hidden',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transition: `transform ${TRANS_DUR}ms cubic-bezier(.22,.9,.28,1), box-shadow ${TRANS_DUR}ms, opacity ${TRANS_DUR}ms`,
+                        transform: `translateY(${translateY}px) scale(${scale})`,
+                        transformOrigin: 'center center',
+                        boxShadow: (isTranslating ? absPosCurrent : absPosActive) === 0 ? '0 28px 60px rgba(0,0,0,0.22)' : '0 8px 20px rgba(0,0,0,0.06)',
+                        zIndex,
+                        opacity,
+                        visibility,
+                        margin: `0 ${Math.round(gap / 2)}px`,
+                        background: '#fff',
+                        position: 'relative',
+                        cursor: withinWindow ? 'pointer' : 'default',
+                        pointerEvents: withinWindow ? 'auto' : 'none',
+                        willChange: 'transform',
+                        border: 'none',
+                      }}
+                    >
                     <img
                       src={src}
                       alt="item"
@@ -282,7 +328,7 @@ function ShopQuicklink() {
 
         <div className="shop-pagination" style={{ display: 'flex', gap: 8, justifyContent: 'center', marginTop: 12 }}>
           {images.map((_, i) => (
-            <button key={i} onClick={() => jumpTo(i)} aria-label={`Go to item ${i + 1}`} style={{ width: 12, height: 12, borderRadius: '50%', border: 'none', background: i === ((virtualIndex % n) + n) % n ? '#176B5F' : '#ddd', cursor: 'pointer' }} />
+            <button key={i} onClick={() => jumpTo(i)} aria-label={`Go to item ${i + 1}`} style={{ width: 12, height: 12, borderRadius: '50%', border: 'none', background: i === ((activeVirtual % n) + n) % n ? '#176B5F' : '#ddd', cursor: 'pointer' }} />
           ))}
         </div>
       </div>
