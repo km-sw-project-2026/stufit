@@ -210,162 +210,170 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
       });
     }
 
-  const memberList = Array.isArray(members?.results) ? members.results : [];
-  if (memberList.length === 0) {
-    return new Response(
-      JSON.stringify({ success: true, applied: [], ranking: [], type, mode }),
-      { status: 200, headers: { 'Content-Type': 'application/json' } }
-    );
-  }
+    const memberList = Array.isArray(members?.results) ? members.results : [];
+    if (memberList.length === 0) {
+      return new Response(
+        JSON.stringify({ success: true, applied: [], ranking: [], type, mode }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
 
-  let progress;
-  try {
-    progress = await env.D1_DB
-      .prepare('SELECT user_id, COUNT(*) as count FROM challenge_daily_progress WHERE challenge_id = ? GROUP BY user_id')
-      .bind(challengeId)
-      .all();
-  } catch (err) {
-    console.warn('[rewards] progress query failed:', err);
-    progress = { results: [] };
-  }
+    // 혼자 하는 챌린지는 보상 없음 (악용 방지)
+    if (memberList.length <= 1) {
+      return new Response(
+        JSON.stringify({ success: true, applied: [], ranking: [], type, mode, message: '혼자 참여한 챌린지는 보상을 받을 수 없습니다.' }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
 
-  const counts = new Map<number, number>();
-  (progress?.results || []).forEach((row: any) => {
-    counts.set(Number(row.user_id), Number(row.count) || 0);
-  });
+    let progress;
+    try {
+      progress = await env.D1_DB
+        .prepare('SELECT user_id, COUNT(*) as count FROM challenge_daily_progress WHERE challenge_id = ? GROUP BY user_id')
+        .bind(challengeId)
+        .all();
+    } catch (err) {
+      console.warn('[rewards] progress query failed:', err);
+      progress = { results: [] };
+    }
 
-  const totalDays = resolveTotalDays(challenge);
-  const base = memberList.map((member: any) => {
-    const count = counts.get(Number(member.user_id)) || 0;
-    const ratio = totalDays > 0 ? Math.min(count / totalDays, 1) : 0;
-    return {
-      userId: Number(member.user_id),
-      name: member.username,
-      count,
-      ratio
-    };
-  });
+    const counts = new Map<number, number>();
+    (progress?.results || []).forEach((row: any) => {
+      counts.set(Number(row.user_id), Number(row.count) || 0);
+    });
 
-  base.sort((a, b) => {
-    if (b.ratio !== a.ratio) return b.ratio - a.ratio;
-    return String(a.name).localeCompare(String(b.name));
-  });
+    const totalDays = resolveTotalDays(challenge);
+    const base = memberList.map((member: any) => {
+      const count = counts.get(Number(member.user_id)) || 0;
+      const ratio = totalDays > 0 ? Math.min(count / totalDays, 1) : 0;
+      return {
+        userId: Number(member.user_id),
+        name: member.username,
+        count,
+        ratio
+      };
+    });
 
-  const otherCount = Math.max(base.length - 1, 0);
-  const ranking = base.map((item, idx) => {
-    let points = 0;
+    base.sort((a, b) => {
+      if (b.ratio !== a.ratio) return b.ratio - a.ratio;
+      return String(a.name).localeCompare(String(b.name));
+    });
+
+    const otherCount = Math.max(base.length - 1, 0);
+    const ranking = base.map((item, idx) => {
+      let points = 0;
+
+      if (mode === 'practice') {
+        points = 0;
+      } else if (idx === 0) {
+        points = 500;
+      } else {
+        const otherIndex = idx - 1;
+        const tierRatio = otherCount > 0 ? otherIndex / otherCount : 0;
+        if (tierRatio < 0.3) points = 400;
+        else if (tierRatio < 0.7) points = 300;
+        else points = -200;
+      }
+
+      return {
+        rank: idx + 1,
+        name: item.name,
+        userId: item.userId,
+        points,
+        score: Math.round(item.ratio * 100),
+        ratio: item.ratio,
+        count: item.count,
+        totalDays
+      };
+    });
 
     if (mode === 'practice') {
-      points = 0;
-    } else if (idx === 0) {
-      points = 500;
-    } else {
-      const otherIndex = idx - 1;
-      const tierRatio = otherCount > 0 ? otherIndex / otherCount : 0;
-      if (tierRatio < 0.3) points = 400;
-      else if (tierRatio < 0.7) points = 300;
-      else points = -200;
+      return new Response(
+        JSON.stringify({ success: true, applied: [], ranking, type, mode }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      );
     }
 
-    return {
-      rank: idx + 1,
-      name: item.name,
-      userId: item.userId,
-      points,
-      score: Math.round(item.ratio * 100),
-      ratio: item.ratio,
-      count: item.count,
-      totalDays
-    };
-  });
+    const applied: Array<{ userId: number; points: number }> = [];
+    const errors: string[] = [];
+    const now = new Date().toISOString();
+    let transactionStarted = false;
 
-  if (mode === 'practice') {
-    return new Response(
-      JSON.stringify({ success: true, applied: [], ranking, type, mode }),
-      { status: 200, headers: { 'Content-Type': 'application/json' } }
-    );
-  }
+    try {
+      await env.D1_DB.prepare('BEGIN').run();
+      transactionStarted = true;
+    } catch (err) {
+      console.warn('[rewards] transaction begin failed:', err);
+    }
 
-  const applied: Array<{ userId: number; points: number }> = [];
-  const errors: string[] = [];
-  const now = new Date().toISOString();
-  let transactionStarted = false;
+    try {
+      for (const entry of ranking) {
+        if (!entry.userId || entry.points === 0) continue;
 
-  try {
-    await env.D1_DB.prepare('BEGIN').run();
-    transactionStarted = true;
-  } catch (err) {
-    console.warn('[rewards] transaction begin failed:', err);
-  }
+        try {
+          const reason = `challenge_reward:${challengeId}:${action}:${mode}`;
+          const already = pointLogColumn
+            ? await env.D1_DB
+              .prepare('SELECT 1 FROM point_logs WHERE user_id = ? AND reason = ?')
+              .bind(entry.userId, reason)
+              .first()
+            : null;
 
-  try {
-    for (const entry of ranking) {
-      if (!entry.userId || entry.points === 0) continue;
+          if (already) continue;
 
-      try {
-        const reason = `challenge_reward:${challengeId}:${action}:${mode}`;
-        const already = pointLogColumn
-          ? await env.D1_DB
-            .prepare('SELECT 1 FROM point_logs WHERE user_id = ? AND reason = ?')
-            .bind(entry.userId, reason)
-            .first()
-          : null;
+          await env.D1_DB
+            .prepare('INSERT OR IGNORE INTO user_profiles (user_id, tier, score, points) VALUES (?, ?, ?, ?)')
+            .bind(entry.userId, 'bronze', 0, 0)
+            .run();
 
-        if (already) continue;
+          const profile = await env.D1_DB
+            .prepare('SELECT points FROM user_profiles WHERE user_id = ?')
+            .bind(entry.userId)
+            .first();
 
-        await env.D1_DB
-          .prepare('INSERT OR IGNORE INTO user_profiles (user_id, tier, score, points) VALUES (?, ?, ?, ?)')
-          .bind(entry.userId, 'bronze', 0, 0)
-          .run();
+          const currentPoints = Number(profile?.points) || 0;
+          const nextPoints = Math.max(0, currentPoints + entry.points);
 
-        const profile = await env.D1_DB
-          .prepare('SELECT points FROM user_profiles WHERE user_id = ?')
-          .bind(entry.userId)
-          .first();
+          await env.D1_DB
+            .prepare('UPDATE user_profiles SET points = ? WHERE user_id = ?')
+            .bind(nextPoints, entry.userId)
+            .run();
 
-        const currentPoints = Number(profile?.points) || 0;
-        const nextPoints = Math.max(0, currentPoints + entry.points);
-
-        await env.D1_DB
-          .prepare('UPDATE user_profiles SET points = ? WHERE user_id = ?')
-          .bind(nextPoints, entry.userId)
-          .run();
-
-        if (pointLogColumn) {
-          try {
-            await env.D1_DB
-              .prepare(`INSERT INTO point_logs (user_id, ${pointLogColumn}, reason, created_at) VALUES (?, ?, ?, ?)`) 
-              .bind(entry.userId, entry.points, reason, now)
-              .run();
-          } catch (pointLogErr: any) {
-            console.warn('POINT LOG INSERT SKIPPED:', pointLogErr?.message || String(pointLogErr));
+          if (pointLogColumn) {
+            try {
+              await env.D1_DB
+                .prepare(`INSERT INTO point_logs (user_id, ${pointLogColumn}, reason, created_at) VALUES (?, ?, ?, ?)`) 
+                .bind(entry.userId, entry.points, reason, now)
+                .run();
+            } catch (pointLogErr: any) {
+              console.warn('POINT LOG INSERT SKIPPED:', pointLogErr?.message || String(pointLogErr));
+            }
           }
+
+          applied.push({ userId: entry.userId, points: entry.points });
+        } catch (entryErr: any) {
+          const message = entryErr?.message || String(entryErr);
+          console.warn('[rewards] entry update failed:', entry.userId, message);
+          errors.push(message);
         }
-
-        applied.push({ userId: entry.userId, points: entry.points });
-      } catch (entryErr: any) {
-        const message = entryErr?.message || String(entryErr);
-        console.warn('[rewards] entry update failed:', entry.userId, message);
-        errors.push(message);
       }
-    }
 
-    if (transactionStarted) {
-      await env.D1_DB.prepare('COMMIT').run();
-    }
-  } catch (err) {
-    if (transactionStarted) {
-      try {
-        await env.D1_DB.prepare('ROLLBACK').run();
-      } catch (rollbackErr) {
-        console.warn('[rewards] rollback failed:', rollbackErr);
+      if (transactionStarted) {
+        await env.D1_DB.prepare('COMMIT').run();
       }
+    } catch (err) {
+      if (transactionStarted) {
+        try {
+          await env.D1_DB.prepare('ROLLBACK').run();
+        } catch (rollbackErr) {
+          console.warn('[rewards] rollback failed:', rollbackErr);
+        }
+      }
+      return new Response(JSON.stringify({ message: '보상 처리 중 오류가 발생했습니다.' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      });
     }
-    return new Response(JSON.stringify({ message: '보상 처리 중 오류가 발생했습니다.' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
-  }
 
     return new Response(
       JSON.stringify({ success: true, applied, ranking, type, mode, errors }),

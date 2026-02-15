@@ -649,6 +649,7 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
             const rows = Array.isArray(result?.data) ? result.data : [];
             const rankings = buildRankingData(rows);
             setRankingData(rankings);
+            await syncPointsFromServer();
         } catch (error) {
             console.error('[finalizeChallenge] error:', error);
         }
