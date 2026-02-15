@@ -107,9 +107,12 @@ export async function onRequestPost(context: { request: Request; env: any; userI
             }
         }
 
+        // 포인트 차감 (0 미만으로 떨어지지 않도록)
+        const nextPoints = Math.max(0, currentPoints - price);
+
         await env.D1_DB
-            .prepare('UPDATE user_profiles SET points = points - ? WHERE user_id = ?')
-            .bind(price, userId)
+            .prepare('UPDATE user_profiles SET points = ? WHERE user_id = ?')
+            .bind(nextPoints, userId)
             .run();
 
         // user_items에 아이템 추가
@@ -119,8 +122,6 @@ export async function onRequestPost(context: { request: Request; env: any; userI
                 .bind(userId, itemId)
                 .run();
         }
-
-        const nextPoints = currentPoints - price;
 
         return new Response(
             JSON.stringify({ success: true, points: nextPoints }),

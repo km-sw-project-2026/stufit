@@ -88,6 +88,39 @@ function MyPage({ isOpen, onClose }) {
     navigate('/my-items');
   };
 
+  const handleTempAddScore = async () => {
+    const userId = getStoredUserId();
+    const username = localStorage.getItem('username');
+    if (!userId && !username) {
+      alert('로그인 정보가 없어 점수를 저장할 수 없습니다.');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/user/score', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Username': encodeUsernameHeader(username),
+        },
+        body: JSON.stringify({ amount: 100, userId }),
+      });
+
+      const payload = await response.json().catch(() => null);
+      if (!response.ok || !payload?.success) {
+        throw new Error(payload?.message || '점수 저장 실패');
+      }
+
+      const savedScore = Number(payload.score) || 0;
+      localStorage.setItem('score', String(savedScore));
+      setUserData((prev) => (prev ? { ...prev, score: savedScore } : prev));
+      window.dispatchEvent(new CustomEvent('pointsUpdated', { detail: { score: savedScore } }));
+    } catch (error) {
+      console.error('Temp score save failed:', error);
+      alert('점수 저장에 실패했습니다. 잠시 후 다시 시도해주세요.');
+    }
+  };
+
   useEffect(() => {
     if (!isOpen) {
       return;
@@ -120,6 +153,7 @@ function MyPage({ isOpen, onClose }) {
     const cachedPoints = localStorage.getItem('points');
     const cachedScore = localStorage.getItem('score');
     const cachedCommunity = getCachedCommunityCounts();
+    const cachedSuccessful = Number(localStorage.getItem('successfulChallengesCount') || '0');
 
     const fetchStats = async () => {
       if (!userId && !username) {
@@ -133,7 +167,7 @@ function MyPage({ isOpen, onClose }) {
         joinDate: localStorage.getItem('joinDate') || '2024년 7월 1일',
         rank: '1위',
         currentRank: '1위',
-        challenges: '10개',
+        challenges: `${cachedSuccessful}개`,
         points: cachedPoints ? Number(cachedPoints) : 0,
         posts: `${cachedCommunity.posts}개`,
         comments: `${cachedCommunity.comments}개`,
@@ -161,7 +195,7 @@ function MyPage({ isOpen, onClose }) {
           joinDate: localStorage.getItem('joinDate') || '2024년 7월 1일',
           rank: '1위',
           currentRank: '1위',
-          challenges: '10개',
+          challenges: `${cachedSuccessful}개`,
           points: cachedPoints ? Number(cachedPoints) : 0,
           posts: `${cachedCommunity.posts}개`,
           comments: `${cachedCommunity.comments}개`,
@@ -507,11 +541,24 @@ function MyPage({ isOpen, onClose }) {
     window.addEventListener('purchasedItemsUpdated', handlePurchasedUpdated);
     window.addEventListener('storage', handlePurchasedUpdated);
     window.addEventListener('communityActivityUpdated', refreshCommunityStats);
+    const handleChallengeCompleted = (event) => {
+      const delta = Number(event?.detail?.delta ?? 1);
+      if (!delta) return;
+      setUserData((prev) => {
+        if (!prev) return prev;
+        const prevCount = parseCountText(prev.challenges);
+        const nextCount = Math.max(0, prevCount + delta);
+        try { localStorage.setItem('successfulChallengesCount', String(nextCount)); } catch (e) { }
+        return { ...prev, challenges: `${nextCount}개` };
+      });
+    };
+    window.addEventListener('challengeCompleted', handleChallengeCompleted);
     return () => {
       window.removeEventListener('pointsUpdated', handlePointsUpdated);
       window.removeEventListener('purchasedItemsUpdated', handlePurchasedUpdated);
       window.removeEventListener('storage', handlePurchasedUpdated);
       window.removeEventListener('communityActivityUpdated', refreshCommunityStats);
+      window.removeEventListener('challengeCompleted', handleChallengeCompleted);
     };
   }, [isOpen]);
 
@@ -575,6 +622,9 @@ function MyPage({ isOpen, onClose }) {
                     <span className="score-value">{userData.score}</span>
                     <button className="score-help-btn" title="점수 정보" onClick={handleTierGuideClick}>
                       <span>?</span>
+                    </button>
+                    <button type="button" title="임시 점수 +100" onClick={handleTempAddScore}>
+                      +100
                     </button>
                   </div>
                   <div className="score-progress-bar">

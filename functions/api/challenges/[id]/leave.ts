@@ -66,51 +66,35 @@ export default async function handler(
           "DELETE FROM challenge_members WHERE challenge_id = ? AND user_id = ?"
         ).bind(challengeId, userId).run();
         
-        // 진행도 확인 (날짜를 다 채웠는지)
-        const progressCount = await env.D1_DB.prepare(
-          "SELECT COUNT(*) as count FROM challenge_daily_progress WHERE challenge_id = ? AND user_id = ?"
-        ).bind(challengeId, userId).first();
+        // 포인트만 차감 (방장도 포기 시 무조건 100P 차감)
+        console.log("📝 방장 포인트 차감 (-100P)");
         
-        // 챌린지 총 기간 계산
-        const challengeInfo = await env.D1_DB.prepare(
-          "SELECT created_at, end_date FROM challenges WHERE challenge_id = ?"
-        ).bind(challengeId).first();
+        // user_profiles 레코드가 없으면 생성
+        await env.D1_DB.prepare(
+          "INSERT OR IGNORE INTO user_profiles (user_id, score, points) VALUES (?, 0, 0)"
+        ).bind(userId).run();
         
-        const totalDays = Math.ceil(
-          (new Date(challengeInfo.end_date).getTime() - new Date(challengeInfo.created_at).getTime()) 
-          / (1000 * 60 * 60 * 24)
-        );
+        // 현재 상태 확인
+        const currentProfile = await env.D1_DB.prepare(
+          "SELECT points FROM user_profiles WHERE user_id = ?"
+        ).bind(userId).first();
         
-        console.log("Progress:", progressCount?.count, "Total days:", totalDays);
+        const currentPoints = currentProfile?.points || 0;
+        const newPoints = Math.max(0, currentPoints - 100);
         
-        // 날짜를 다 채우지 않았으면 100점 차감
-        if ((progressCount?.count || 0) < totalDays) {
-          console.log("📝 Reducing points (incomplete challenge)");
-          
-          // user_profiles 레코드가 없으면 생성
-          await env.D1_DB.prepare(
-            "INSERT OR IGNORE INTO user_profiles (user_id, score, points) VALUES (?, 0, 0)"
-          ).bind(userId).run();
-          
-          // 현재 상태 확인
-          const currentProfile = await env.D1_DB.prepare(
-            "SELECT points FROM user_profiles WHERE user_id = ?"
-          ).bind(userId).first();
-          
-          const newPoints = Math.max(0, (currentProfile?.points || 0) - 100);
-          
-          // 포인트 차감
-          await env.D1_DB.prepare(
-            "UPDATE user_profiles SET points = ? WHERE user_id = ?"
-          ).bind(newPoints, userId).run();
-          
-          console.log(`📝 Updated: Points ${currentProfile?.points}->${newPoints}`);
-          
-          // 포인트 로그 기록
-          await env.D1_DB.prepare(
-            "INSERT INTO point_logs (user_id, point, reason) VALUES (?, ?, ?)"
-          ).bind(userId, -100, "챌린지 중도 포기").run();
-        }
+        console.log(`📝 방장 포인트 차감: ${currentPoints} -> ${newPoints}`);
+        
+        // 포인트만 차감
+        await env.D1_DB.prepare(
+          "UPDATE user_profiles SET points = ? WHERE user_id = ?"
+        ).bind(newPoints, userId).run();
+        
+        // 포인트 로그 기록
+        await env.D1_DB.prepare(
+          "INSERT INTO point_logs (user_id, point, reason) VALUES (?, ?, ?)"
+        ).bind(userId, -100, "챌린지 중도 포기 (방장)").run();
+        
+        console.log(`✅ 방장 포인트 차감 완료`);
       } else {
         console.log("📝 No other members - deleting challenge");
         // 멤버가 없으면 챌린지 삭제
@@ -125,42 +109,43 @@ export default async function handler(
       }
     } else {
       console.log("📝 Removing member from challenge");
-      try {
-        await env.D1_DB.prepare(
-          "DELETE FROM challenge_members WHERE challenge_id = ? AND user_id = ?"
-        ).bind(challengeId, userId).run();
-      } catch (deleteErr) {
-        console.log("⚠️ Member delete failed:", deleteErr?.message);
-      }
-
-      console.log("📝 Reducing points (100 points)");
-      try {
-        // user_profiles 레코드가 없으면 생성
-        await env.D1_DB.prepare(
-          "INSERT OR IGNORE INTO user_profiles (user_id, score, points) VALUES (?, 0, 0)"
-        ).bind(userId).run();
-        
-        // 현재 상태 확인
-        const currentProfile = await env.D1_DB.prepare(
-          "SELECT points FROM user_profiles WHERE user_id = ?"
-        ).bind(userId).first();
-        
-        const newPoints = Math.max(0, (currentProfile?.points || 0) - 100);
-        
-        // 포인트 차감
-        await env.D1_DB.prepare(
-          "UPDATE user_profiles SET points = ? WHERE user_id = ?"
-        ).bind(newPoints, userId).run();
-        
-        console.log(`📝 Updated: Points ${currentProfile?.points}->${newPoints}`);
-        
-        // 포인트 로그 기록
-        await env.D1_DB.prepare(
-          "INSERT INTO point_logs (user_id, point, reason) VALUES (?, ?, ?)"
-        ).bind(userId, -100, "챌린지 포기").run();
-      } catch (scoreErr) {
-        console.log("⚠️ Deduction failed (continuing anyway):", scoreErr?.message);
-      }
+      
+      // 포인트만 차감 (멤버 삭제 전)
+      console.log("📝 일반 멤버 포인트 차감 (-100P)");
+      
+      // user_profiles 레코드가 없으면 생성
+      await env.D1_DB.prepare(
+        "INSERT OR IGNORE INTO user_profiles (user_id, score, points) VALUES (?, 0, 0)"
+      ).bind(userId).run();
+      
+      // 현재 상태 확인
+      const currentProfile = await env.D1_DB.prepare(
+        "SELECT points FROM user_profiles WHERE user_id = ?"
+      ).bind(userId).first();
+      
+      const currentPoints = currentProfile?.points || 0;
+      const newPoints = Math.max(0, currentPoints - 100);
+      
+      console.log(`📝 포인트 차감 진행: ${currentPoints} -> ${newPoints}`);
+      
+      // 포인트만 차감
+      await env.D1_DB.prepare(
+        "UPDATE user_profiles SET points = ? WHERE user_id = ?"
+      ).bind(newPoints, userId).run();
+      
+      // 포인트 로그 기록
+      await env.D1_DB.prepare(
+        "INSERT INTO point_logs (user_id, point, reason) VALUES (?, ?, ?)"
+      ).bind(userId, -100, "챌린지 포기").run();
+      
+      console.log(`✅ 포인트 차감 완료: ${newPoints}`);
+      
+      // 포인트 차감 후 멤버 삭제
+      await env.D1_DB.prepare(
+        "DELETE FROM challenge_members WHERE challenge_id = ? AND user_id = ?"
+      ).bind(challengeId, userId).run();
+      
+      console.log("✅ 멤버 삭제 완료");
     }
 
     console.log("✅ Success");
@@ -186,12 +171,20 @@ export default async function handler(
       'SELECT * FROM challenges WHERE challenge_id = ?'
     ).bind(challengeId).first();
 
+    // 업데이트된 포인트 정보 가져오기
+    const updatedProfile = await env.D1_DB.prepare(
+      'SELECT points FROM user_profiles WHERE user_id = ?'
+    ).bind(userId).first();
+
+    console.log(`✅ 최종 응답 준비 - points: ${updatedProfile?.points}`);
+
     return new Response(
       JSON.stringify({ 
         success: true, 
         message: 'Successfully left challenge', 
         members: members.results || [],
-        challenge: updatedChallenge
+        challenge: updatedChallenge,
+        points: updatedProfile?.points || 0
       }),
       { status: 200, headers: { 'Content-Type': 'application/json' } }
     );
