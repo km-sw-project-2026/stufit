@@ -15,6 +15,15 @@ function MyPage({ isOpen, onClose }) {
     return parsedUserId;
   };
 
+  const encodeUsernameHeader = (username) => {
+    if (!username) return '';
+    try {
+      return encodeURIComponent(username);
+    } catch {
+      return username;
+    }
+  };
+
   const formatPoints = (value) => {
     const numeric = Number(value);
     if (Number.isNaN(numeric)) {
@@ -64,9 +73,9 @@ function MyPage({ isOpen, onClose }) {
 
       try {
         // 사용자 아이템 정보 가져오기
-        const itemsUrl = username ? '/api/user/items' : (userId ? `/api/user/items?userId=${userId}` : '/api/user/items');
+        const itemsUrl = userId ? `/api/user/items?userId=${userId}` : '/api/user/items';
         const itemsResponse = await fetch(itemsUrl, {
-          headers: { 'X-Username': username || '' },
+          headers: { 'X-Username': encodeUsernameHeader(username) },
         });
         let itemsData = null;
         try {
@@ -92,13 +101,13 @@ function MyPage({ isOpen, onClose }) {
 
         // 통계 정보 가져오기
         const statsParams = new URLSearchParams({ t: String(Date.now()) });
-        if (!username && userId) {
+        if (userId) {
           statsParams.set('userId', String(userId));
         }
 
         const response = await fetch(`/api/user/stats?${statsParams.toString()}`, {
           headers: { 
-            'X-Username': username || '',
+            'X-Username': encodeUsernameHeader(username),
             'Cache-Control': 'no-cache, no-store, must-revalidate',
             'Pragma': 'no-cache',
             'Expires': '0'
@@ -215,9 +224,9 @@ function MyPage({ isOpen, onClose }) {
       }
 
       try {
-        const itemsUrl = username ? '/api/user/items' : (userId ? `/api/user/items?userId=${userId}` : '/api/user/items');
+        const itemsUrl = userId ? `/api/user/items?userId=${userId}` : '/api/user/items';
         const response = await fetch(itemsUrl, {
-          headers: { 'X-Username': username || '' },
+          headers: { 'X-Username': encodeUsernameHeader(username) },
         });
         let data = null;
         try {
@@ -258,13 +267,13 @@ function MyPage({ isOpen, onClose }) {
       if (!userId && !username) return;
 
       const statsParams = new URLSearchParams({ t: String(Date.now()) });
-      if (!username && userId) {
+      if (userId) {
         statsParams.set('userId', String(userId));
       }
 
       fetch(`/api/user/stats?${statsParams.toString()}`, {
         headers: {
-          'X-Username': username || '',
+          'X-Username': encodeUsernameHeader(username),
           'Cache-Control': 'no-cache, no-store, must-revalidate',
           'Pragma': 'no-cache',
           'Expires': '0'
@@ -301,10 +310,10 @@ function MyPage({ isOpen, onClose }) {
       const username = localStorage.getItem('username');
       if (!userId && !username) return;
 
-      const itemsUrl = username ? '/api/user/items' : (userId ? `/api/user/items?userId=${userId}` : '/api/user/items');
+      const itemsUrl = userId ? `/api/user/items?userId=${userId}` : '/api/user/items';
 
       fetch(itemsUrl, {
-        headers: { 'X-Username': username || '' },
+        headers: { 'X-Username': encodeUsernameHeader(username) },
       })
         .then((response) => response.json().then((data) => ({ ok: response.ok, data })).catch(() => ({ ok: response.ok, data: null })))
         .then(({ ok, data }) => {
