@@ -102,8 +102,9 @@ function MyPage({ isOpen, onClose }) {
         headers: {
           'Content-Type': 'application/json',
           'X-Username': encodeUsernameHeader(username),
+          ...(userId ? { 'X-User-Id': String(userId) } : {}),
         },
-        body: JSON.stringify({ amount: 100, userId }),
+        body: JSON.stringify({ amount: 100, ...(userId ? { userId } : {}) }),
       });
 
       const payload = await response.json().catch(() => null);
