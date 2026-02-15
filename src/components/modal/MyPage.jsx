@@ -88,6 +88,13 @@ function MyPage({ isOpen, onClose }) {
     navigate('/my-items');
   };
 
+  const handleTempAddScore = () => {
+    const nextScore = (Number(userData?.score) || 0) + 100;
+    localStorage.setItem('score', String(nextScore));
+    setUserData((prev) => (prev ? { ...prev, score: nextScore } : prev));
+    window.dispatchEvent(new CustomEvent('pointsUpdated', { detail: { score: nextScore } }));
+  };
+
   useEffect(() => {
     if (!isOpen) {
       return;
@@ -575,6 +582,9 @@ function MyPage({ isOpen, onClose }) {
                     <span className="score-value">{userData.score}</span>
                     <button className="score-help-btn" title="점수 정보" onClick={handleTierGuideClick}>
                       <span>?</span>
+                    </button>
+                    <button type="button" title="임시 점수 +100" onClick={handleTempAddScore}>
+                      +100
                     </button>
                   </div>
                   <div className="score-progress-bar">
