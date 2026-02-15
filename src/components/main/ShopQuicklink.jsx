@@ -66,6 +66,8 @@ function ShopQuicklink() {
   }, []);
 
   const TRANS_DUR = 240;
+  // slightly longer transition for smoother scale animation
+  const TRANS_DUR_MS = 300;
 
   // move virtual index by delta (keyboard)
   const moveBy = (delta) => {
@@ -285,7 +287,7 @@ function ShopQuicklink() {
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            transition: `transform ${TRANS_DUR}ms cubic-bezier(.2,.9,.27,1), box-shadow ${TRANS_DUR}ms`,
+                            transition: `transform ${TRANS_DUR_MS}ms cubic-bezier(.22,.9,.28,1), box-shadow ${TRANS_DUR_MS}ms, opacity ${TRANS_DUR_MS}ms`,
                             transform: `scale(${scale})`,
                             transformOrigin: 'center center',
                             boxShadow: (isTranslating ? absPosCurrent : absPosActive) === 0 ? '0 18px 40px rgba(0,0,0,0.18)' : 'none',
@@ -316,52 +318,58 @@ function ShopQuicklink() {
                                 } else {
                                   imgEl.style.imageRendering = 'auto';
                                 }
-                              } catch (err) {
+                              // decide visibility based on VISIBLE (maxOffset)
+                              const withinVisibleCurrent = absPosCurrent <= maxOffset;
+                              const withinVisibleActive = absPosActive <= maxOffset;
+
+                              if (isTranslating) {
                                 // ignore
-                              }
-                            }}
-                            onError={(e) => {
-                              // eslint-disable-next-line no-console
-                              console.warn('ShopQuicklink image failed to load, using placeholder', src);
-                              e.currentTarget.src = placeholderSvg;
-                            }}
-                            style={{
-                              width: '100%',
-                              height: '100%',
-                              objectFit: 'cover',
-                              display: 'block',
-                              borderRadius: '50%',
-                              border: '1px solid rgba(0,0,0,0.06)'
-                            }}
-                          />
-                          {showOutlines && (
-                            <div style={{ position: 'absolute', left: 4, top: 4, fontSize: 10, background: 'rgba(255,255,255,0.8)', padding: '2px 4px', borderRadius: 4 }}>
-                              {`${i % n}:${posCurrent}`}
-                            </div>
-                          )}
+                                if (!withinVisibleCurrent) {
+                                  scale = 0.75;
+                                  zIndex = 1;
+                                  opacity = 0;
+                                  pointerEvents = 'none';
+                                } else if (absPosCurrent === 0) {
+                                  scale = 1.2;
+                                  zIndex = 6;
+                                  opacity = 1;
+                                  pointerEvents = 'auto';
+                                } else if (absPosCurrent === 1) {
+                                  scale = 1.05;
+                                  zIndex = 5;
+                                  opacity = 1;
+                                  pointerEvents = 'auto';
+                                } else {
+                                  // absPosCurrent === 2
+                                  scale = 0.9;
+                                  zIndex = 4;
+                                  opacity = 1;
+                                  pointerEvents = 'auto';
+                                }
                         </div>
                       );
-                    })}
-                  </div>
-                );
-              })()
-            }
-          </div>
-
-          <button
-            type="button"
-            className="shop-nav next"
-            onClick={next}
-            aria-label="next"
-            style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}
-          >
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#222" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="9 18 15 12 9 6"></polyline>
-            </svg>
-          </button>
-        </div>
-
-        <div className="shop-item-info" style={{ textAlign: 'center', marginTop: 16 }}>
+                                if (!withinVisibleActive) {
+                                  scale = 0.75;
+                                  zIndex = 1;
+                                  opacity = 0;
+                                  pointerEvents = 'none';
+                                } else if (absPosActive === 0) {
+                                  scale = 1.6;
+                                  zIndex = 6;
+                                  opacity = 1;
+                                  pointerEvents = 'auto';
+                                } else if (absPosActive === 1) {
+                                  scale = 1.1;
+                                  zIndex = 5;
+                                  opacity = 1;
+                                  pointerEvents = 'auto';
+                                } else {
+                                  // absPosActive === 2
+                                  scale = 0.9;
+                                  zIndex = 4;
+                                  opacity = 1;
+                                  pointerEvents = 'auto';
+                                }
           <div className="shop-badge">프로필 액자</div>
           <div className="shop-name">아이템 미리보기</div>
         </div>
