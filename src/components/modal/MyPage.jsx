@@ -544,6 +544,14 @@ function MyPage({ isOpen, onClose }) {
         if (profileImgEl) {
           profileImgEl.src = (imageItem?.image) ? imageItem.image : '/img/Profile2.png';
           profileImgEl.style.objectFit = 'contain';
+
+          if (frameItem?.myPageImageFront) {
+            profileImgEl.style.position = 'relative';
+            profileImgEl.style.zIndex = '1020';
+          } else {
+            profileImgEl.style.position = '';
+            profileImgEl.style.zIndex = '';
+          }
         }
 
         const frameOverlay = document.querySelector('.profile-frame-overlay');
@@ -560,8 +568,10 @@ function MyPage({ isOpen, onClose }) {
             frameOverlay.style.height = widthPct;
             frameOverlay.style.left = `-${leftOffset.toFixed(2)}%`;
             frameOverlay.style.top = `-${topOffset.toFixed(2)}%`;
+            frameOverlay.style.zIndex = frameItem.myPageImageFront ? '1005' : '1015';
           } else {
             frameOverlay.style.display = 'none';
+            frameOverlay.style.zIndex = '';
           }
         }
       };
