@@ -1160,31 +1160,32 @@ function Community() {
     };
 
     // 2. 좋아요 핸들러 (서버 응답 즉시 반영)
-    const handleToggleLike = async (postId) => {
-        const username = localStorage.getItem('username');
-        if (!username) return alert('로그인이 필요합니다.');
+    // handleToggleLike 함수만 이 내용으로 완전히 교체해 보세요.
+const handleToggleLike = async (postId) => {
+    const username = localStorage.getItem('username'); // 'q' 확인됨
+    if (!username) return alert('로그인이 필요합니다.');
 
-        try {
-            const response = await fetch(`/api/post/${postId}/like`, {
-                method: 'POST',
-                headers: { 
-                    'X-Username': username,
-                    'Content-Type': 'application/json'
-                }
-            });
-
-            const payload = await response.json();
-            if (!response.ok) return alert(payload.message || '좋아요 실패');
-
-            await fetchPosts(); // DB와 화면 동기화
-
-            if (payload.data.promoted) {
-                showAlert(payload.data.message || '인기글로 선정되었습니다!');
+    try {
+        const response = await fetch(`/api/post/${postId}/like`, {
+            method: 'POST',
+            headers: { 
+                'X-Username': username,
+                'Content-Type': 'application/json'
             }
-        } catch (error) {
-            console.error('좋아요 처리 오류:', error);
+        });
+
+        if (response.ok) {
+            // [가장 강력한 조치] 서버 응답이 성공이면 페이지를 아예 새로고침합니다.
+            // 이렇게 하면 fetchPosts가 다시 실행되면서 인기글로 이동한 결과가 무조건 보입니다.
+            window.location.reload(); 
+        } else {
+            const errorData = await response.json();
+            alert(errorData.message || '좋아요 처리 실패');
         }
-    };
+    } catch (error) {
+        console.error('좋아요 에러:', error);
+    }
+};
 
     const [showPostDetail, setShowPostDetail] = useState(false);
     const [selectedPost, setSelectedPost] = useState(null);
