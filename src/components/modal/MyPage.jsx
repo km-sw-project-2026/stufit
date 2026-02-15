@@ -15,6 +15,21 @@ function MyPage({ isOpen, onClose }) {
     return parsedUserId;
   };
 
+  const encodeUsernameHeader = (username) => {
+    if (!username) return '';
+    try {
+      return encodeURIComponent(username);
+    } catch {
+      return username;
+    }
+  };
+
+  const isStatsDebugEnabled = () => localStorage.getItem('debugMyPageStats') === '1';
+  const debugStatsLog = (...args) => {
+    if (!isStatsDebugEnabled()) return;
+    console.info('[MyPageStatsDebug]', ...args);
+  };
+
   const formatPoints = (value) => {
     const numeric = Number(value);
     if (Number.isNaN(numeric)) {
@@ -38,6 +53,15 @@ function MyPage({ isOpen, onClose }) {
     if (!isOpen) {
       return;
     }
+
+    const handlePointsUpdated = (event) => {
+      const nextPoints = Number(event?.detail?.points);
+      if (Number.isNaN(nextPoints)) return;
+      localStorage.setItem('points', String(nextPoints));
+      setUserData((prev) => (prev ? { ...prev, points: nextPoints } : prev));
+    };
+
+    window.addEventListener('pointsUpdated', handlePointsUpdated);
 
     const username = localStorage.getItem('username');
     const userId = getStoredUserId();
@@ -64,9 +88,9 @@ function MyPage({ isOpen, onClose }) {
 
       try {
         // 사용자 아이템 정보 가져오기
-        const itemsUrl = username ? '/api/user/items' : (userId ? `/api/user/items?userId=${userId}` : '/api/user/items');
+        const itemsUrl = userId ? `/api/user/items?userId=${userId}` : '/api/user/items';
         const itemsResponse = await fetch(itemsUrl, {
-          headers: { 'X-Username': username || '' },
+          headers: { 'X-Username': encodeUsernameHeader(username) },
         });
         let itemsData = null;
         try {
@@ -92,17 +116,25 @@ function MyPage({ isOpen, onClose }) {
 
         // 통계 정보 가져오기
         const statsParams = new URLSearchParams({ t: String(Date.now()) });
-        if (!username && userId) {
+        if (userId) {
           statsParams.set('userId', String(userId));
         }
 
         const response = await fetch(`/api/user/stats?${statsParams.toString()}`, {
           headers: { 
-            'X-Username': username || '',
+            'X-Username': encodeUsernameHeader(username),
             'Cache-Control': 'no-cache, no-store, must-revalidate',
             'Pragma': 'no-cache',
             'Expires': '0'
           },
+        });
+        debugStatsLog('initial stats request', {
+          username,
+          userId,
+          url: `/api/user/stats?${statsParams.toString()}`,
+          encodedUsername: encodeUsernameHeader(username),
+          ok: response.ok,
+          status: response.status,
         });
         let data = null;
         try {
@@ -110,8 +142,10 @@ function MyPage({ isOpen, onClose }) {
         } catch {
           data = null;
         }
+        debugStatsLog('initial stats response', data);
 
         if (!response.ok) {
+          debugStatsLog('initial stats failed', { status: response.status, data });
           return;
         }
 
@@ -127,13 +161,20 @@ function MyPage({ isOpen, onClose }) {
             posts: `${posts}개`,
             comments: `${comments}개`
           } : prev));
+        } else {
+          debugStatsLog('initial stats missing payload', data);
         }
       } catch (err) {
         console.error('Stats fetch error:', err);
+        debugStatsLog('initial stats exception', err);
       }
     };
 
     fetchStats();
+
+    return () => {
+      window.removeEventListener('pointsUpdated', handlePointsUpdated);
+    };
   }, [isOpen]);
 
   // activeItems: currently applied items (frame/bg/image)
@@ -215,9 +256,9 @@ function MyPage({ isOpen, onClose }) {
       }
 
       try {
-        const itemsUrl = username ? '/api/user/items' : (userId ? `/api/user/items?userId=${userId}` : '/api/user/items');
+        const itemsUrl = userId ? `/api/user/items?userId=${userId}` : '/api/user/items';
         const response = await fetch(itemsUrl, {
-          headers: { 'X-Username': username || '' },
+          headers: { 'X-Username': encodeUsernameHeader(username) },
         });
         let data = null;
         try {
@@ -258,20 +299,31 @@ function MyPage({ isOpen, onClose }) {
       if (!userId && !username) return;
 
       const statsParams = new URLSearchParams({ t: String(Date.now()) });
-      if (!username && userId) {
+      if (userId) {
         statsParams.set('userId', String(userId));
       }
 
       fetch(`/api/user/stats?${statsParams.toString()}`, {
         headers: {
-          'X-Username': username || '',
+          'X-Username': encodeUsernameHeader(username),
           'Cache-Control': 'no-cache, no-store, must-revalidate',
           'Pragma': 'no-cache',
           'Expires': '0'
         },
       })
-        .then((response) => response.json().then((data) => ({ ok: response.ok, data })).catch(() => ({ ok: response.ok, data: null })))
-        .then(({ ok, data }) => {
+        .then((response) => {
+          debugStatsLog('event stats request', {
+            username,
+            userId,
+            url: `/api/user/stats?${statsParams.toString()}`,
+            encodedUsername: encodeUsernameHeader(username),
+            ok: response.ok,
+            status: response.status,
+          });
+          return response.json().then((data) => ({ ok: response.ok, status: response.status, data })).catch(() => ({ ok: response.ok, status: response.status, data: null }));
+        })
+        .then(({ ok, status, data }) => {
+          debugStatsLog('event stats response', { ok, status, data });
           if (!ok || !data?.success || !data?.stats) return;
           const posts = data.stats.posts;
           const comments = data.stats.comments;
@@ -284,7 +336,9 @@ function MyPage({ isOpen, onClose }) {
             comments: `${comments}개`
           } : prev));
         })
-        .catch(() => {});
+        .catch((err) => {
+          debugStatsLog('event stats exception', err);
+        });
     };
 
     const handlePointsUpdated = (event) => {
@@ -301,10 +355,10 @@ function MyPage({ isOpen, onClose }) {
       const username = localStorage.getItem('username');
       if (!userId && !username) return;
 
-      const itemsUrl = username ? '/api/user/items' : (userId ? `/api/user/items?userId=${userId}` : '/api/user/items');
+      const itemsUrl = userId ? `/api/user/items?userId=${userId}` : '/api/user/items';
 
       fetch(itemsUrl, {
-        headers: { 'X-Username': username || '' },
+        headers: { 'X-Username': encodeUsernameHeader(username) },
       })
         .then((response) => response.json().then((data) => ({ ok: response.ok, data })).catch(() => ({ ok: response.ok, data: null })))
         .then(({ ok, data }) => {
