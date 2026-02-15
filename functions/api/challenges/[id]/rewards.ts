@@ -126,6 +126,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
   const mode = resolveMode(challenge);
   const type = resolveType(challenge);
   let pointLogColumn: 'point' | 'points' | null = null;
+  let hasScoreColumn = false;
 
   try {
     const pointLogInfo = await env.D1_DB.prepare("PRAGMA table_info('point_logs')").all();
@@ -134,6 +135,15 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
     else if (columns.some((col: any) => col.name === 'points')) pointLogColumn = 'points';
   } catch (err) {
     console.warn('[rewards] point_logs check failed:', err);
+  }
+
+  try {
+    const profileInfo = await env.D1_DB.prepare("PRAGMA table_info('user_profiles')").all();
+    const columns = Array.isArray(profileInfo?.results) ? profileInfo.results : [];
+    hasScoreColumn = columns.some((col: any) => col.name === 'score');
+  } catch (err) {
+    console.warn('[rewards] user_profiles check failed:', err);
+    hasScoreColumn = false;
   }
 
   if (action === 'giveup') {
@@ -159,19 +169,26 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
       .run();
 
     const profile = await env.D1_DB
-      .prepare('SELECT points, score FROM user_profiles WHERE user_id = ?')
+      .prepare(hasScoreColumn ? 'SELECT points, score FROM user_profiles WHERE user_id = ?' : 'SELECT points FROM user_profiles WHERE user_id = ?')
       .bind(userId)
       .first();
 
     const currentPoints = Number(profile?.points) || 0;
-    const currentScore = Number(profile?.score) || 0;
+    const currentScore = hasScoreColumn ? (Number(profile?.score) || 0) : 0;
     const nextPoints = Math.max(0, currentPoints - 100);
-    const nextScore = Math.max(0, currentScore - 100);
+    const nextScore = hasScoreColumn ? Math.max(0, currentScore - 100) : 0;
 
-    await env.D1_DB
-      .prepare('UPDATE user_profiles SET points = ?, score = ? WHERE user_id = ?')
-      .bind(nextPoints, nextScore, userId)
-      .run();
+    if (hasScoreColumn) {
+      await env.D1_DB
+        .prepare('UPDATE user_profiles SET points = ?, score = ? WHERE user_id = ?')
+        .bind(nextPoints, nextScore, userId)
+        .run();
+    } else {
+      await env.D1_DB
+        .prepare('UPDATE user_profiles SET points = ? WHERE user_id = ?')
+        .bind(nextPoints, userId)
+        .run();
+    }
 
     if (pointLogColumn) {
       try {
@@ -362,19 +379,26 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
             .run();
 
           const profile = await env.D1_DB
-            .prepare('SELECT points, score FROM user_profiles WHERE user_id = ?')
+            .prepare(hasScoreColumn ? 'SELECT points, score FROM user_profiles WHERE user_id = ?' : 'SELECT points FROM user_profiles WHERE user_id = ?')
             .bind(entry.userId)
             .first();
 
           const currentPoints = Number(profile?.points) || 0;
-          const currentScore = Number(profile?.score) || 0;
+          const currentScore = hasScoreColumn ? (Number(profile?.score) || 0) : 0;
           const nextPoints = Math.max(0, currentPoints + entry.points);
-          const nextScore = Math.max(0, currentScore + entry.score);
+          const nextScore = hasScoreColumn ? Math.max(0, currentScore + entry.score) : 0;
 
-          await env.D1_DB
-            .prepare('UPDATE user_profiles SET points = ?, score = ? WHERE user_id = ?')
-            .bind(nextPoints, nextScore, entry.userId)
-            .run();
+          if (hasScoreColumn) {
+            await env.D1_DB
+              .prepare('UPDATE user_profiles SET points = ?, score = ? WHERE user_id = ?')
+              .bind(nextPoints, nextScore, entry.userId)
+              .run();
+          } else {
+            await env.D1_DB
+              .prepare('UPDATE user_profiles SET points = ? WHERE user_id = ?')
+              .bind(nextPoints, entry.userId)
+              .run();
+          }
 
           if (pointLogColumn) {
             try {
@@ -387,7 +411,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
             }
           }
 
-          applied.push({ userId: entry.userId, points: entry.points, score: entry.score });
+          applied.push({ userId: entry.userId, points: entry.points, score: hasScoreColumn ? entry.score : 0 });
         } catch (entryErr: any) {
           const message = entryErr?.message || String(entryErr);
           console.warn('[rewards] entry update failed:', entry.userId, message);
