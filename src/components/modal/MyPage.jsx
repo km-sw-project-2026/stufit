@@ -30,6 +30,12 @@ function MyPage({ isOpen, onClose }) {
     console.info('[MyPageStatsDebug]', ...args);
   };
 
+  const parseCountText = (value) => {
+    const numeric = Number(String(value ?? '').replace(/[^0-9-]/g, ''));
+    if (Number.isNaN(numeric)) return 0;
+    return numeric;
+  };
+
   const formatPoints = (value) => {
     const numeric = Number(value);
     if (Number.isNaN(numeric)) {
@@ -293,10 +299,27 @@ function MyPage({ isOpen, onClose }) {
       return;
     }
 
-    const refreshCommunityStats = () => {
+    const refreshCommunityStats = (event) => {
       const userId = getStoredUserId();
       const username = localStorage.getItem('username');
       if (!userId && !username) return;
+
+      const postsDelta = Number(event?.detail?.postsDelta || 0);
+      const commentsDelta = Number(event?.detail?.commentsDelta || 0);
+      if (postsDelta || commentsDelta) {
+        setUserData((prev) => {
+          if (!prev) return prev;
+          const prevPosts = parseCountText(prev.posts);
+          const prevComments = parseCountText(prev.comments);
+          const nextPosts = Math.max(0, prevPosts + postsDelta);
+          const nextComments = Math.max(0, prevComments + commentsDelta);
+          return {
+            ...prev,
+            posts: `${nextPosts}개`,
+            comments: `${nextComments}개`
+          };
+        });
+      }
 
       const statsParams = new URLSearchParams({ t: String(Date.now()) });
       if (userId) {
