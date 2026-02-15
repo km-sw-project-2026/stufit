@@ -1,22 +1,36 @@
 // --------------원래 쓰던 코드
 
-export const onRequestGet = async (context: { request: Request; env: any }) => {
-  const { request, env } = context;
+export const onRequestGet = async (context: { request: Request; env: any; userId?: number }) => {
+  const { request, env, userId: middlewareUserId } = context;
   try {
     const url = new URL(request.url);
     const userIdArg = url.searchParams.get('userId');
-    const username = request.headers.get('X-Username');
+    const rawUsername = request.headers.get('X-Username');
+    const queryUserId = Number(userIdArg);
+    const parsedUserId = Number.isInteger(queryUserId) && queryUserId > 0 ? queryUserId : null;
+    const resolvedMiddlewareUserId = typeof middlewareUserId === 'number' && middlewareUserId > 0 ? middlewareUserId : null;
+    let username = rawUsername;
+    if (rawUsername) {
+      try {
+        username = decodeURIComponent(rawUsername);
+      } catch {
+        username = rawUsername;
+      }
+    }
 
     if (!env.D1_DB) {
       return Response.json({ error: 'DB not configured' }, { status: 500 });
     }
 
-    let userId = userIdArg;
+    let userId: number | null = parsedUserId || resolvedMiddlewareUserId;
 
     // 만약 userId가 없으면 username으로 조회
     if (!userId && username) {
       const user = await env.D1_DB.prepare("SELECT user_id FROM users WHERE username = ?").bind(username).first();
-      if (user) userId = user.user_id;
+      const resolved = Number(user?.user_id);
+      if (Number.isInteger(resolved) && resolved > 0) {
+        userId = resolved;
+      }
     }
 
     if (!userId) {

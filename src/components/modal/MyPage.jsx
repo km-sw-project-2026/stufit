@@ -6,6 +6,15 @@ function MyPage({ isOpen, onClose }) {
   const [userData, setUserData] = useState(null);
   const navigate = useNavigate();
 
+  const getStoredUserId = () => {
+    const rawUserId = localStorage.getItem('userId');
+    const parsedUserId = Number(rawUserId);
+    if (!Number.isInteger(parsedUserId) || parsedUserId <= 0) {
+      return null;
+    }
+    return parsedUserId;
+  };
+
   const formatPoints = (value) => {
     const numeric = Number(value);
     if (Number.isNaN(numeric)) {
@@ -31,7 +40,7 @@ function MyPage({ isOpen, onClose }) {
     }
 
     const username = localStorage.getItem('username');
-    const userId = localStorage.getItem('userId');
+    const userId = getStoredUserId();
     const cachedPoints = localStorage.getItem('points');
 
     const fetchStats = async () => {
@@ -132,7 +141,7 @@ function MyPage({ isOpen, onClose }) {
     if (!isOpen) return;
 
     const applyActiveToUI = async () => {
-      const userId = localStorage.getItem('userId');
+      const userId = getStoredUserId();
       const username = localStorage.getItem('username');
 
       const applyFromActive = (active) => {
@@ -244,7 +253,7 @@ function MyPage({ isOpen, onClose }) {
     }
 
     const refreshCommunityStats = () => {
-      const userId = localStorage.getItem('userId');
+      const userId = getStoredUserId();
       const username = localStorage.getItem('username');
       if (!userId && !username) return;
 
@@ -288,7 +297,7 @@ function MyPage({ isOpen, onClose }) {
 
     window.addEventListener('pointsUpdated', handlePointsUpdated);
     const handlePurchasedUpdated = () => {
-      const userId = localStorage.getItem('userId');
+      const userId = getStoredUserId();
       const username = localStorage.getItem('username');
       if (!userId && !username) return;
 
