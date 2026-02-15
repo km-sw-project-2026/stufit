@@ -173,10 +173,11 @@ function ShopQuicklink() {
               (() => {
                 const containerWidthLocal = containerWidth || 900;
                 const VISIBLE = 5; // show five items fully
-                const gapTotal = 32; // total horizontal gap per slot (left+right)
-                const slot = Math.round(containerWidthLocal / VISIBLE);
-                const base = Math.max(80, slot - gapTotal);
-                const gapHalf = Math.round((slot - base) / 2);
+                // Use a compact layout: base size clamped to reasonable values
+                const gap = 24; // px gap between items
+                const base = Math.max(100, Math.min(160, Math.round(containerWidthLocal * 0.16)));
+                const slot = base + gap;
+                const gapHalf = Math.round(gap / 2);
                 const translateX = Math.round(containerWidthLocal / 2 - (virtualIndex * slot + base / 2));
 
                 return (
@@ -260,7 +261,7 @@ function ShopQuicklink() {
                             transition: `transform ${TRANS_DUR}ms cubic-bezier(.2,.9,.27,1), box-shadow ${TRANS_DUR}ms`,
                             transform: `scale(${scale})`,
                             transformOrigin: 'center center',
-                            boxShadow: absPos === 0 ? '0 18px 40px rgba(0,0,0,0.18)' : 'none',
+                            boxShadow: (isTranslating ? absPosCurrent : absPosActive) === 0 ? '0 18px 40px rgba(0,0,0,0.18)' : 'none',
                             zIndex,
                             opacity,
                             margin: `0 ${gapHalf}px`,
