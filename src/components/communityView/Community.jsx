@@ -1207,41 +1207,42 @@ function Community() {
         } catch (error) { console.error(error); }
     };
 
-    // --- 수정한 핵심 로직 시작 --- [cite: 2026-02-13]
-    const handleToggleLike = async (postId) => {
-        const username = localStorage.getItem('username');
-        if (!username) return alert('로그인이 필요합니다.');
+const handleToggleLike = async (postId) => {
+    const username = localStorage.getItem('username'); 
+    if (!username) return alert('로그인이 필요합니다.');
 
-        try {
-            const response = await fetch(`/api/post/${postId}/like`, {
-                method: 'POST',
-                headers: { 
-                    'X-Username': username,
-                    'Content-Type': 'application/json'
-                }
-            });
-
-            const payload = await response.json();
-            if (!response.ok) return alert(payload.message || '좋아요 처리에 실패했습니다.');
-
-            // 승격 여부와 상관없이 무조건 최신 데이터를 fetch하여 동기화
-            if (payload.data.promoted) {
-                await fetchPosts();
-                showAlert(payload.data.message || '축하합니다! 인기글로 선정되었습니다.');
-            } else {
-                // 일반 좋아요의 경우 로컬 상태를 즉시 업데이트하여 반응 속도 향상
-                setPosts(prev => ({
-                    ...prev,
-                    popular: prev.popular.map(p => p.id === postId ? { ...p, liked: payload.data.liked, likes: payload.data.count } : p),
-                    tips: prev.tips.map(p => p.id === postId ? { ...p, liked: payload.data.liked, likes: payload.data.count } : p),
-                    data: prev.data.map(p => p.id === postId ? { ...p, liked: payload.data.liked, likes: payload.data.count } : p),
-                    mypost: prev.mypost.map(p => p.id === postId ? { ...p, liked: payload.data.liked, likes: payload.data.count } : p)
-                }));
+    try {
+        const response = await fetch(`/api/post/${postId}/like`, {
+            method: 'POST',
+            headers: { 
+                'X-Username': username,
+                'Content-Type': 'application/json'
             }
-        } catch (error) {
-            console.error('좋아요 처리 실패:', error);
+        });
+
+        const payload = await response.json();
+        if (!response.ok) return alert(payload.message || '좋아요 처리에 실패했습니다.');
+
+        const { liked, count, promoted, message } = payload.data;
+
+        if (promoted) {
+            await fetchPosts();
+            showAlert(message || '축하합니다! 인기글로 선정되었습니다.');
+        } else {
+            setPosts(prev => {
+                const newPosts = { ...prev };
+                Object.keys(newPosts).forEach(cat => {
+                    newPosts[cat] = newPosts[cat].map(p => 
+                        p.id === postId ? { ...p, liked: liked, likes: count } : p
+                    );
+                });
+                return newPosts;
+            });
         }
-    };
+    } catch (error) {
+        console.error('좋아요 처리 중 오류 발생:', error);
+    }
+};
 
     const handleUpdatePostState = async (updatedPost) => {
         // 상세페이지에서 좋아요를 눌러 승격된 경우 목록 전체 갱신
