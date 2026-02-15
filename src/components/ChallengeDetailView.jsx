@@ -423,7 +423,7 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
         }
 
         // 모든 사용자에 대해 순위와 보상 계산
-        return sorted.map((item, idx) => {
+        const result = sorted.map((item, idx) => {
             let points = 0;
             let score = 0;
 
@@ -474,6 +474,9 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
                 totalDays
             };
         });
+
+        console.log('[buildRankingData] result:', result);
+        return result;
     };
 
 
@@ -660,7 +663,9 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
 
             if (rewardsResponse.ok) {
                 const payload = await rewardsResponse.json();
+                console.log('[finalizeChallenge] rewards success:', payload);
                 if (Array.isArray(payload?.ranking)) {
+                    console.log('[finalizeChallenge] ranking data:', payload.ranking);
                     setRankingData(payload.ranking);
                     await syncPointsFromServer();
                     return;
@@ -689,6 +694,7 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
             const result = await response.json();
             const rows = Array.isArray(result?.data) ? result.data : [];
             const rankings = buildRankingData(rows);
+            console.log('[finalizeChallenge] fallback ranking data:', rankings);
             setRankingData(rankings);
             await syncPointsFromServer();
         } catch (error) {
