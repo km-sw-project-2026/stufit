@@ -159,16 +159,18 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
       .run();
 
     const profile = await env.D1_DB
-      .prepare('SELECT points FROM user_profiles WHERE user_id = ?')
+      .prepare('SELECT points, score FROM user_profiles WHERE user_id = ?')
       .bind(userId)
       .first();
 
     const currentPoints = Number(profile?.points) || 0;
+    const currentScore = Number(profile?.score) || 0;
     const nextPoints = Math.max(0, currentPoints - 100);
+    const nextScore = Math.max(0, currentScore - 100);
 
     await env.D1_DB
-      .prepare('UPDATE user_profiles SET points = ? WHERE user_id = ?')
-      .bind(nextPoints, userId)
+      .prepare('UPDATE user_profiles SET points = ?, score = ? WHERE user_id = ?')
+      .bind(nextPoints, nextScore, userId)
       .run();
 
     if (pointLogColumn) {
@@ -265,20 +267,47 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
       let score = 0;
 
       if (mode === 'practice') {
+        // 연습 모드는 보상 없음
+        points = 0;
+        score = 0;
+      } else if (base.length <= 1) {
+        // 1명 참여: 보상 없음
         points = 0;
         score = 0;
       } else if (idx === 0) {
-        points = 500;
-        score = 150; // 1등은 무조건 150점
+        // 1등: 항상 +150점, +150포인트
+        points = 150;
+        score = 150;
+      } else if (base.length === 2) {
+        // 2명 참여: 2등 -30
+        points = -30;
+        score = -30;
+      } else if (base.length === 3) {
+        // 3명 참여: 2등 +100, 3등 -30
+        points = idx === 1 ? 100 : -30;
+        score = idx === 1 ? 100 : -30;
       } else {
-        const otherIndex = idx - 1;
-        const tierRatio = otherCount > 0 ? otherIndex / otherCount : 0;
-        if (tierRatio < 0.3) points = 400;
-        else if (tierRatio < 0.7) points = 300;
-        else points = -200;
-        
-        // 나머지는 비율에 따라 점수 계산 (최대 150점)
-        score = Math.round(item.ratio * 150);
+        // 4명 이상: 1등 제외 인원을 상/중/하로 분배
+        const restCount = otherCount; // 1등 제외
+        const topPercent = Math.ceil(restCount * 0.3) || 1; // 최소 1명
+        const bottomPercent = Math.ceil(restCount * 0.3) || 1; // 최소 1명 (그런데 단순 비율이므로 조정 필요)
+        const middlePercent = restCount - topPercent - bottomPercent;
+
+        const otherIndex = idx - 1; // 1등을 제외한 순서 (0부터 시작)
+
+        if (otherIndex < topPercent) {
+          // 상위 30%
+          points = 100;
+          score = 100;
+        } else if (otherIndex < topPercent + middlePercent) {
+          // 중위 40%
+          points = 50;
+          score = 50;
+        } else {
+          // 하위 30%
+          points = -30;
+          score = -30;
+        }
       }
 
       return {

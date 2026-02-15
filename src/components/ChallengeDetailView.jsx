@@ -413,27 +413,53 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
         });
 
         const mode = getChallengeMode();
-        const otherCount = Math.max(sorted.length - 1, 0);
 
         return sorted.map((item, idx) => {
             let points = 0;
             let score = 0;
 
             if (mode === 'practice') {
+                // 연습 모드는 보상 없음
+                points = 0;
+                score = 0;
+            } else if (sorted.length <= 1) {
+                // 1명 참여: 보상 없음
                 points = 0;
                 score = 0;
             } else if (idx === 0) {
-                points = 500;
-                score = 150; // 1등은 무조건 150점
+                // 1등: 항상 +150점, +150포인트
+                points = 150;
+                score = 150;
+            } else if (sorted.length === 2) {
+                // 2명 참여: 2등 -30
+                points = -30;
+                score = -30;
+            } else if (sorted.length === 3) {
+                // 3명 참여: 2등 +100, 3등 -30
+                points = idx === 1 ? 100 : -30;
+                score = idx === 1 ? 100 : -30;
             } else {
-                const otherIndex = idx - 1;
-                const tierRatio = otherCount > 0 ? otherIndex / otherCount : 0;
-                if (tierRatio < 0.3) points = 400;
-                else if (tierRatio < 0.7) points = 300;
-                else points = -200;
-                
-                // 나머지는 비율에 따라 점수 계산 (최대 150점)
-                score = Math.round(item.ratio * 150);
+                // 4명 이상: 1등 제외 인원을 상/중/하로 분배
+                const restCount = sorted.length - 1; // 1등 제외
+                const topPercent = Math.ceil(restCount * 0.3) || 1; // 최소 1명
+                const bottomPercent = Math.ceil(restCount * 0.3) || 1; // 최소 1명
+                const middlePercent = restCount - topPercent - bottomPercent;
+
+                const otherIndex = idx - 1; // 1등을 제외한 순서 (0부터 시작)
+
+                if (otherIndex < topPercent) {
+                    // 상위 30%
+                    points = 100;
+                    score = 100;
+                } else if (otherIndex < topPercent + middlePercent) {
+                    // 중위 40%
+                    points = 50;
+                    score = 50;
+                } else {
+                    // 하위 30%
+                    points = -30;
+                    score = -30;
+                }
             }
 
             return {
