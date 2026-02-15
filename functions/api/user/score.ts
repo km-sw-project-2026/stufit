@@ -11,8 +11,36 @@ export async function onRequestGet(context: { request: Request; env: any; userId
 
         const url = new URL(request.url);
         const userIdRaw = url.searchParams.get('userId');
-        const fallbackUserId = Number(userIdRaw);
-        const userId = typeof authenticatedUserId === 'number' ? authenticatedUserId : fallbackUserId;
+        const queryUserId = Number(userIdRaw);
+        const parsedQueryUserId = Number.isInteger(queryUserId) && queryUserId > 0 ? queryUserId : null;
+        const headerUserIdRaw = request.headers.get('X-User-Id') || request.headers.get('X-UserId');
+        const headerUserId = Number(headerUserIdRaw);
+        const parsedHeaderUserId = Number.isInteger(headerUserId) && headerUserId > 0 ? headerUserId : null;
+        const rawUsername = request.headers.get('X-Username');
+        let username = rawUsername;
+        if (rawUsername) {
+            try {
+                username = decodeURIComponent(rawUsername);
+            } catch {
+                username = rawUsername;
+            }
+        }
+
+        let userId = Number.isInteger(authenticatedUserId) && Number(authenticatedUserId) > 0
+            ? Number(authenticatedUserId)
+            : null;
+
+        if (!userId && username) {
+            const user = await env.D1_DB.prepare('SELECT user_id FROM users WHERE username = ?').bind(username).first();
+            const resolved = Number(user?.user_id);
+            if (Number.isInteger(resolved) && resolved > 0) {
+                userId = resolved;
+            }
+        }
+
+        if (!userId) {
+            userId = parsedHeaderUserId || parsedQueryUserId;
+        }
 
         if (!userId || Number.isNaN(userId)) {
             return new Response(
@@ -62,10 +90,38 @@ export async function onRequestPost(context: { request: Request; env: any; userI
         }
 
         const requestedUserId = Number(body?.userId);
-        const hasRequestedUserId = !Number.isNaN(requestedUserId) && requestedUserId > 0;
-        const userId = hasRequestedUserId
+        const hasRequestedUserId = Number.isInteger(requestedUserId) && requestedUserId > 0;
+        const url = new URL(request.url);
+        const queryUserId = Number(url.searchParams.get('userId'));
+        const parsedQueryUserId = Number.isInteger(queryUserId) && queryUserId > 0 ? queryUserId : null;
+        const headerUserIdRaw = request.headers.get('X-User-Id') || request.headers.get('X-UserId');
+        const headerUserId = Number(headerUserIdRaw);
+        const parsedHeaderUserId = Number.isInteger(headerUserId) && headerUserId > 0 ? headerUserId : null;
+        const rawUsername = request.headers.get('X-Username');
+        let username = rawUsername;
+        if (rawUsername) {
+            try {
+                username = decodeURIComponent(rawUsername);
+            } catch {
+                username = rawUsername;
+            }
+        }
+
+        let userId = hasRequestedUserId
             ? requestedUserId
-            : (typeof authenticatedUserId === 'number' ? authenticatedUserId : Number.NaN);
+            : (Number.isInteger(authenticatedUserId) && Number(authenticatedUserId) > 0 ? Number(authenticatedUserId) : null);
+
+        if (!userId && username) {
+            const user = await env.D1_DB.prepare('SELECT user_id FROM users WHERE username = ?').bind(username).first();
+            const resolved = Number(user?.user_id);
+            if (Number.isInteger(resolved) && resolved > 0) {
+                userId = resolved;
+            }
+        }
+
+        if (!userId) {
+            userId = parsedHeaderUserId || parsedQueryUserId;
+        }
 
         const amount = Number(body?.amount);
 
@@ -88,24 +144,28 @@ export async function onRequestPost(context: { request: Request; env: any; userI
             .bind(userId, 'bronze', 0, 0)
             .run();
 
-        await env.D1_DB
-            .prepare('UPDATE user_profiles SET score = score + ? WHERE user_id = ?')
-            .bind(amount, userId)
-            .run();
-
-        const profile = await env.D1_DB
+        // 현재 점수 조회
+        const currentProfile = await env.D1_DB
             .prepare('SELECT score FROM user_profiles WHERE user_id = ?')
             .bind(userId)
             .first();
 
+        const currentScore = Number(currentProfile?.score) || 0;
+        const newScore = Math.max(0, currentScore + amount); // 0 미만으로 떨어지지 않도록
+
+        await env.D1_DB
+            .prepare('UPDATE user_profiles SET score = ? WHERE user_id = ?')
+            .bind(newScore, userId)
+            .run();
+
         return new Response(
-            JSON.stringify({ success: true, score: Number(profile?.score) || 0 }),
+            JSON.stringify({ success: true, score: newScore }),
             { status: 200, headers: { 'Content-Type': 'application/json' } }
         );
     } catch (err: any) {
         console.error('❌ SCORE POST ERROR:', err?.message || String(err));
         return new Response(
-            JSON.stringify({ message: '점수 저장에 실패했습니다.' }),
+            JSON.stringify({ message: err?.message || '점수 저장에 실패했습니다.' }),
             { status: 500, headers: { 'Content-Type': 'application/json' } }
         );
     }
