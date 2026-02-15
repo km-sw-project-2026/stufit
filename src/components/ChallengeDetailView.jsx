@@ -3,6 +3,7 @@ import GiveUpModal from "./modal/GiveUpModal";
 import HostGiveUpModal from "./modal/HostGiveUpModal";
 import FinalGiveUpModal from "./modal/FinalGiveUpModal";
 import CustomAlertModal from "./modal/CustomAlertModal";
+import ChallengeOverModal from "./modals/ChallengeOverModal";
 
 // 주간 제출 현황 컴포넌트
 function WeeklySubmissionStatus({ challengeId, refreshKey }) {
@@ -197,11 +198,18 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
     const [remainingDays, setRemainingDays] = useState(0);
     const [refreshKey, setRefreshKey] = useState(0);
     const [ongoingAlertOpen, setOngoingAlertOpen] = useState(false);
+    const [isChallengeOverOpen, setIsChallengeOverOpen] = useState(false);
+    const [rankingData, setRankingData] = useState([]);
 
     // props로 받은 challenge가 변경되면 state 업데이트
     useEffect(() => {
         setChallenge(initialChallenge);
     }, [initialChallenge]);
+
+    useEffect(() => {
+        setIsChallengeOverOpen(false);
+        setRankingData([]);
+    }, [challenge?.challenge_id]);
 
     useEffect(() => {
         document.body.classList.add('modal-open');
@@ -278,6 +286,26 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
             return 30;
         }
 
+    };
+
+    const getChallengeType = () => {
+        const rawType = challenge?.type;
+        if (rawType) return String(rawType).toLowerCase();
+
+        const category = challenge?.category;
+        if (category === 'STUDY') return 'study';
+        if (category === 'EXERCISE') return 'exercise';
+        if (category === 'DAILY') return 'daily';
+        return '';
+    };
+
+    const getChallengeMode = () => {
+        const rawMode = challenge?.mode;
+        if (rawMode) return String(rawMode).toLowerCase();
+
+        const category = challenge?.category;
+        if (category === 'DAILY') return 'daily';
+        return 'main';
     };
 
     const loadWeeklyData = async () => {
@@ -358,6 +386,67 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
             console.error('진행도 조회 오류:', error);
         }
     };
+
+    const buildRankingData = (rows) => {
+        const totalDays = getTotalDays();
+        const countsByUser = new Map();
+
+        rows.forEach((row) => {
+            if (!row?.username) return;
+            countsByUser.set(row.username, (countsByUser.get(row.username) || 0) + 1);
+        });
+
+        const base = members.map((member) => {
+            const count = countsByUser.get(member.username) || 0;
+            const ratio = totalDays > 0 ? Math.min(count / totalDays, 1) : 0;
+            return {
+                userId: member.user_id,
+                name: member.username,
+                count,
+                ratio
+            };
+        });
+
+        const sorted = base.sort((a, b) => {
+            if (b.ratio !== a.ratio) return b.ratio - a.ratio;
+            return a.name.localeCompare(b.name);
+        });
+
+        const mode = getChallengeMode();
+        const otherCount = Math.max(sorted.length - 1, 0);
+
+        return sorted.map((item, idx) => {
+            let points = 0;
+
+            if (mode === 'practice') {
+                points = 0;
+            } else if (mode === 'daily') {
+                points = item.ratio >= 1 ? 100 : -30;
+            } else {
+                if (idx === 0) {
+                    points = 150;
+                } else {
+                    const otherIndex = idx - 1;
+                    const tierRatio = otherCount > 0 ? otherIndex / otherCount : 0;
+                    if (tierRatio < 0.3) points = 100;
+                    else if (tierRatio < 0.7) points = 50;
+                    else points = -30;
+                }
+            }
+
+            return {
+                rank: idx + 1,
+                name: item.name,
+                userId: item.userId,
+                points,
+                score: Math.round(item.ratio * 100),
+                ratio: item.ratio,
+                count: item.count,
+                totalDays
+            };
+        });
+    };
+
 
     // 진행도 로드 (오늘 제출 여부 포함)
     useEffect(() => {
@@ -470,13 +559,99 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
 
     // 완료하기 버튼 핸들러
     const handleComplete = () => {
+        console.log('[handleComplete] click', { remainingDays, challengeId: challenge?.challenge_id });
         // 챌린지가 아직 진행 중인지 확인
         if (remainingDays > 0) {
             setOngoingAlertOpen(true);
             return;
         }
-        // 챌린지가 끝난 경우 완료 처리 로직 추가 가능
-        alert('챌린지를 완료했습니다!');
+        setIsChallengeOverOpen(true);
+        finalizeChallenge();
+    };
+
+    const finalizeChallenge = async () => {
+        if (!challenge?.challenge_id) return;
+
+        try {
+            const username = localStorage.getItem('username');
+            const headers = {};
+            if (username) headers['X-Username'] = username;
+
+            await fetch(`/api/challenges/${challenge.challenge_id}/complete`, {
+                method: 'PATCH',
+                headers
+            });
+        } catch (error) {
+            console.warn('[finalizeChallenge] complete failed:', error);
+        }
+
+        try {
+            const username = localStorage.getItem('username');
+            const headers = { 'Content-Type': 'application/json' };
+            if (username) headers['X-Username'] = username;
+
+            const rewardsResponse = await fetch(`/api/challenges/${challenge.challenge_id}/rewards`, {
+                method: 'POST',
+                headers,
+                body: JSON.stringify({ action: 'complete' })
+            });
+
+            if (rewardsResponse.ok) {
+                const payload = await rewardsResponse.json();
+                if (Array.isArray(payload?.ranking)) {
+                    setRankingData(payload.ranking);
+                    return;
+                }
+            } else {
+                console.warn('[finalizeChallenge] rewards failed:', rewardsResponse.status);
+            }
+        } catch (error) {
+            console.error('[finalizeChallenge] rewards error:', error);
+        }
+
+        try {
+            const response = await fetch(`/api/challenges/${challenge.challenge_id}/progress`);
+            if (!response.ok) {
+                console.warn('[finalizeChallenge] progress fetch failed:', response.status);
+                setRankingData([]);
+                return;
+            }
+
+            const result = await response.json();
+            const rows = Array.isArray(result?.data) ? result.data : [];
+            const rankings = buildRankingData(rows);
+            setRankingData(rankings);
+        } catch (error) {
+            console.error('[finalizeChallenge] error:', error);
+        }
+    };
+
+    const handleSubmitStudyScore = async (score) => {
+        console.log('[handleSubmitStudyScore] score:', score);
+        const userId = Number(localStorage.getItem('userId'));
+        if (!userId || Number.isNaN(userId)) {
+            alert('로그인이 필요합니다.');
+            return false;
+        }
+
+        try {
+            const response = await fetch(`/api/challenges/${challenge.challenge_id}/scores`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId, score })
+            });
+
+            if (!response.ok) {
+                alert('점수 제출에 실패했습니다.');
+                return false;
+            }
+
+            return true;
+        } catch (error) {
+            console.error('[handleSubmitStudyScore] error:', error);
+            alert('점수 제출 중 오류가 발생했습니다.');
+            return false;
+        }
     };
 
     // Props 기본값 설정
@@ -757,6 +932,16 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
                     onClose={() => setOngoingAlertOpen(false)}
                 />
             )}
+            <ChallengeOverModal
+                isOpen={isChallengeOverOpen}
+                onClose={() => {
+                    console.log('[ChallengeOverModal] close click');
+                    setIsChallengeOverOpen(false);
+                }}
+                showScoreInput={getChallengeType() === 'study'}
+                onSubmitScore={handleSubmitStudyScore}
+                rankingData={rankingData}
+            />
         </>
     );
 };

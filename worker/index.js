@@ -31,6 +31,7 @@ import * as userResolve from '../functions/api/user/resolve';
 import * as progress from '../functions/api/challenges/[id]/progress';
 import * as complete from '../functions/api/challenges/[id]/complete';
 import * as scores from '../functions/api/challenges/[id]/scores';
+import * as rewards from '../functions/api/challenges/[id]/rewards';
 
 import challengeEdit from '../functions/api/challenges/[id]/edit';
 import challengeResult from '../functions/api/challenges/[id]/result';
@@ -435,6 +436,14 @@ export default {
 
           case 'scores':
             return scores.onRequest({
+              request,
+              env,
+              params: { id },
+              userId
+            });
+
+          case 'rewards':
+            return rewards.onRequestPost({
               request,
               env,
               params: { id },

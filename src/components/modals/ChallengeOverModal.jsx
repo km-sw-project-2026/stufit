@@ -1,29 +1,43 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
-function ChallengeOverModal({ onClose }) {
+function ChallengeOverModal({
+  isOpen,
+  onClose,
+  showScoreInput = false,
+  onSubmitScore,
+  rankingData = [],
+  title = 'Challenge Over'
+}) {
   const [score, setScore] = useState('');
-  const [showRanking, setShowRanking] = useState(false);
+  const [showRanking, setShowRanking] = useState(!showScoreInput);
 
-  const handleSubmitScore = () => {
-    if (score) {
-      setShowRanking(true);
+  useEffect(() => {
+    setShowRanking(!showScoreInput);
+  }, [showScoreInput]);
+
+  if (!isOpen) return null;
+
+  const handleSubmitScore = async () => {
+    if (!score) return;
+    if (onSubmitScore) {
+      const ok = await onSubmitScore(Number(score));
+      if (!ok) return;
     }
+    setShowRanking(true);
   };
 
-  const rankingData = [
-    { rank: 1, name: '김예선', score: 95 },
-    { rank: 2, name: '유태민', score: 87 },
-    { rank: 3, name: '박현서', score: 82 },
-    { rank: 4, name: '이정민', score: 78 }
-  ];
+  const handleClose = () => {
+    console.log('[ChallengeOverModal] close');
+    onClose?.();
+  };
 
   return (
-    <div className="popup-modal">
+    <div className="popup-modal" onClick={handleClose}>
       <div className="popup-overlay"></div>
-      <div className="popup-content challenge-over-content">
-        <h2>Challenge Over</h2>
+      <div className="popup-content challenge-over-content" onClick={(e) => e.stopPropagation()}>
+        <h2>{title}</h2>
 
-        {!showRanking && (
+        {showScoreInput && !showRanking && (
           <div id="challenge-over-score-view">
             <p className="subtitle">최종 점수입력</p>
             <div className="score-card">
@@ -43,19 +57,37 @@ function ChallengeOverModal({ onClose }) {
           <div id="challenge-over-ranking-view">
             <p className="subtitle">최종순위</p>
             <div className="ranking-list">
-              {rankingData.map((item) => (
-                <div key={item.rank} className="ranking-item">
-                  <span className="rank-badge">{item.rank}</span>
-                  <span className="rank-name">{item.name}</span>
-                  <span className="rank-score">{item.score}점</span>
+              {rankingData.length === 0 ? (
+                <div className="ranking-item">
+                  <span className="name">랭킹 데이터가 없습니다.</span>
                 </div>
-              ))}
+              ) : (
+                rankingData.map((item) => (
+                  <div key={item.rank} className="ranking-item">
+                    <span className="rank">{item.rank}</span>
+                    <span className="name">{item.name}</span>
+                    <div className="score-info">
+                      <div className="score-group">
+                        <span className="label">포인트</span>
+                        <span className="value">
+                          {item.points > 0 ? `+${item.points}` : `${item.points}`}
+                        </span>
+                      </div>
+                      <div className="divider" />
+                      <div className="score-group">
+                        <span className="label">점수</span>
+                        <span className="value">{item.score}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         )}
 
-        <div className="close-btn-wrapper position-top-right">
-          <svg className="close-challenge-over-x" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" onClick={onClose} style={{ cursor: 'pointer' }}>
+        <div className="close-btn-wrapper position-top-right" onClick={handleClose}>
+          <svg className="close-challenge-over-x" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M18 6L6 18M6 6L18 18" stroke="#333" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </div>
