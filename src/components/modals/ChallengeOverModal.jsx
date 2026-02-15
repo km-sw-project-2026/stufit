@@ -44,7 +44,7 @@ function ChallengeOverModal({
               <p className="score-input-label">점수 입력하기</p>
               <input
                 type="number"
-                placeholder="예: 80점"
+                placeholder="예: 100"
                 value={score}
                 min="0"
                 max="999"
@@ -55,7 +55,7 @@ function ChallengeOverModal({
                   }
                 }}
               />
-              <button className="confirm-score-btn" onClick={handleSubmitScore}>재출하기</button>
+              <button className="confirm-score-btn" onClick={handleSubmitScore}>제출하기</button>
             </div>
           </div>
         )}
