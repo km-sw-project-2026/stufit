@@ -192,11 +192,13 @@ function ShopQuicklink() {
               (() => {
                 const containerWidthLocal = containerWidth || 900;
                 const VISIBLE = 5; // show five items fully
+                const maxOffset = Math.floor(VISIBLE / 2); // how many items on each side
                 // Use a compact layout: base size clamped to reasonable values
                 const gap = 24; // px gap between items
                 const base = Math.max(100, Math.min(160, Math.round(containerWidthLocal * 0.16)));
                 const slot = base + gap;
                 const gapHalf = Math.round(gap / 2);
+                // center the virtualIndex item
                 const translateX = Math.round(containerWidthLocal / 2 - (virtualIndex * slot + base / 2));
 
                 return (
@@ -223,23 +225,26 @@ function ShopQuicklink() {
                       let pointerEvents = 'auto';
 
                       if (isTranslating) {
-                        // while translating, show positions relative to the moving index
+                        // while translating, base on current moving position
                         if (absPosCurrent === 0) {
-                          scale = 1.0;
+                          scale = 1.2;
                           zIndex = 6;
                           opacity = 1;
+                          pointerEvents = 'auto';
                         } else if (absPosCurrent === 1) {
                           scale = 1.05;
                           zIndex = 5;
                           opacity = 1;
+                          pointerEvents = 'auto';
                         } else if (absPosCurrent === 2) {
                           scale = 0.9;
                           zIndex = 4;
                           opacity = 1;
+                          pointerEvents = 'auto';
                         } else {
                           scale = 0.75;
                           zIndex = 1;
-                          opacity = 0.9;
+                          opacity = 0; // hide extras so exactly VISIBLE items are seen
                           pointerEvents = 'none';
                         }
                       } else {
@@ -248,18 +253,21 @@ function ShopQuicklink() {
                           scale = 1.6;
                           zIndex = 6;
                           opacity = 1;
+                          pointerEvents = 'auto';
                         } else if (absPosActive === 1) {
-                          scale = 1.05;
+                          scale = 1.1;
                           zIndex = 5;
                           opacity = 1;
+                          pointerEvents = 'auto';
                         } else if (absPosActive === 2) {
                           scale = 0.9;
                           zIndex = 4;
                           opacity = 1;
+                          pointerEvents = 'auto';
                         } else {
                           scale = 0.75;
                           zIndex = 1;
-                          opacity = 0.9;
+                          opacity = 0; // hide extras
                           pointerEvents = 'none';
                         }
                       }
