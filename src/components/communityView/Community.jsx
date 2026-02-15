@@ -1084,7 +1084,7 @@ function Community() {
         setIsAlertOpen(true);
     };
     
-    // 게시글 상태
+    // 게시글 상태 관리
     const [posts, setPosts] = useState({
         popular: [],
         tips: [],
@@ -1092,7 +1092,7 @@ function Community() {
         mypost: []
     });
 
-    // DB 데이터를 리액트 형식으로 변환 [cite: 2026-02-13]
+    // DB 데이터를 리액트 UI 형식으로 매핑 [cite: 2026-02-13]
     const mapPost = (row) => ({
         id: row.post_id,
         title: row.title,
@@ -1100,15 +1100,15 @@ function Community() {
         author: row.username || '익명',
         likes: Number(row.like_count) || 0,
         comments: Number(row.comment_count) || 0,
-        liked: Boolean(row.user_liked),
+        liked: Boolean(row.user_liked), // 하트 색상을 결정하는 핵심 변수
         date: row.created_at ? new Date(row.created_at).toLocaleString('ko-KR') : '',
         category: row.category || 'data'
     });
 
-    // 서버에서 데이터를 가져오는 함수 [cite: 2026-02-13]
+    // 서버에서 최신 게시글 목록을 가져오는 함수 [cite: 2026-02-13]
     const fetchPosts = async () => {
         try {
-            const username = localStorage.getItem('username'); // 'q' 확인됨
+            const username = localStorage.getItem('username'); // 'q' 확인
             const headers = {};
             if (username) headers['X-Username'] = username;
             
@@ -1127,7 +1127,7 @@ function Community() {
 
             setPosts(categorized);
         } catch (error) {
-            console.error('게시글 불러오기 실패:', error);
+            console.error('게시글 로딩 실패:', error);
         }
     };
 
@@ -1135,7 +1135,7 @@ function Community() {
         fetchPosts();
     }, []);
     
-    // 좋아요 토글 핸들러 (핵심 수정 부분) [cite: 2026-02-15]
+    // [핵심] 좋아요 토글 핸들러: 하트 색상과 숫자를 즉시 변경 [cite: 2026-02-13, 2026-02-15]
     const handleToggleLike = async (postId) => {
         const username = localStorage.getItem('username');
         if (!username) return alert('로그인이 필요합니다.');
@@ -1150,21 +1150,32 @@ function Community() {
             });
 
             const payload = await response.json();
-            if (!response.ok) return alert(payload.message || '좋아요 처리에 실패했습니다.');
+            if (!response.ok) return alert(payload.message || '좋아요 실패');
 
-            // [중요] 페이지 이동(reload) 없이 데이터만 다시 불러와서 현재 탭을 유지함 [cite: 2026-02-13]
-            await fetchPosts();
+            // 1. 서버 응답값(liked, count)을 바탕으로 화면 UI 즉시 업데이트
+            const { liked, count, promoted } = payload.data;
 
-            // 좋아요 1개로 인기글 승격 시 알림 띄우기 [cite: 2026-02-15]
-            if (payload.data && payload.data.promoted) {
+            setPosts(prev => {
+                const newPosts = { ...prev };
+                Object.keys(newPosts).forEach(cat => {
+                    newPosts[cat] = newPosts[cat].map(post => 
+                        post.id === postId ? { ...post, liked: liked, likes: count } : post
+                    );
+                });
+                return newPosts;
+            });
+
+            // 2. 좋아요 1개로 인기글 승격 시 알림창 띄우고 데이터 전체 동기화 [cite: 2026-02-15]
+            if (promoted) {
                 showAlert("축하합니다! 좋아요 1개를 달성하여 인기글로 등록되었습니다.");
+                await fetchPosts(); // 카테고리 이동 반영을 위해 전체 데이터 재로드
             }
         } catch (error) {
-            console.error('좋아요 처리 실패:', error);
+            console.error('좋아요 에러:', error);
         }
     };
 
-    // 새 게시글 추가 핸들러 [cite: 2026-02-13]
+    // 새 게시글 추가 [cite: 2026-02-13]
     const handleAddPost = async (newPostData) => {
         const username = localStorage.getItem('username');
         if (!username) return alert('로그인이 필요합니다.');
@@ -1183,19 +1194,16 @@ function Community() {
                 })
             });
 
-            if (!response.ok) {
-                const payload = await response.json();
-                throw new Error(payload.message);
+            if (response.ok) {
+                await fetchPosts(); 
+                setNewPostModalOpen(false);
             }
-
-            await fetchPosts(); 
-            setNewPostModalOpen(false);
         } catch (error) {
-            alert(error.message || '게시글 작성에 실패했습니다.');
+            alert('작성 중 오류가 발생했습니다.');
         }
     };
 
-    // 상세 보기 및 기타 기능 [cite: 2026-02-13]
+    // 게시글 상세 보기 및 삭제/수정 (기존 기능 유지) [cite: 2026-02-13]
     const [showPostDetail, setShowPostDetail] = useState(false);
     const [selectedPost, setSelectedPost] = useState(null);
 
@@ -1209,7 +1217,7 @@ function Community() {
         setSelectedPost(null);
     };
 
-    const handleUpdatePostState = async (updatedPost) => {
+    const handleUpdatePostState = async () => {
         await fetchPosts();
     };
 
@@ -1252,10 +1260,11 @@ function Community() {
                 <div className="community-main">
                     {!showPostDetail ? (
                         <>
-                            {activeTab === 'popular' && <Popular posts={posts.popular} onOpenPost={detailPostView} onToggleLike={handleToggleLike} onNewPost={() => { setCurrentCategory('popular'); setNewPostModalOpen(true); }} />}
-                            {activeTab === 'tips' && <Tips posts={posts.tips} onOpenPost={detailPostView} onToggleLike={handleToggleLike} onNewPost={() => { setCurrentCategory('tips'); setNewPostModalOpen(true); }} />}
-                            {activeTab === 'data' && <DataSharing posts={posts.data} onOpenPost={detailPostView} onToggleLike={handleToggleLike} onNewPost={() => { setCurrentCategory('data'); setNewPostModalOpen(true); }} />}
-                            {activeTab === 'mypost' && <MyPost posts={posts.mypost} onOpenPost={detailPostView} onToggleLike={handleToggleLike} onNewPost={() => { setCurrentCategory('mypost'); setNewPostModalOpen(true); }} />}
+                            {/* Popular 컴포넌트에 좋아요 1개 기준 메시지 전달 필요 시 Popular.jsx 수정 권장 */}
+                            {activeTab === 'popular' && <Popular posts={posts.popular} onOpenPost={detailPostView} onToggleLike={handleToggleLike} onNewPost={() => setNewPostModalOpen(true)} />}
+                            {activeTab === 'tips' && <Tips posts={posts.tips} onOpenPost={detailPostView} onToggleLike={handleToggleLike} onNewPost={() => setNewPostModalOpen(true)} />}
+                            {activeTab === 'data' && <DataSharing posts={posts.data} onOpenPost={detailPostView} onToggleLike={handleToggleLike} onNewPost={() => setNewPostModalOpen(true)} />}
+                            {activeTab === 'mypost' && <MyPost posts={posts.mypost} onOpenPost={detailPostView} onToggleLike={handleToggleLike} onNewPost={() => setNewPostModalOpen(true)} />}
                         </>
                     ) : (
                         <PostDetailView 
