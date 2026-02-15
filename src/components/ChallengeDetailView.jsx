@@ -620,7 +620,7 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
                     className="detail-view-container"
                     style={
                         isPage
-                            ? { maxWidth: '1600px', margin: '0 auto', padding: '20px 12px', width: '100%' }
+                            ? { maxWidth: '1920px', margin: '0 auto', padding: '12px 8px', width: '100vw', boxSizing: 'border-box' }
                             : {}
                     }
                 >
