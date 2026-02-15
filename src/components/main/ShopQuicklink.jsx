@@ -178,7 +178,8 @@ function ShopQuicklink() {
                 const within = absPosCurrent <= half || absPosActive <= half;
                 let scale = 0.75;
                 let zIndex = 1;
-                let opacity = within ? 1 : 0; // hide extras
+                // keep images visible but dim non-visible slides so user never sees an empty gap
+                let opacity = within ? 1 : 0.25;
                 let pointerEvents = within ? 'auto' : 'none';
 
                 if (isTranslating) {
