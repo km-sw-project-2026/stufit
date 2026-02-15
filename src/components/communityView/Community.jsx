@@ -1074,6 +1074,8 @@ function Community() {
     const [isModalOpen, setModalOpen] = useState(false);
     const [isNewPostModalOpen, setNewPostModalOpen] = useState(false);
     const [currentCategory, setCurrentCategory] = useState('popular');
+
+    // 커스텀 알림 모달 상태
     const [isAlertOpen, setIsAlertOpen] = useState(false);
     const [alertMessage, setAlertMessage] = useState('');
 
@@ -1082,6 +1084,7 @@ function Community() {
         setIsAlertOpen(true);
     };
     
+    // 게시글 상태
     const [posts, setPosts] = useState({
         popular: [],
         tips: [],
@@ -1089,6 +1092,7 @@ function Community() {
         mypost: []
     });
 
+    // DB 데이터를 리액트 형식으로 변환 [cite: 2026-02-13]
     const mapPost = (row) => ({
         id: row.post_id,
         title: row.title,
@@ -1101,9 +1105,10 @@ function Community() {
         category: row.category || 'data'
     });
 
+    // 서버에서 데이터를 가져오는 함수 [cite: 2026-02-13]
     const fetchPosts = async () => {
         try {
-            const username = localStorage.getItem('username'); // 'q'
+            const username = localStorage.getItem('username'); // 'q' 확인됨
             const headers = {};
             if (username) headers['X-Username'] = username;
             
@@ -1129,8 +1134,37 @@ function Community() {
     useEffect(() => {
         fetchPosts();
     }, []);
+    
+    // 좋아요 토글 핸들러 (핵심 수정 부분) [cite: 2026-02-15]
+    const handleToggleLike = async (postId) => {
+        const username = localStorage.getItem('username');
+        if (!username) return alert('로그인이 필요합니다.');
 
-    // 1. 글쓰기 핸들러 수정 (데이터 구조 명확화) [cite: 2026-02-13]
+        try {
+            const response = await fetch(`/api/post/${postId}/like`, {
+                method: 'POST',
+                headers: { 
+                    'X-Username': username,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            const payload = await response.json();
+            if (!response.ok) return alert(payload.message || '좋아요 처리에 실패했습니다.');
+
+            // [중요] 페이지 이동(reload) 없이 데이터만 다시 불러와서 현재 탭을 유지함 [cite: 2026-02-13]
+            await fetchPosts();
+
+            // 좋아요 1개로 인기글 승격 시 알림 띄우기 [cite: 2026-02-15]
+            if (payload.data && payload.data.promoted) {
+                showAlert("축하합니다! 좋아요 1개를 달성하여 인기글로 등록되었습니다.");
+            }
+        } catch (error) {
+            console.error('좋아요 처리 실패:', error);
+        }
+    };
+
+    // 새 게시글 추가 핸들러 [cite: 2026-02-13]
     const handleAddPost = async (newPostData) => {
         const username = localStorage.getItem('username');
         if (!username) return alert('로그인이 필요합니다.');
@@ -1138,55 +1172,30 @@ function Community() {
         try {
             const response = await fetch('/api/posts', {
                 method: 'POST',
-                headers: { 
+                headers: {
                     'Content-Type': 'application/json',
-                    'X-Username': username 
+                    'X-Username': username
                 },
                 body: JSON.stringify({
                     title: newPostData.title,
                     content: newPostData.content,
-                    category: newPostData.category || currentCategory || 'data'
+                    category: newPostData.category || activeTab || 'data'
                 })
             });
 
-            const payload = await response.json();
-            if (!response.ok) throw new Error(payload.message || '작성 실패');
+            if (!response.ok) {
+                const payload = await response.json();
+                throw new Error(payload.message);
+            }
 
-            await fetchPosts(); // 작성 성공 시 목록 갱신
-            setNewPostModalOpen(false); // 모달 닫기
+            await fetchPosts(); 
+            setNewPostModalOpen(false);
         } catch (error) {
-            alert(error.message);
+            alert(error.message || '게시글 작성에 실패했습니다.');
         }
     };
 
-    // 2. 좋아요 핸들러 (서버 응답 즉시 반영)
-    // handleToggleLike 함수만 이 내용으로 완전히 교체해 보세요.
-const handleToggleLike = async (postId) => {
-    const username = localStorage.getItem('username'); // 'q' 확인됨
-    if (!username) return alert('로그인이 필요합니다.');
-
-    try {
-        const response = await fetch(`/api/post/${postId}/like`, {
-            method: 'POST',
-            headers: { 
-                'X-Username': username,
-                'Content-Type': 'application/json'
-            }
-        });
-
-        if (response.ok) {
-            // [가장 강력한 조치] 서버 응답이 성공이면 페이지를 아예 새로고침합니다.
-            // 이렇게 하면 fetchPosts가 다시 실행되면서 인기글로 이동한 결과가 무조건 보입니다.
-            window.location.reload(); 
-        } else {
-            const errorData = await response.json();
-            alert(errorData.message || '좋아요 처리 실패');
-        }
-    } catch (error) {
-        console.error('좋아요 에러:', error);
-    }
-};
-
+    // 상세 보기 및 기타 기능 [cite: 2026-02-13]
     const [showPostDetail, setShowPostDetail] = useState(false);
     const [selectedPost, setSelectedPost] = useState(null);
 
@@ -1230,28 +1239,23 @@ const handleToggleLike = async (postId) => {
     const navigate = useNavigate();
     const location = useLocation();
     const activeTab = new URLSearchParams(location.search).get('tab') || 'popular';
-    
+
     const goToTab = (tab) => {
         if (showPostDetail) closeDetailView();
         navigate(`/community?tab=${tab}`);
     };
 
-    const handleNewPostClick = (category) => {
-        setCurrentCategory(category);
-        setNewPostModalOpen(true);
-    };
-
     return (
         <div id="community-view" className="community-view">
             <div className="community-layout">
-                <SidebarMenu activeTab={activeTab} goToTab={goToTab} onNewPost={() => handleNewPostClick(activeTab)} />
+                <SidebarMenu activeTab={activeTab} goToTab={goToTab} onNewPost={() => setNewPostModalOpen(true)} />
                 <div className="community-main">
                     {!showPostDetail ? (
                         <>
-                            {activeTab === 'popular' && <Popular posts={posts.popular} onOpenPost={detailPostView} onToggleLike={handleToggleLike} onNewPost={() => handleNewPostClick('popular')} />}
-                            {activeTab === 'tips' && <Tips posts={posts.tips} onOpenPost={detailPostView} onToggleLike={handleToggleLike} onNewPost={() => handleNewPostClick('tips')} />}
-                            {activeTab === 'data' && <DataSharing posts={posts.data} onOpenPost={detailPostView} onToggleLike={handleToggleLike} onNewPost={() => handleNewPostClick('data')} />}
-                            {activeTab === 'mypost' && <MyPost posts={posts.mypost} onOpenPost={detailPostView} onToggleLike={handleToggleLike} onNewPost={() => handleNewPostClick('mypost')} />}
+                            {activeTab === 'popular' && <Popular posts={posts.popular} onOpenPost={detailPostView} onToggleLike={handleToggleLike} onNewPost={() => { setCurrentCategory('popular'); setNewPostModalOpen(true); }} />}
+                            {activeTab === 'tips' && <Tips posts={posts.tips} onOpenPost={detailPostView} onToggleLike={handleToggleLike} onNewPost={() => { setCurrentCategory('tips'); setNewPostModalOpen(true); }} />}
+                            {activeTab === 'data' && <DataSharing posts={posts.data} onOpenPost={detailPostView} onToggleLike={handleToggleLike} onNewPost={() => { setCurrentCategory('data'); setNewPostModalOpen(true); }} />}
+                            {activeTab === 'mypost' && <MyPost posts={posts.mypost} onOpenPost={detailPostView} onToggleLike={handleToggleLike} onNewPost={() => { setCurrentCategory('mypost'); setNewPostModalOpen(true); }} />}
                         </>
                     ) : (
                         <PostDetailView 
@@ -1266,9 +1270,9 @@ const handleToggleLike = async (postId) => {
             </div>
             {isNewPostModalOpen && (
                 <NewPostModal 
-                    category={currentCategory} 
+                    category={activeTab} 
                     onClose={() => setNewPostModalOpen(false)} 
-                    onSubmit={handleAddPost} 
+                    onSubmit={handleAddPost}
                 />
             )}
             {isAlertOpen && <CustomAlertModal message={alertMessage} onClose={() => setIsAlertOpen(false)} />}
