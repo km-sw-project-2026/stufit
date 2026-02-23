@@ -132,18 +132,7 @@ function MyPage({ isOpen, onClose }) {
     navigate('/tier-guide');
   };
 
-  const handleResetBestRank = () => {
-    if (!confirm('최고 기록을 초기화하시겠습니까?')) return;
-    try {
-      localStorage.removeItem('bestRank');
-      setUserData((prev) => (prev ? { ...prev, rank: getBestRankLabel() } : prev));
-      const username = localStorage.getItem('username');
-      updateRanks(username, getStoredUserId());
-      alert('최고 기록이 초기화되었습니다.');
-    } catch (e) {
-      console.warn('reset bestRank failed', e);
-    }
-  };
+  
 
   const handleMyItemsClick = () => {
     onClose();
@@ -797,12 +786,7 @@ function MyPage({ isOpen, onClose }) {
         <div className="mypage-stats">
           <div className="stat-item">
             <div className="stat-label">최고 기록</div>
-            <div className="stat-value">
-              {userData.rank}
-              <button onClick={handleResetBestRank} style={{ marginLeft: '10px', padding: '4px 8px', fontSize: '12px', cursor: 'pointer' }}>
-                초기화
-              </button>
-            </div>
+            <div className="stat-value">{userData.rank}</div>
           </div>
           <div className="stat-divider"></div>
           <div className="stat-item">
