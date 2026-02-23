@@ -110,12 +110,6 @@ function HostGiveUpModal({ setModalOpen, setFinalModalOpen, challenge, onLeave }
                     </svg>
                 </button>
                 
-                <div style={{ textAlign: 'center', marginBottom: '20px', marginTop: '8px' }}>
-                    <p style={{ fontSize: '1.1rem', fontWeight: '600', lineHeight: '1.5', color: '#333', marginBottom: '8px' }}>
-                        {randomQuote.text}
-                    </p>
-                </div>
-                
                 <h3 className="host-giveup-title">챌린지</h3>
                 
                 <div className="host-giveup-options">
