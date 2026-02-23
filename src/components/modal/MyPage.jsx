@@ -37,6 +37,11 @@ function MyPage({ isOpen, onClose }) {
     return numeric;
   };
 
+  const getBestRankLabel = () => {
+    const stored = Number(localStorage.getItem('bestRank') || '0');
+    return stored > 0 ? `${stored}위` : '-';
+  };
+
   // 랭킹을 불러와 현재 순위와 최고 순위를 계산해 userData에 반영
   const updateRanks = async (username, userId) => {
     if (!username && !userId) return;
@@ -57,13 +62,18 @@ function MyPage({ isOpen, onClose }) {
       const currentRankNum = meIndex >= 0 ? meIndex + 1 : null;
 
       const storedBest = Number(localStorage.getItem('bestRank') || '0');
-      // bestRank는 로컬에 이미 저장된 값이 있을 때만 사용합니다.
-      // 최초에는 자동으로 현재 순위로 초기화하지 않습니다.
+      // 동작 요구사항:
+      // - 최초 접근 시(저장된 bestRank가 없으면) 현재 순위를 최고기록으로 초기화해서 보여줌
+      // - 이후에는 최고기록은 오직 더 높은(숫자가 더 작은) 순위를 달성했을 때만 갱신
       let bestRankNum = storedBest > 0 ? storedBest : null;
-      // 저장된 최고 기록이 있고, 새로 산출된 currentRank가 더 높(숫자가 작)으면 갱신
-      if (currentRankNum && storedBest > 0 && currentRankNum < storedBest) {
+      if (!bestRankNum && currentRankNum) {
+        // 최초 초기화: 현재 순위를 최고로 설정
         bestRankNum = currentRankNum;
-        localStorage.setItem('bestRank', String(bestRankNum));
+        try { localStorage.setItem('bestRank', String(bestRankNum)); } catch (e) { /* ignore */ }
+      } else if (currentRankNum && storedBest > 0 && currentRankNum < storedBest) {
+        // 새로운 최고 기록 달성 시 갱신
+        bestRankNum = currentRankNum;
+        try { localStorage.setItem('bestRank', String(bestRankNum)); } catch (e) { /* ignore */ }
       }
 
       setUserData((prev) => (prev ? {
@@ -121,6 +131,8 @@ function MyPage({ isOpen, onClose }) {
     onClose();
     navigate('/tier-guide');
   };
+
+  
 
   const handleMyItemsClick = () => {
     onClose();
@@ -231,8 +243,8 @@ function MyPage({ isOpen, onClose }) {
           username: localStorage.getItem('username') || '',
           score: cachedScore ? Number(cachedScore) : 0,
           joinDate: localStorage.getItem('joinDate') || '2024년 7월 1일',
-          rank: '1위',
-          currentRank: '1위',
+          rank: getBestRankLabel(),
+          currentRank: '-',
           challenges: `${cachedSuccessful}개`,
           points: cachedPoints ? Number(cachedPoints) : 0,
           posts: `${cachedCommunity.posts}개`,
@@ -269,8 +281,8 @@ function MyPage({ isOpen, onClose }) {
         username: username || '',
         score: cachedScore ? Number(cachedScore) : 0,
         joinDate: localStorage.getItem('joinDate') || '2024년 7월 1일',
-        rank: '1위',
-        currentRank: '1위',
+        rank: getBestRankLabel(),
+        currentRank: '-',
         challenges: `${cachedSuccessful}개`,
         points: cachedPoints ? Number(cachedPoints) : 0,
         posts: `${cachedCommunity.posts}개`,
@@ -403,6 +415,31 @@ function MyPage({ isOpen, onClose }) {
 
     return () => {
       window.removeEventListener('pointsUpdated', handlePointsUpdated);
+    };
+  }, [isOpen]);
+
+  // MyPage 열려있을 때 랭킹을 주기적으로 동기화 및 포커스/visibility 시 동기화
+  useEffect(() => {
+    if (!isOpen) return;
+    const username = localStorage.getItem('username');
+    const userId = getStoredUserId();
+    const sync = () => {
+      try { updateRanks(username, userId); } catch (e) { console.warn(e); }
+    };
+
+    // 즉시 동기화
+    sync();
+    const id = setInterval(sync, 30000);
+
+    const onFocus = () => sync();
+    const onVisibility = () => { if (document.visibilityState === 'visible') sync(); };
+    window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onVisibility);
+
+    return () => {
+      clearInterval(id);
+      window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onVisibility);
     };
   }, [isOpen]);
 

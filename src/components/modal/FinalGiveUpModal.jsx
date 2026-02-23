@@ -1,4 +1,11 @@
+import { useState } from 'react';
+
 function FinalGiveUpModal({ setModalOpen, challengeId, onLeave }) {
+    const [randomQuote] = useState(() => {
+        const randomIndex = Math.floor(Math.random() * 10);
+        return { text: "포기하지 말기를..." }; // 더 이상 사용되지 않음
+    });
+
     const handleConfirmLeave = async () => {
         try {
             console.log("🔵 챌린지 나가기 시작:", { challengeId });
