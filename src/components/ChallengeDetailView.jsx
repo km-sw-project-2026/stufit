@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import GiveUpModal from "./modal/GiveUpModal";
 import HostGiveUpModal from "./modal/HostGiveUpModal";
 import FinalGiveUpModal from "./modal/FinalGiveUpModal";
+import QuotePopup from "./modal/QuotePopup";
 import CustomAlertModal from "./modal/CustomAlertModal";
 import ChallengeOverModal from "./modals/ChallengeOverModal";
 
@@ -188,6 +189,7 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
     const [modalOpen, setModalOpen] = useState(false);
     const [hostModalOpen, setHostModalOpen] = useState(false);
     const [finalModalOpen, setFinalModalOpen] = useState(false);
+    const [quotePopupOpen, setQuotePopupOpen] = useState(false);
     const [alertOpen, setAlertOpen] = useState(false);
     const [timerSeconds, setTimerSeconds] = useState(0);
     const [isTimerRunning, setIsTimerRunning] = useState(false);
@@ -588,6 +590,14 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
         fetchMembers();
         setFinalModalOpen(false);
         setAlertOpen(true);
+        // 제출 상태 초기화: 챌린지를 나가면 로컬 제출 상태는 제거
+        try {
+            setSubmittedToday(false);
+            setProgressPercent(0);
+            setElapsedDays(0);
+            setRemainingDays(getTotalDays());
+            setRefreshKey(prev => prev + 1);
+        } catch (e) { console.warn('leave local clear failed', e); }
         // 자세히보기도 닫기
         setTimeout(() => {
             if (onClose) onClose();
@@ -988,7 +998,11 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
                 </div>
             </div>
 
-            {modalOpen && <GiveUpModal setModalOpen={setModalOpen} setFinalModalOpen={setFinalModalOpen} />}
+            {modalOpen && <GiveUpModal setModalOpen={setModalOpen} setQuotePopupOpen={setQuotePopupOpen} />}
+            {quotePopupOpen && <QuotePopup isOpen={quotePopupOpen} onClose={() => {
+                setQuotePopupOpen(false);
+                setFinalModalOpen(true);
+            }} />}
             {hostModalOpen && <HostGiveUpModal setModalOpen={setHostModalOpen} setFinalModalOpen={setFinalModalOpen} challenge={challenge} onLeave={handleLeaveSuccess} />}
             {finalModalOpen && (
                 <FinalGiveUpModal
