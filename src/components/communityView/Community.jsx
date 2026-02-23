@@ -814,20 +814,20 @@ function Community() {
         }
     };
 
-    // [핵심 수정] 계정별로 팝업 노출 여부 판단 [cite: 2026-02-13]
+    // [로직 변경] 접속 시 "거부 기록"이 없으면 무조건 띄움 [cite: 2026-02-13]
     useEffect(() => {
         fetchPosts();
 
         const username = localStorage.getItem('username');
         if (username) {
             const today = new Date().toISOString().split('T')[0];
-            // 키값에 username을 더해 계정마다 따로 저장되게 합니다. (예: lastVisit_user1)
-            const storageKey = `lastCommunityVisit_${username}`;
-            const lastVisit = localStorage.getItem(storageKey);
+            const storageKey = `hideCommunityModal_${username}`;
+            const hideUntilDate = localStorage.getItem(storageKey);
 
-            if (lastVisit !== today) {
+            // 오늘 날짜가 '보지 않기' 기록된 날짜와 다를 때만 팝업을 띄움
+            if (hideUntilDate !== today) {
                 setModalOpen(true);
-                localStorage.setItem(storageKey, today);
+                // 여기서 localStorage.setItem을 하지 않습니다! (모달 안에서 직접 클릭 시에만 기록)
             }
         }
     }, []);
@@ -839,10 +839,7 @@ function Community() {
         try {
             const response = await fetch(`/api/post/${postId}/like`, {
                 method: 'POST',
-                headers: { 
-                    'X-Username': username,
-                    'Content-Type': 'application/json'
-                }
+                headers: { 'X-Username': username, 'Content-Type': 'application/json' }
             });
 
             const payload = await response.json();
@@ -854,7 +851,7 @@ function Community() {
                 const newState = { ...prev };
                 Object.keys(newState).forEach(cat => {
                     newState[cat] = newState[cat].map(p => 
-                        p.id === postId ? { ...p, liked: liked, likes: count } : p
+                        p.id === postId ? { ...p, liked, likes: count } : p
                     );
                 });
                 return newState;
@@ -901,17 +898,8 @@ function Community() {
 
     const [showPostDetail, setShowPostDetail] = useState(false);
     const [selectedPost, setSelectedPost] = useState(null);
-
-    const detailPostView = (post) => {
-        setSelectedPost(post);
-        setShowPostDetail(true);
-    };
-
-    const closeDetailView = () => {
-        setShowPostDetail(false);
-        setSelectedPost(null);
-    };
-
+    const detailPostView = (post) => { setSelectedPost(post); setShowPostDetail(true); };
+    const closeDetailView = () => { setShowPostDetail(false); setSelectedPost(null); };
     const handleDeletePost = async (postId) => {
         const username = localStorage.getItem('username');
         try {
@@ -922,7 +910,6 @@ function Community() {
             if (response.ok) { closeDetailView(); await fetchPosts(); }
         } catch (error) { console.error(error); }
     };
-
     const handleEditPost = async (updatedPost) => {
         const username = localStorage.getItem('username');
         try {
@@ -934,7 +921,6 @@ function Community() {
             if (response.ok) { closeDetailView(); await fetchPosts(); }
         } catch (error) { console.error(error); }
     };
-
     const handleUpdatePostState = () => fetchPosts();
 
     const navigate = useNavigate();
@@ -955,14 +941,7 @@ function Community() {
                             {activeTab === 'mypost' && <MyPost posts={posts.mypost} onOpenPost={detailPostView} onNewPost={() => newPost('mypost')} onToggleLike={handleToggleLike} />}
                         </>
                     ) : (
-                        <PostDetailView 
-                            post={selectedPost} 
-                            onClose={closeDetailView} 
-                            onDeletePost={handleDeletePost}
-                            onEditPost={handleEditPost}
-                            onToggleLike={handleToggleLike}
-                            onUpdatePostState={handleUpdatePostState}
-                        />
+                        <PostDetailView post={selectedPost} onClose={closeDetailView} onDeletePost={handleDeletePost} onEditPost={handleEditPost} onToggleLike={handleToggleLike} onUpdatePostState={handleUpdatePostState} />
                     )}
                 </div>
             </div>
