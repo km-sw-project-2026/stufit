@@ -1,9 +1,9 @@
 import { useState } from 'react';
 
-function GiveUpModal({ setModalOpen, setQuotePopupOpen }) {
+function GiveUpModal({ setModalOpen, setFinalModalOpen }) {
     const handleGiveUp = () => {
         setModalOpen(false);
-        setQuotePopupOpen(true);
+        setFinalModalOpen(true);
     };
 
     return (
