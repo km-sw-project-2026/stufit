@@ -588,6 +588,14 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
         fetchMembers();
         setFinalModalOpen(false);
         setAlertOpen(true);
+        // 제출 상태 초기화: 챌린지를 나가면 로컬 제출 상태는 제거
+        try {
+            setSubmittedToday(false);
+            setProgressPercent(0);
+            setElapsedDays(0);
+            setRemainingDays(getTotalDays());
+            setRefreshKey(prev => prev + 1);
+        } catch (e) { console.warn('leave local clear failed', e); }
         // 자세히보기도 닫기
         setTimeout(() => {
             if (onClose) onClose();
