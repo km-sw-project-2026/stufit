@@ -279,6 +279,17 @@ function MyPage({ isOpen, onClose }) {
       });
 
       try {
+        // 완료된 챌린지 개수 가져오기
+        const challengesResponse = await fetch('/api/challenges?includeCompleted=true&countOnly=true', {
+          headers: { 'X-Username': encodeUsernameHeader(username) },
+        });
+        if (challengesResponse.ok) {
+          const challengesData = await challengesResponse.json();
+          const completedCount = challengesData?.count || 0;
+          localStorage.setItem('successfulChallengesCount', String(completedCount));
+          setUserData((prev) => (prev ? { ...prev, challenges: `${completedCount}개` } : prev));
+        }
+
         // 사용자 아이템 정보 가져오기
         const itemsUrl = userId ? `/api/user/items?userId=${userId}` : '/api/user/items';
         const itemsResponse = await fetch(itemsUrl, {
@@ -292,19 +303,7 @@ function MyPage({ isOpen, onClose }) {
         }
         const ownedCount = itemsData?.purchasedItems?.length || 0;
 
-        // 초기 userData 설정 (아이템 개수 포함)
-        setUserData({
-          username: username || '',
-          score: cachedScore ? Number(cachedScore) : 0,
-          joinDate: localStorage.getItem('joinDate') || '2024년 7월 1일',
-          rank: '1위',
-          currentRank: '1위',
-          challenges: `${cachedSuccessful}개`,
-          points: cachedPoints ? Number(cachedPoints) : 0,
-          posts: `${cachedCommunity.posts}개`,
-          comments: `${cachedCommunity.comments}개`,
-          items: `${ownedCount}개`
-        });
+        setUserData((prev) => (prev ? { ...prev, items: `${ownedCount}개` } : prev));
 
         // 통계 정보 가져오기
         const statsParams = new URLSearchParams({ t: String(Date.now()) });
