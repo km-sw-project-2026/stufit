@@ -762,8 +762,6 @@ function Community() {
     const [isModalOpen, setModalOpen] = useState(false);
     const [isNewPostModalOpen, setNewPostModalOpen] = useState(false);
     const [currentCategory, setCurrentCategory] = useState('popular');
-
-    // 커스텀 알림 모달 상태
     const [isAlertOpen, setIsAlertOpen] = useState(false);
     const [alertMessage, setAlertMessage] = useState('');
 
@@ -772,7 +770,6 @@ function Community() {
         setIsAlertOpen(true);
     };
     
-    // 게시글 상태
     const [posts, setPosts] = useState({
         popular: [],
         tips: [],
@@ -817,22 +814,24 @@ function Community() {
         }
     };
 
-    // [수정] 접속 시 팝업 띄우기 및 데이터 로드 [cite: 2026-02-13]
+    // [핵심 수정] 계정별로 팝업 노출 여부 판단 [cite: 2026-02-13]
     useEffect(() => {
         fetchPosts();
 
-        // 오늘 날짜 확인 (YYYY-MM-DD 형식)
-        const today = new Date().toISOString().split('T')[0];
-        const lastVisit = localStorage.getItem('lastCommunityVisit');
+        const username = localStorage.getItem('username');
+        if (username) {
+            const today = new Date().toISOString().split('T')[0];
+            // 키값에 username을 더해 계정마다 따로 저장되게 합니다. (예: lastVisit_user1)
+            const storageKey = `lastCommunityVisit_${username}`;
+            const lastVisit = localStorage.getItem(storageKey);
 
-        // 오늘 처음 방문했다면 팝업 띄우기
-        if (lastVisit !== today) {
-            setModalOpen(true);
-            localStorage.setItem('lastCommunityVisit', today);
+            if (lastVisit !== today) {
+                setModalOpen(true);
+                localStorage.setItem(storageKey, today);
+            }
         }
     }, []);
     
-    // 좋아요 핸들러 (하트 색상 및 1개 승격 로직 통합) [cite: 2026-02-15]
     const handleToggleLike = async (postId) => {
         const username = localStorage.getItem('username');
         if (!username) return alert('로그인이 필요합니다.');
@@ -851,7 +850,6 @@ function Community() {
 
             const { liked, count, promoted } = payload.data;
 
-            // 1. 하트 상태 즉시 업데이트 (리렌더링 유도) [cite: 2026-02-13]
             setPosts(prev => {
                 const newState = { ...prev };
                 Object.keys(newState).forEach(cat => {
@@ -862,10 +860,9 @@ function Community() {
                 return newState;
             });
 
-            // 2. 좋아요 1개로 인기글 승격 시 [cite: 2026-02-15]
             if (promoted) {
                 showAlert('축하합니다! 좋아요 1개를 달성하여 인기글로 등록되었습니다.');
-                await fetchPosts(); // 전체 목록 다시 불러와서 위치 이동 반영
+                await fetchPosts();
             }
         } catch (error) {
             console.error('좋아요 에러:', error);
@@ -892,14 +889,13 @@ function Community() {
                 })
             });
 
-            const payload = await response.json();
-            if (!response.ok) throw new Error(payload.message);
-
-            await fetchPosts();
-            setNewPostModalOpen(false);
-            window.dispatchEvent(new CustomEvent('communityActivityUpdated'));
+            if (response.ok) {
+                await fetchPosts();
+                setNewPostModalOpen(false);
+                window.dispatchEvent(new CustomEvent('communityActivityUpdated'));
+            }
         } catch (error) {
-            alert(error.message || '게시글 작성에 실패했습니다.');
+            alert('작성 실패');
         }
     };
 
@@ -970,23 +966,9 @@ function Community() {
                     )}
                 </div>
             </div>
-            
-            {/* 팝업 모달 */}
             {isModalOpen && <CommunityRewardModal onClose={() => setModalOpen(false)} />}
-            
-            {isNewPostModalOpen && (
-                <NewPostModal 
-                    category={currentCategory} 
-                    onClose={() => setNewPostModalOpen(false)} 
-                    onSubmit={handleAddPost}
-                />
-            )}
-            {isAlertOpen && (
-                <CustomAlertModal 
-                    message={alertMessage} 
-                    onClose={() => setIsAlertOpen(false)} 
-                />
-            )}
+            {isNewPostModalOpen && <NewPostModal category={currentCategory} onClose={() => setNewPostModalOpen(false)} onSubmit={handleAddPost} />}
+            {isAlertOpen && <CustomAlertModal message={alertMessage} onClose={() => setIsAlertOpen(false)} />}
         </div>
     );
 }
