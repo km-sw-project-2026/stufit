@@ -1209,7 +1209,6 @@ function Community() {
         mypost: []
     });
 
-    // [중요] row.user_liked 값을 불리언(true/false)으로 정확히 변환하여 전달 [cite: 2026-02-13]
     const mapPost = (row) => ({
         id: row.post_id,
         title: row.title,
@@ -1217,7 +1216,7 @@ function Community() {
         author: row.username || '익명',
         likes: Number(row.like_count) || 0,
         comments: Number(row.comment_count) || 0,
-        liked: row.user_liked === 1 || row.user_liked === true, // 서버 응답에 따른 불리언 처리 [cite: 2026-02-13]
+        liked: row.user_liked === 1 || row.user_liked === true,
         date: row.created_at ? new Date(row.created_at).toLocaleString('ko-KR') : '',
         category: row.category || 'data'
     });
@@ -1226,7 +1225,6 @@ function Community() {
         try {
             const username = localStorage.getItem('username');
             const headers = {};
-            // 서버가 "누가" 요청했는지 알아야 좋아요 여부를 알려줄 수 있습니다 [cite: 2026-02-13]
             if (username) headers['X-Username'] = username;
             
             const response = await fetch('/api/posts', { headers });
@@ -1260,6 +1258,7 @@ function Community() {
         }
     }, []);
     
+    // [수정된 로직] 좋아요 상태 유지 및 깜빡임 해결 [cite: 2026-02-13]
     const handleToggleLike = async (postId) => {
         const username = localStorage.getItem('username');
         if (!username) return alert('로그인이 필요합니다.');
@@ -1276,9 +1275,9 @@ function Community() {
             const payload = await response.json();
             if (!response.ok) return alert(payload.message || '좋아요 처리 실패');
 
-            // 서버에서 넘어온 최신 좋아요 상태(liked)와 개수(count) 반영 [cite: 2026-02-13]
             const { liked, count } = payload.data;
 
+            // 1. 먼저 UI 상태를 업데이트하여 하트 색상을 고정시킵니다. [cite: 2026-02-13]
             setPosts(prev => {
                 const newState = { ...prev };
                 Object.keys(newState).forEach(cat => {
@@ -1289,16 +1288,19 @@ function Community() {
                 return newState;
             });
 
-            if (count >= 1) {
-                // 이미 알림을 본 글이라면 중복 알림을 방지하기 위해 추가 로직이 필요할 수 있으나 현재는 1개 기준 알림 유지 [cite: 2026-02-15]
+            // 2. 좋아요가 1개가 되어 인기글이 되었을 때 알림을 띄웁니다. [cite: 2026-02-15]
+            // 여기서 fetchPosts()를 바로 호출하지 않고, 필요한 경우에만 호출하도록 조정합니다. [cite: 2026-02-13]
+            if (count === 1 && liked === true) {
                 showAlert('축하합니다! 좋아요 1개를 달성하여 인기글로 등록되었습니다.');
-                await fetchPosts(); 
+                // 알림창을 닫은 후나 혹은 약간의 지연 후에 데이터를 갱신하여 색상 사라짐 방지 [cite: 2026-02-13]
+                setTimeout(() => fetchPosts(), 500);
             }
         } catch (error) {
             console.error('좋아요 에러:', error);
         }
     };
 
+    // ... (이하 기존 함수들: newPost, handleAddPost, detailPostView 등 동일하게 유지) [cite: 2026-02-13]
     const newPost = (category) => {
         setCurrentCategory(category || activeTab);
         setNewPostModalOpen(true);
