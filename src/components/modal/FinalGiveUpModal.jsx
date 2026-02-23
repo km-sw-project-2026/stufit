@@ -61,6 +61,17 @@ function FinalGiveUpModal({ setModalOpen, challengeId, onLeave }) {
                     }
                 }
                 
+                // 시도: 사용자의 제출 기록도 삭제 요청
+                try {
+                    await fetch(`/api/challenges/${challengeId}/progress`, {
+                        method: 'DELETE',
+                        headers: { 'X-Username': username }
+                    });
+                    console.log('🔵 progress 삭제 요청 전송');
+                } catch (e) {
+                    console.warn('progress 삭제 요청 실패', e);
+                }
+
                 setModalOpen(false);
                 // 부모 컴포넌트에 콜백
                 if (onLeave) {
