@@ -672,6 +672,9 @@ function OngoingChallenge() {
         return () => {
             window.removeEventListener('challengeCompleted', handleChallengeCompleted);
             console.log('👋 [OngoingChallenge] challengeCompleted 이벤트 리스너 제거됨');
+        };
+    }, []);
+
     // 새 챌린지 추가 후 목록 새로고침
     const handleCreateChallenge = () => {
         fetchChallenges();
