@@ -72,6 +72,17 @@ function HostGiveUpModal({ setModalOpen, setFinalModalOpen, challenge, onLeave }
                         window.dispatchEvent(event);
                     }
                     
+                    // 시도: 사용자의 제출 기록도 삭제 요청
+                    try {
+                        await fetch(`/api/challenges/${challenge.challenge_id}/progress`, {
+                            method: 'DELETE',
+                            headers: { 'X-Username': username }
+                        });
+                        console.log('🔵 progress 삭제 요청 전송 (host leave)');
+                    } catch (e) {
+                        console.warn('progress 삭제 요청 실패 (host leave)', e);
+                    }
+
                     setAlertMessage('챌린지를 나갔습니다. 방장 권한이 다른 멤버에게 이전되었습니다.');
                     setAlertOpen(true);
                 } else {
@@ -109,12 +120,6 @@ function HostGiveUpModal({ setModalOpen, setFinalModalOpen, challenge, onLeave }
                         <line x1="6" y1="6" x2="18" y2="18"></line>
                     </svg>
                 </button>
-                
-                <div style={{ textAlign: 'center', marginBottom: '20px', marginTop: '8px' }}>
-                    <p style={{ fontSize: '1.1rem', fontWeight: '600', lineHeight: '1.5', color: '#333', marginBottom: '8px' }}>
-                        {randomQuote.text}
-                    </p>
-                </div>
                 
                 <h3 className="host-giveup-title">챌린지</h3>
                 
