@@ -1,28 +1,11 @@
 import { useState } from "react";
 import CustomAlertModal from "./CustomAlertModal";
 
-const quotes = [
-    { text: "지금 포기하는 건 게으른게 아니라, 스스로를 포기한거다." },
-    { text: "노력하지 않은 미래를 후회하는 게 제일 추하다." },
-    { text: "경쟁자는 나와 어제의 나일뿐이다." },
-    { text: "양심을 버린 순간부터 너는 이미 변명 속에서 산다." },
-    { text: "재능이 없어서가 아니라, 끝까지 하지 않아서 평범한 것이다." },
-    { text: "아무것도 하지 않으면서 바라는 건 꿈이 아니라 욕심이다." },
-    { text: "변명은 노력보다 쉽고, 후회는 변명보다 오래 간다." },
-    { text: "당신이 안 하는 동안, 누군가는 이미 당신을 추월했다." },
-    { text: "할 수 있었는데 안 한 선택들이 결국 당신의 한계를 만든다." },
-    { text: "힘들다는 이유로 멈추는 순간, 당신의 목표도 당신을 포기한다." }
-];
-
 function HostGiveUpModal({ setModalOpen, setFinalModalOpen, challenge, onLeave }) {
     const [selectedOption, setSelectedOption] = useState('leave'); // 'leave' 또는 'delete'
     const [loading, setLoading] = useState(false);
     const [alertOpen, setAlertOpen] = useState(false);
     const [alertMessage, setAlertMessage] = useState('');
-    const [randomQuote] = useState(() => {
-        const randomIndex = Math.floor(Math.random() * quotes.length);
-        return quotes[randomIndex];
-    });
 
     const handleConfirm = async () => {
         if (loading) return;

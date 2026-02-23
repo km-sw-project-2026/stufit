@@ -1,23 +1,9 @@
 import { useState } from 'react';
 
-const quotes = [
-    { text: "지금 포기하는 건 게으른게 아니라, 스스로를 포기한거다.", author: "" },
-    { text: "노력하지 않은 미래를 후회하는 게 제일 추하다.", author: "" },
-    { text: "경쟁자는 나와 어제의 나일뿐이다.", author: "" },
-    { text: "양심을 버린 순간부터 너는 이미 변명 속에서 산다.", author: "" },
-    { text: "재능이 없어서가 아니라, 끝까지 하지 않아서 평범한 것이다.", author: "" },
-    { text: "아무것도 하지 않으면서 바라는 건 꿈이 아니라 욕심이다.", author: "" },
-    { text: "변명은 노력보다 쉽고, 후회는 변명보다 오래 간다.", author: "" },
-    { text: "당신이 안 하는 동안, 누군가는 이미 당신을 추월했다.", author: "" },
-    { text: "할 수 있었는데 안 한 선택들이 결국 당신의 한계를 만든다.", author: "" },
-    { text: "힘들다는 이유로 멈추는 순간, 당신의 목표도 당신을 포기한다.", author: "" }
-];
-
 function FinalGiveUpModal({ setModalOpen, challengeId, onLeave }) {
-    // 컴포넌트가 렌더링될 때마다 랜덤 명언 선택
     const [randomQuote] = useState(() => {
-        const randomIndex = Math.floor(Math.random() * quotes.length);
-        return quotes[randomIndex];
+        const randomIndex = Math.floor(Math.random() * 10);
+        return { text: "포기하지 말기를..." }; // 더 이상 사용되지 않음
     });
 
     const handleConfirmLeave = async () => {
@@ -95,13 +81,11 @@ function FinalGiveUpModal({ setModalOpen, challengeId, onLeave }) {
             <div className="popup-overlay"></div>
             <div className="popup-content confirm-modal-content">
                 <div className="confirm-text-area">
-                    <h3 className="confirm-title" style={{ wordBreak: 'keep-all', lineHeight: '1.4', marginBottom: '20px', marginTop: '8px' }}>
-                        {randomQuote.text}
+                    <h3 className="confirm-title" style={{ wordBreak: 'keep-all', lineHeight: '1.4', marginBottom: '20px' }}>
+                        끝까지 가보지 못한다면 '안 되는 이유'를<br />말할 자격이 없다
                     </h3>
-                    {randomQuote.author && (
-                        <p className="confirm-subtitle" style={{ color: 'grey', fontSize: '0.9rem', marginBottom: '30px', fontWeight: 'normal' }}>-{randomQuote.author}-</p>
-                    )}
-                    <p className="confirm-subtitle" style={{ marginTop: randomQuote.author ? 0 : '30px' }}>챌린지를 포기하시겠습니까?</p>
+                    <p className="confirm-subtitle" style={{ color: 'grey', fontSize: '0.9rem', marginBottom: '30px', fontWeight: 'normal' }}>-박현서-</p>
+                    <p className="confirm-subtitle" style={{ marginTop: 0 }}>챌린지를 포기하시겠습니까?</p>
                 </div>
                 <div className="confirm-buttons">
                     <button className="confirm-btn cancel" onClick={() => setModalOpen(false)}>취소</button>
