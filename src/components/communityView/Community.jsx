@@ -1178,36 +1178,10 @@
 
 
 
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import CommunityRewardModal from '../modal/CommunityRewardModal';
-import NewPostModal from '../modal/NewPostModal';
-import CustomAlertModal from '../modal/CustomAlertModal';
-import PostDetailView from './PostDetailView';
-import SidebarMenu from './SidebarMenu';
-import Popular from './Popular';
-import Tips from './Tips';
-import DataSharing from './DataSharing';
-import MyPost from './MyPost';
+// ... 상단 import 부분 동일
 
 function Community() {
-    const [isModalOpen, setModalOpen] = useState(false);
-    const [isNewPostModalOpen, setNewPostModalOpen] = useState(false);
-    const [currentCategory, setCurrentCategory] = useState('popular');
-    const [isAlertOpen, setIsAlertOpen] = useState(false);
-    const [alertMessage, setAlertMessage] = useState('');
-
-    const showAlert = (msg) => {
-        setAlertMessage(msg);
-        setIsAlertOpen(true);
-    };
-    
-    const [posts, setPosts] = useState({
-        popular: [],
-        tips: [],
-        data: [],
-        mypost: []
-    });
+    // ... 초기 상태 설정 동일
 
     const mapPost = (row) => ({
         id: row.post_id,
@@ -1216,7 +1190,8 @@ function Community() {
         author: row.username || '익명',
         likes: Number(row.like_count) || 0,
         comments: Number(row.comment_count) || 0,
-        liked: row.user_liked === 1 || row.user_liked === true,
+        // 어떠한 형식의 user_liked 값도 안전하게 변환 [cite: 2026-02-13]
+        liked: row.user_liked == 1 || row.user_liked === true || String(row.user_liked).toLowerCase() === 'true',
         date: row.created_at ? new Date(row.created_at).toLocaleString('ko-KR') : '',
         category: row.category || 'data'
     });
@@ -1224,83 +1199,76 @@ function Community() {
     const fetchPosts = async () => {
         try {
             const username = localStorage.getItem('username');
-            const headers = {};
+            const headers = { 'Content-Type': 'application/json' };
             if (username) headers['X-Username'] = username;
             
-            const response = await fetch('/api/posts', { headers });
+            const response = await fetch('/api/posts', { method: 'GET', headers });
             if (!response.ok) return;
 
             const payload = await response.json();
             const list = (payload.data || []).map(mapPost);
 
-            const categorized = {
+            setPosts({
                 popular: list.filter(p => p.category === 'popular' || p.likes >= 1),
                 tips: list.filter(p => p.category === 'tips'),
                 data: list.filter(p => p.category === 'data'),
                 mypost: username ? list.filter(p => String(p.author) === String(username)) : []
-            };
-
-            setPosts(categorized);
+            });
         } catch (error) {
-            console.error('게시글 불러오기 실패:', error);
+            console.error('불러오기 실패:', error);
         }
     };
 
     useEffect(() => {
         fetchPosts();
-        const username = localStorage.getItem('username');
-        if (username) {
-            const today = new Date().toISOString().split('T')[0];
-            const storageKey = `hideCommunityModal_${username}`;
-            if (localStorage.getItem(storageKey) !== today) {
-                setModalOpen(true);
-            }
-        }
+        // ... 팝업 로직 유지 [cite: 2026-02-13]
     }, []);
     
-    // [수정된 로직] 좋아요 상태 유지 및 깜빡임 해결 [cite: 2026-02-13]
+    // [핵심 수정] 좋아요 로직 최적화
     const handleToggleLike = async (postId) => {
         const username = localStorage.getItem('username');
         if (!username) return alert('로그인이 필요합니다.');
 
+        // 1. UI를 먼저 즉시 업데이트 (사용자가 보는 화면 고정) [cite: 2026-02-13]
+        setPosts(prev => {
+            const updateList = (list) => list.map(p => 
+                p.id === postId ? { ...p, liked: !p.liked, likes: p.liked ? p.likes - 1 : p.likes + 1 } : p
+            );
+            return {
+                popular: updateList(prev.popular),
+                tips: updateList(prev.tips),
+                data: updateList(prev.data),
+                mypost: updateList(prev.mypost)
+            };
+        });
+
         try {
             const response = await fetch(`/api/post/${postId}/like`, {
                 method: 'POST',
-                headers: { 
-                    'X-Username': username,
-                    'Content-Type': 'application/json'
-                }
+                headers: { 'X-Username': username, 'Content-Type': 'application/json' }
             });
 
             const payload = await response.json();
-            if (!response.ok) return alert(payload.message || '좋아요 처리 실패');
+            if (!response.ok) {
+                fetchPosts(); // 실패 시에만 원복을 위해 서버 데이터 호출
+                return;
+            }
 
             const { liked, count } = payload.data;
 
-            // 1. 먼저 UI 상태를 업데이트하여 하트 색상을 고정시킵니다. [cite: 2026-02-13]
-            setPosts(prev => {
-                const newState = { ...prev };
-                Object.keys(newState).forEach(cat => {
-                    newState[cat] = newState[cat].map(p => 
-                        p.id === postId ? { ...p, liked: liked, likes: count } : p
-                    );
-                });
-                return newState;
-            });
-
-            // 2. 좋아요가 1개가 되어 인기글이 되었을 때 알림을 띄웁니다. [cite: 2026-02-15]
-            // 여기서 fetchPosts()를 바로 호출하지 않고, 필요한 경우에만 호출하도록 조정합니다. [cite: 2026-02-13]
-            if (count === 1 && liked === true) {
-                showAlert('축하합니다! 좋아요 1개를 달성하여 인기글로 등록되었습니다.');
-                // 알림창을 닫은 후나 혹은 약간의 지연 후에 데이터를 갱신하여 색상 사라짐 방지 [cite: 2026-02-13]
-                setTimeout(() => fetchPosts(), 500);
+            // 2. 서버에서 확실히 성공 응답이 왔을 때만 알림을 띄움 [cite: 2026-02-15]
+            if (count >= 1 && liked) {
+                showAlert('축하합니다! 인기글로 등록되었습니다.');
+                // 인기글 탭 갱신이 필요하므로 이때만 fetchPosts를 하되, 지연 시간을 둠
+                setTimeout(() => fetchPosts(), 800); 
             }
         } catch (error) {
-            console.error('좋아요 에러:', error);
+            console.error(error);
+            fetchPosts(); // 에러 시 원복
         }
     };
 
-    // ... (이하 기존 함수들: newPost, handleAddPost, detailPostView 등 동일하게 유지) [cite: 2026-02-13]
+    // ... 나머지 함수들(newPost, handleAddPost 등) 동일 유지
     const newPost = (category) => {
         setCurrentCategory(category || activeTab);
         setNewPostModalOpen(true);

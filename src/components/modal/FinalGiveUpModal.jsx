@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 const quotes = [
     { text: "지금 포기하는 건 게으른게 아니라, 스스로를 포기한거다.", author: "" },
@@ -14,13 +14,11 @@ const quotes = [
 ];
 
 function FinalGiveUpModal({ setModalOpen, challengeId, onLeave }) {
-    const [randomQuote, setRandomQuote] = useState(quotes[0]);
-
-    useEffect(() => {
-        // 컴포넌트 마운트 시 랜덤 명언 선택
+    // 컴포넌트가 렌더링될 때마다 랜덤 명언 선택
+    const [randomQuote] = useState(() => {
         const randomIndex = Math.floor(Math.random() * quotes.length);
-        setRandomQuote(quotes[randomIndex]);
-    }, []);
+        return quotes[randomIndex];
+    });
 
     const handleConfirmLeave = async () => {
         try {
@@ -97,7 +95,7 @@ function FinalGiveUpModal({ setModalOpen, challengeId, onLeave }) {
             <div className="popup-overlay"></div>
             <div className="popup-content confirm-modal-content">
                 <div className="confirm-text-area">
-                    <h3 className="confirm-title" style={{ wordBreak: 'keep-all', lineHeight: '1.4', marginBottom: '20px' }}>
+                    <h3 className="confirm-title" style={{ wordBreak: 'keep-all', lineHeight: '1.4', marginBottom: '20px', marginTop: '8px' }}>
                         {randomQuote.text}
                     </h3>
                     {randomQuote.author && (
