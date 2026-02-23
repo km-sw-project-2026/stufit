@@ -15,11 +15,6 @@ function HostGiveUpModal({ setModalOpen, setFinalModalOpen, challenge, onLeave }
 
     const handleQuoteClose = async () => {
         setShowQuote(false);
-        await executeAction();
-    };
-
-    const executeAction = async () => {
-        if (loading) return;
         
         const username = localStorage.getItem('username');
         if (!username || !challenge?.challenge_id) {
@@ -104,7 +99,6 @@ function HostGiveUpModal({ setModalOpen, setFinalModalOpen, challenge, onLeave }
                 // 챌린지 삭제 - FinalGiveUpModal 사용
                 setModalOpen(false);
                 setFinalModalOpen(true);
-                return; // executeAction 종료
             }
         } catch (error) {
             console.error('Error:', error);
@@ -124,6 +118,7 @@ function HostGiveUpModal({ setModalOpen, setFinalModalOpen, challenge, onLeave }
     return (
         <>
             <QuotePopup isOpen={showQuote} onClose={handleQuoteClose} />
+            {!showQuote && (
             <div id="host-give-up-modal" className="popup-modal">
                 <div className="popup-overlay"></div>
                 <div className="popup-content host-giveup-modal-content">
@@ -182,6 +177,7 @@ function HostGiveUpModal({ setModalOpen, setFinalModalOpen, challenge, onLeave }
                 </button>
             </div>
         </div>
+            )}
             {alertOpen && (
                 <CustomAlertModal
                     message={alertMessage}
