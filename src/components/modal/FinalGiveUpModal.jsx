@@ -95,7 +95,7 @@ function FinalGiveUpModal({ setModalOpen, challengeId, onLeave }) {
             <div className="popup-overlay"></div>
             <div className="popup-content confirm-modal-content">
                 <div className="confirm-text-area">
-                    <h3 className="confirm-title" style={{ wordBreak: 'keep-all', lineHeight: '1.4', marginBottom: '20px' }}>
+                    <h3 className="confirm-title" style={{ wordBreak: 'keep-all', lineHeight: '1.4', marginBottom: '20px', marginTop: '8px' }}>
                         {randomQuote.text}
                     </h3>
                     {randomQuote.author && (
