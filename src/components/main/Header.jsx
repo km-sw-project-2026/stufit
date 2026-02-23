@@ -8,15 +8,54 @@ function Header() {
     const [points, setPoints] = useState(0);
 
     useEffect(() => {
+        let isMounted = true;
+
+        const fetchPointsFromDb = async ({ username, userId }) => {
+            const normalizedUserId = Number(userId);
+            if (!username && (!Number.isInteger(normalizedUserId) || normalizedUserId <= 0)) {
+                return;
+            }
+
+            try {
+                const query = Number.isInteger(normalizedUserId) && normalizedUserId > 0
+                    ? `?userId=${normalizedUserId}`
+                    : '';
+
+                const response = await fetch(`/api/user/points${query}`, {
+                    method: 'GET',
+                    headers: {
+                        ...(username ? { 'X-Username': encodeURIComponent(username) } : {}),
+                        ...(Number.isInteger(normalizedUserId) && normalizedUserId > 0 ? { 'X-User-Id': String(normalizedUserId) } : {}),
+                    },
+                });
+
+                const payload = await response.json().catch(() => null);
+                if (!response.ok || !payload?.success) {
+                    return;
+                }
+
+                const dbPoints = Number(payload?.points);
+                if (!Number.isNaN(dbPoints) && isMounted) {
+                    localStorage.setItem('points', String(dbPoints));
+                    setPoints(dbPoints);
+                    window.dispatchEvent(new CustomEvent('pointsUpdated', { detail: { points: dbPoints } }));
+                }
+            } catch (error) {
+                console.error('Header points fetch failed:', error);
+            }
+        };
+
         // 로그인 상태 확인
-        const checkLoginStatus = () => {
+        const checkLoginStatus = async () => {
             const username = localStorage.getItem('username');
+            const userId = localStorage.getItem('userId');
             setIsLoggedIn(!!username);
             
             // 로그인 상태면 포인트도 로드
             if (username) {
                 const storedPoints = localStorage.getItem('points');
                 setPoints(storedPoints ? Number(storedPoints) : 0);
+                await fetchPointsFromDb({ username, userId });
             } else {
                 setPoints(0);
             }
@@ -41,6 +80,7 @@ function Header() {
         window.addEventListener('pointsUpdated', handlePointsUpdate);
 
         return () => {
+            isMounted = false;
             window.removeEventListener('storage', checkLoginStatus);
             window.removeEventListener('loginStatusChanged', checkLoginStatus);
             window.removeEventListener('pointsUpdated', handlePointsUpdate);
