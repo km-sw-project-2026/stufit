@@ -607,11 +607,13 @@ function MyPage({ isOpen, onClose }) {
     const handleChallengeCompleted = (event) => {
       const delta = Number(event?.detail?.delta ?? 1);
       if (!delta) return;
+      console.log('✅ [MyPage] challengeCompleted 이벤트 수신! delta:', delta);
       setUserData((prev) => {
         if (!prev) return prev;
         const prevCount = parseCountText(prev.challenges);
         const nextCount = Math.max(0, prevCount + delta);
         try { localStorage.setItem('successfulChallengesCount', String(nextCount)); } catch (e) { }
+        console.log('📊 [MyPage] 성공한 챌린지 개수 업데이트:', prevCount, '->', nextCount);
         return { ...prev, challenges: `${nextCount}개` };
       });
     };

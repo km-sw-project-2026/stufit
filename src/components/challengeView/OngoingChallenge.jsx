@@ -655,6 +655,23 @@ function OngoingChallenge() {
         fetchChallenges();
     }, []);
 
+    // 챌린지 완료 시 목록 새로고침
+    useEffect(() => {
+        const handleChallengeCompleted = () => {
+            console.log('✅ [OngoingChallenge] challengeCompleted 이벤트 수신 - 목록 새로고침 시작');
+            // 약간의 딜레이를 주어 서버에서 완료 처리가 완료되도록 함
+            setTimeout(() => {
+                fetchChallenges();
+                console.log('🔄 [OngoingChallenge] 목록 새로고침 완료');
+            }, 500);
+        };
+
+        window.addEventListener('challengeCompleted', handleChallengeCompleted);
+        console.log('👂 [OngoingChallenge] challengeCompleted 이벤트 리스너 등록됨');
+        
+        return () => {
+            window.removeEventListener('challengeCompleted', handleChallengeCompleted);
+            console.log('👋 [OngoingChallenge] challengeCompleted 이벤트 리스너 제거됨');
     // 새 챌린지 추가 후 목록 새로고침
     const handleCreateChallenge = () => {
         fetchChallenges();
