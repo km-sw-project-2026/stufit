@@ -710,6 +710,7 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
         }
         try {
             window.dispatchEvent(new CustomEvent('challengeCompleted', { detail: { delta: 1 } }));
+            console.log('[finalizeChallenge] ✅ challengeCompleted 이벤트 발생!');
         } catch (e) {
             console.warn('[finalizeChallenge] challengeCompleted dispatch failed', e);
         }
@@ -1011,6 +1012,12 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
                 onClose={() => {
                     console.log('[ChallengeOverModal] close click');
                     setIsChallengeOverOpen(false);
+                    // 완료 후 상세 페이지도 닫기
+                    if (onClose) {
+                        setTimeout(() => {
+                            onClose();
+                        }, 300);
+                    }
                 }}
                 showScoreInput={getChallengeType() === 'study'}
                 onSubmitScore={handleSubmitStudyScore}
