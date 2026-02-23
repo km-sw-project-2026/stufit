@@ -2,7 +2,7 @@
 
 
 // 사람들의 데이터를 받은 후 (예시)
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 function Ranking() {
     // 서버에서 사용자 목록을 불러옵니다 (Cloudflare D1의 `users` 테이블)
@@ -12,26 +12,38 @@ function Ranking() {
     const [searchResult, setSearchResult] = useState(null); 
 
     // Fetch users from API (fallback to dummyData)
-    useEffect(() => {
+    const fetchUsers = useCallback(async (opts = {}) => {
         let cancelled = false;
-        (async () => {
-            try {
-                const res = await fetch('/api/users');
-                const payload = await res.json().catch(() => null);
-                if (!res.ok || !payload?.success || !Array.isArray(payload.users)) {
-                    console.warn('Failed to load /api/users', payload);
-                    if (!cancelled) setRankings([]);
-                    return;
-                }
-                const users = payload.users.map((u) => ({ id: u.userId || u.username, username: u.username, score: Number(u.score) || 0 }));
-                if (!cancelled) setRankings(users);
-            } catch (e) {
-                console.error('Error fetching /api/users', e);
+        try {
+            const res = await fetch('/api/users');
+            const payload = await res.json().catch(() => null);
+            if (!res.ok || !payload?.success || !Array.isArray(payload.users)) {
+                console.warn('Failed to load /api/users', payload);
                 if (!cancelled) setRankings([]);
+                return;
             }
-        })();
+            const users = payload.users.map((u) => ({ id: u.userId || u.username, username: u.username, score: Number(u.score) || 0 }));
+            if (!cancelled) setRankings(users);
+        } catch (e) {
+            console.error('Error fetching /api/users', e);
+            if (!cancelled) setRankings([]);
+        }
         return () => { cancelled = true; };
     }, []);
+
+    useEffect(() => {
+        fetchUsers();
+
+        const handler = (event) => {
+            // on pointsUpdated, re-fetch rankings to reflect score/tier changes
+            fetchUsers();
+        };
+
+        window.addEventListener('pointsUpdated', handler);
+        return () => {
+            window.removeEventListener('pointsUpdated', handler);
+        };
+    }, [fetchUsers]);
 
     // 2. 검색 기능 확인 함수
     const handleSearch = () => {
