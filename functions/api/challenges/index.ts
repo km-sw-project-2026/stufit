@@ -32,12 +32,32 @@ export default async function handler(request: Request, { env, userId }: Handler
 
       console.log('Fetching challenges for userId:', userId);
 
+      // Check if requesting completed challenges count
+      const includeCompleted = url.searchParams.get('includeCompleted') === 'true';
+      const countOnly = url.searchParams.get('countOnly') === 'true';
+
+      if (countOnly && includeCompleted) {
+        // Return count of completed challenges
+        const completedCount = await env.D1_DB
+          .prepare(
+            `SELECT COUNT(*) as count FROM challenges c
+             INNER JOIN challenge_members cm ON c.challenge_id = cm.challenge_id
+             WHERE cm.user_id = ? AND c.deleted_at IS NOT NULL`
+          )
+          .bind(userId)
+          .first();
+        
+        return Response.json({
+          success: true,
+          count: completedCount?.count || 0
+        });
+      }
+
       const userChallenges = await env.D1_DB
         .prepare(
           `SELECT c.* FROM challenges c
            INNER JOIN challenge_members cm ON c.challenge_id = cm.challenge_id
            WHERE cm.user_id = ? AND c.deleted_at IS NULL
-           AND (c.status IS NULL OR c.status != 'completed')
            ORDER BY c.created_at DESC`
         )
         .bind(userId)

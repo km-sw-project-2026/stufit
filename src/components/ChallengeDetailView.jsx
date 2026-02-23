@@ -199,6 +199,7 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
     const [refreshKey, setRefreshKey] = useState(0);
     const [ongoingAlertOpen, setOngoingAlertOpen] = useState(false);
     const [isChallengeOverOpen, setIsChallengeOverOpen] = useState(false);
+    const [showSuccessPopup, setShowSuccessPopup] = useState(false);
     const [rankingData, setRankingData] = useState([]);
     const [studyScore, setStudyScore] = useState(null);
 
@@ -601,6 +602,12 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
             setOngoingAlertOpen(true);
             return;
         }
+        // 성공 메시지 먼저 표시
+        setShowSuccessPopup(true);
+    };
+
+    const handleSuccessConfirm = () => {
+        setShowSuccessPopup(false);
         setIsChallengeOverOpen(true);
         finalizeChallenge();
     };
@@ -1005,6 +1012,12 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
                 <CustomAlertModal
                     message="아직 챌린지가 진행 중입니다!"
                     onClose={() => setOngoingAlertOpen(false)}
+                />
+            )}
+            {showSuccessPopup && (
+                <CustomAlertModal
+                    message="챌린지에 성공하셨습니다! 🎉"
+                    onClose={handleSuccessConfirm}
                 />
             )}
             <ChallengeOverModal
