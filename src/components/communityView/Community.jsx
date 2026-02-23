@@ -1209,7 +1209,6 @@ function Community() {
         mypost: []
     });
 
-    // [핵심] 서버 응답의 user_liked를 불리언으로 완벽 변환 [cite: 2026-02-13]
     const mapPost = (row) => ({
         id: row.post_id,
         title: row.title,
@@ -1217,8 +1216,7 @@ function Community() {
         author: row.username || '익명',
         likes: Number(row.like_count) || 0,
         comments: Number(row.comment_count) || 0,
-        // 서버에서 1, "1", true, "true" 등 어떤 형식이 와도 빨간 하트를 유지하게 함
-        liked: row.user_liked == 1 || row.user_liked === true || String(row.user_liked).toLowerCase() === 'true',
+        liked: row.user_liked === 1 || row.user_liked === true,
         date: row.created_at ? new Date(row.created_at).toLocaleString('ko-KR') : '',
         category: row.category || 'data'
     });
@@ -1226,22 +1224,15 @@ function Community() {
     const fetchPosts = async () => {
         try {
             const username = localStorage.getItem('username');
-            const headers = { 'Content-Type': 'application/json' };
-            
-            // [중요] 랭킹/상점 등에 갔다 와도 '내 좋아요' 기록을 가져오려면 반드시 이 헤더가 필요함 [cite: 2026-01-20]
+            const headers = {};
             if (username) headers['X-Username'] = username;
             
-            const response = await fetch('/api/posts', { 
-                method: 'GET',
-                headers: headers 
-            });
-
+            const response = await fetch('/api/posts', { headers });
             if (!response.ok) return;
 
             const payload = await response.json();
             const list = (payload.data || []).map(mapPost);
 
-            // 좋아요 1개 기준 인기글 자동 분류 로직 유지 [cite: 2026-02-15]
             const categorized = {
                 popular: list.filter(p => p.category === 'popular' || p.likes >= 1),
                 tips: list.filter(p => p.category === 'tips'),
@@ -1255,10 +1246,8 @@ function Community() {
         }
     };
 
-    // 페이지 진입 시 및 탭 변경 시 데이터 로드 [cite: 2026-02-13]
     useEffect(() => {
         fetchPosts();
-
         const username = localStorage.getItem('username');
         if (username) {
             const today = new Date().toISOString().split('T')[0];
@@ -1269,7 +1258,7 @@ function Community() {
         }
     }, []);
     
-    // 좋아요 상태를 즉각 반영하고 유지하는 핸들러 [cite: 2026-02-13]
+    // [수정된 로직] 좋아요 상태 유지 및 깜빡임 해결 [cite: 2026-02-13]
     const handleToggleLike = async (postId) => {
         const username = localStorage.getItem('username');
         if (!username) return alert('로그인이 필요합니다.');
@@ -1277,38 +1266,41 @@ function Community() {
         try {
             const response = await fetch(`/api/post/${postId}/like`, {
                 method: 'POST',
-                headers: { 'X-Username': username, 'Content-Type': 'application/json' }
+                headers: { 
+                    'X-Username': username,
+                    'Content-Type': 'application/json'
+                }
             });
 
             const payload = await response.json();
-            if (!response.ok) return;
+            if (!response.ok) return alert(payload.message || '좋아요 처리 실패');
 
             const { liked, count } = payload.data;
 
-            // 1. 상태 즉시 반영 (하트 색상 고정) [cite: 2026-02-13]
+            // 1. 먼저 UI 상태를 업데이트하여 하트 색상을 고정시킵니다. [cite: 2026-02-13]
             setPosts(prev => {
-                const update = (list) => list.map(p => p.id === postId ? { ...p, liked: !!liked, likes: count } : p);
-                return {
-                    popular: update(prev.popular),
-                    tips: update(prev.tips),
-                    data: update(prev.data),
-                    mypost: update(prev.mypost)
-                };
+                const newState = { ...prev };
+                Object.keys(newState).forEach(cat => {
+                    newState[cat] = newState[cat].map(p => 
+                        p.id === postId ? { ...p, liked: liked, likes: count } : p
+                    );
+                });
+                return newState;
             });
 
-            // 2. 인기글 달성 알림 [cite: 2026-02-15]
-            if (count >= 1 && liked) {
+            // 2. 좋아요가 1개가 되어 인기글이 되었을 때 알림을 띄웁니다. [cite: 2026-02-15]
+            // 여기서 fetchPosts()를 바로 호출하지 않고, 필요한 경우에만 호출하도록 조정합니다. [cite: 2026-02-13]
+            if (count === 1 && liked === true) {
                 showAlert('축하합니다! 좋아요 1개를 달성하여 인기글로 등록되었습니다.');
+                // 알림창을 닫은 후나 혹은 약간의 지연 후에 데이터를 갱신하여 색상 사라짐 방지 [cite: 2026-02-13]
+                setTimeout(() => fetchPosts(), 500);
             }
-
-            // 3. 서버 데이터와 최종 동기화 (지연 시간을 두어 깜빡임 방지)
-            setTimeout(() => fetchPosts(), 300);
-
         } catch (error) {
-            console.error(error);
+            console.error('좋아요 에러:', error);
         }
     };
 
+    // ... (이하 기존 함수들: newPost, handleAddPost, detailPostView 등 동일하게 유지) [cite: 2026-02-13]
     const newPost = (category) => {
         setCurrentCategory(category || activeTab);
         setNewPostModalOpen(true);
