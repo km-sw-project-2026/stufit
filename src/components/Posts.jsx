@@ -1,6 +1,4 @@
 import { useEffect, useState } from 'react';
-import GiveUpModal from './modal/GiveUpModal';
-import FinalGiveUpModal from './modal/FinalGiveUpModal';
 import CommunityRewardModal from './modal/CommunityRewardModal';
 import Footer from './main/Footer';
 import Header from './main/Header';
@@ -100,12 +98,6 @@ const Posts = () => {
 
             {/* 챌린지 수정 모달: 기존 챌린지 정보 수정 */}
             <EditChallengeModal />
-
-            {/* 챌린지 포기 확인 모달 (1단계): 포기 여부 확인 */}
-            <GiveUpModal />
-
-            {/* 챌린지 최종 포기 확인 모달 (2단계): 명언과 함께 최종 확인 */}
-            <FinalGiveUpModal />
 
             {/* 커스텀 알림 모달: 일반적인 알림 메시지 표시 */}
             <CustomAlertModal />
