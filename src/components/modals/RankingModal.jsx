@@ -1,26 +1,33 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { getTierByScore } from '../../constants/tiers';
 
 function RankingModal({ onClose }) {
   const [rankingList, setRankingList] = useState([]);
   const topRankers = rankingList.slice(0, 3).map((u, idx) => ({ rank: idx + 1, username: u.username, score: u.score, img: `/img/rank${idx+1}.png` }));
 
   // load users from API for the list
-  useEffect(() => {
+  const loadUsers = useCallback(async () => {
     let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch('/api/users');
-        const payload = await res.json().catch(() => null);
-        if (!res.ok || !payload?.success || !Array.isArray(payload.users)) return;
-        const users = payload.users.map((u, i) => ({ rank: i + 1, username: u.username, score: Number(u.score) || 0 }));
-        if (!cancelled) {
-          // top 3 handled separately in header; keep full list for body
-          setRankingList(users);
-        }
-      } catch (e) { /* ignore */ }
-    })();
+    try {
+      const res = await fetch('/api/users');
+      const payload = await res.json().catch(() => null);
+      if (!res.ok || !payload?.success || !Array.isArray(payload.users)) return;
+      const users = payload.users.map((u, i) => ({ rank: i + 1, username: u.username, score: Number(u.score) || 0 }));
+      if (!cancelled) setRankingList(users);
+    } catch (e) { /* ignore */ }
     return () => { cancelled = true; };
   }, []);
+
+  useEffect(() => {
+    loadUsers();
+
+    const handler = () => {
+      loadUsers();
+    };
+
+    window.addEventListener('pointsUpdated', handler);
+    return () => window.removeEventListener('pointsUpdated', handler);
+  }, [loadUsers]);
 
   const [searchName, setSearchName] = useState('');
 

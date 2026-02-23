@@ -1,7 +1,25 @@
 import { useNavigate } from 'react-router-dom';
+import { useEffect, useState, useCallback } from 'react';
 
 function RankingQuicklink () {
     const navigate = useNavigate();
+    const [users, setUsers] = useState([]);
+
+    const fetchTop = useCallback(async () => {
+        try {
+            const res = await fetch('/api/users');
+            const payload = await res.json().catch(() => null);
+            if (!res.ok || !payload?.success || !Array.isArray(payload.users)) return;
+            setUsers(payload.users.slice(0, 10).map((u, i) => ({ rank: i + 1, username: u.username, score: Number(u.score) || 0 })));
+        } catch (e) { /* ignore */ }
+    }, []);
+
+    useEffect(() => {
+        fetchTop();
+        const handler = () => fetchTop();
+        window.addEventListener('pointsUpdated', handler);
+        return () => window.removeEventListener('pointsUpdated', handler);
+    }, [fetchTop]);
 
     const handleArrowClick = () => {
         navigate('/ranking');
@@ -18,118 +36,34 @@ function RankingQuicklink () {
                             </svg>
                         </div>
                         <div className="ranking-quicklink-list left">
-                            <div className="quick-rank-card">
-                                <div className="rank-num">1</div>
-                                <div className="rank-profile">
-                                    <div className="profile-img"></div>
-                                    <span className="name">김예선</span>
+                            {users.slice(0,5).map(user => (
+                                <div key={user.rank} className="quick-rank-card">
+                                    <div className="rank-num">{user.rank}</div>
+                                    <div className="rank-profile">
+                                        <div className="profile-img"></div>
+                                        <span className="name">{user.username}</span>
+                                    </div>
+                                    <div className="rank-score">
+                                        <span className="label">점수</span>
+                                        <span className="value">{user.score.toLocaleString()}</span>
+                                    </div>
                                 </div>
-                                <div className="rank-score">
-                                    <span className="label">점수</span>
-                                    <span className="value">4,893</span>
-                                </div>
-                            </div>
-                            <div className="quick-rank-card">
-                                <div className="rank-num">2</div>
-                                <div className="rank-profile">
-                                    <div className="profile-img"></div>
-                                    <span className="name">유태민</span>
-                                </div>
-                                <div className="rank-score">
-                                    <span className="label">점수</span>
-                                    <span className="value">4,201</span>
-                                </div>
-                            </div>
-                            <div className="quick-rank-card">
-                                <div className="rank-num">3</div>
-                                <div className="rank-profile">
-                                    <div className="profile-img"></div>
-                                    <span className="name">이정민</span>
-                                </div>
-                                <div className="rank-score">
-                                    <span className="label">점수</span>
-                                    <span className="value">3,216</span>
-                                </div>
-                            </div>
-                            <div className="quick-rank-card">
-                                <div className="rank-num">4</div>
-                                <div className="rank-profile">
-                                    <div className="profile-img"></div>
-                                    <span className="name">박현서</span>
-                                </div>
-                                <div className="rank-score">
-                                    <span className="label">점수</span>
-                                    <span className="value">3,142</span>
-                                </div>
-                            </div>
-                            <div className="quick-rank-card">
-                                <div className="rank-num">5</div>
-                                <div className="rank-profile">
-                                    <div className="profile-img"></div>
-                                    <span className="name">유태민</span>
-                                </div>
-                                <div className="rank-score">
-                                    <span className="label">점수</span>
-                                    <span className="value">2,873</span>
-                                </div>
-                            </div>
+                            ))}
                         </div>
                         <div className="ranking-quicklink-list right">
-                            <div className="quick-rank-card">
-                                <div className="rank-num">6</div>
-                                <div className="rank-profile">
-                                    <div className="profile-img"></div>
-                                    <span className="name">김예선</span>
+                            {users.slice(5,10).map(user => (
+                                <div key={user.rank} className="quick-rank-card">
+                                    <div className="rank-num">{user.rank}</div>
+                                    <div className="rank-profile">
+                                        <div className="profile-img"></div>
+                                        <span className="name">{user.username}</span>
+                                    </div>
+                                    <div className="rank-score">
+                                        <span className="label">점수</span>
+                                        <span className="value">{user.score.toLocaleString()}</span>
+                                    </div>
                                 </div>
-                                <div className="rank-score">
-                                    <span className="label">점수</span>
-                                    <span className="value">2,423</span>
-                                </div>
-                            </div>
-                            <div className="quick-rank-card">
-                                <div className="rank-num">7</div>
-                                <div className="rank-profile">
-                                    <div className="profile-img"></div>
-                                    <span className="name">박현서</span>
-                                </div>
-                                <div className="rank-score">
-                                    <span className="label">점수</span>
-                                    <span className="value">2,213</span>
-                                </div>
-                            </div>
-                            <div className="quick-rank-card">
-                                <div className="rank-num">8</div>
-                                <div className="rank-profile">
-                                    <div className="profile-img"></div>
-                                    <span className="name">이정민</span>
-                                </div>
-                                <div className="rank-score">
-                                    <span className="label">점수</span>
-                                    <span className="value">1,998</span>
-                                </div>
-                            </div>
-                            <div className="quick-rank-card">
-                                <div className="rank-num">9</div>
-                                <div className="rank-profile">
-                                    <div className="profile-img"></div>
-                                    <span className="name">유태민</span>
-                                </div>
-                                <div className="rank-score">
-                                    <span className="label">점수</span>
-                                    <span className="value">1,873</span>
-                                </div>
-                            </div>
-                            <div className="quick-rank-card">
-                                <div className="rank-num">10</div>
-                                <div className="rank-profile">
-                                    <div className="profile-img"></div>
-                                    <span className="name">김예선</span>
-                                </div>
-                                <div className="rank-score">
-                                    <span className="label">점수</span>
-                                    <span className="value">1,493</span>
-                                </div>
-                            </div>
+                            ))}
                         </div>
                     </div>
                 </div>
