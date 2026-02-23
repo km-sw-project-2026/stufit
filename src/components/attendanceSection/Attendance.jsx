@@ -319,6 +319,20 @@ function Attendance() {
     setIsAlertOpen(true);
   };
 
+  const applyPointsUpdate = (rewardPoints) => {
+    const currentPoints = Number(localStorage.getItem('points') || '0');
+    const safeCurrentPoints = Number.isNaN(currentPoints) ? 0 : currentPoints;
+    const safeRewardPoints = Number(rewardPoints);
+
+    if (Number.isNaN(safeRewardPoints)) {
+      return;
+    }
+
+    const nextPoints = safeCurrentPoints + safeRewardPoints;
+    localStorage.setItem('points', String(nextPoints));
+    window.dispatchEvent(new CustomEvent('pointsUpdated', { detail: { points: nextPoints } }));
+  };
+
   const handleCardClick = async (index) => {
     if (index !== todayIndex) {
       showAlert(`오늘은 ${days[todayIndex]}요일입니다. 해당 요일에만 출석 가능해요!`);
@@ -339,16 +353,20 @@ function Attendance() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId, date: todayDateString })
       });
+
+      const responseData = await response.json().catch(() => null);
+
       if (response.ok) {
         // 성공 시 화면 즉시 반영
         const nextCheckedDays = [...checkedDays];
         nextCheckedDays[index] = true;
         setCheckedDays(nextCheckedDays);
         setLastCheckDate(todayDateString);
-        showAlert(`${days[index]}요일 출석 완료! 랭킹 포인트가 반영되었습니다.`);
+
+        applyPointsUpdate(responseData?.rewardPoints);
+        showAlert(`${days[index]}요일 출석 완료!`);
       } else {
-        const errorData = await response.json();
-        showAlert(errorData.message || '출석 처리 중 오류가 발생했습니다.');
+        showAlert(responseData?.message || '출석 처리 중 오류가 발생했습니다.');
       }
     } catch (error) {
       console.error('Attendance error:', error);
