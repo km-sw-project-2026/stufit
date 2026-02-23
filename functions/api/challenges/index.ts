@@ -38,7 +38,6 @@ export default async function handler(request: Request, { env, userId }: Handler
            INNER JOIN challenge_members cm ON c.challenge_id = cm.challenge_id
            WHERE cm.user_id = ? AND c.deleted_at IS NULL
            AND (c.status IS NULL OR c.status != 'completed')
-           AND (c.end_date IS NULL OR datetime(c.end_date) > datetime('now'))
            ORDER BY c.created_at DESC`
         )
         .bind(userId)
