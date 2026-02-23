@@ -27,6 +27,7 @@ import * as userPoints from '../functions/api/user/points';
 import * as userItems from '../functions/api/user/items';
 import * as userStats from '../functions/api/user/stats';
 import * as userResolve from '../functions/api/user/resolve';
+import * as users from '../functions/api/users/index';
 
 // challenges extra
 import * as progress from '../functions/api/challenges/[id]/progress';
@@ -173,6 +174,19 @@ export default {
       // Posts API (인증 불필요)
       if (pathname === '/api/posts' && request.method === 'GET') {
         return posts.onRequestGet({ env });
+      }
+
+      // Public users list (unauthenticated)
+      if (pathname === '/api/users' && request.method === 'GET') {
+        try {
+          const response = await users.onRequestGet({ request, env });
+          const newHeaders = new Headers(response.headers || {});
+          newHeaders.set('Access-Control-Allow-Origin', '*');
+          return new Response(response.body, { status: response.status, headers: newHeaders });
+        } catch (err) {
+          console.error('[Worker] /api/users handler error', err);
+          return new Response(JSON.stringify({ success: false, error: 'internal' }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+        }
       }
 
       // Comments for a post (public GET)

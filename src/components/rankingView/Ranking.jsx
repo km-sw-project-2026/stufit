@@ -2,30 +2,48 @@
 
 
 // 사람들의 데이터를 받은 후 (예시)
-import React, { useState, useEffect } from 'react';
-import { getTierByScore } from '../../constants/tiers';
+import React, { useState, useEffect, useCallback } from 'react';
 
 function Ranking() {
-    // 실제 서버 데이터 대신 사용할 테스트용 가짜 데이터
-    const dummyData = [
-        { id: 1, username: "김예선", score: 3447 },
-        { id: 2, username: "박현서", score: 1998 },
-        { id: 3, username: "유태민", score: 1358 },
-        { id: 4, username: "신유빈", score: 985 },
-        { id: 5, username: "이도현", score: 820 },
-        { id: 6, username: "최지우", score: 750 },
-    ];
+    // 서버에서 사용자 목록을 불러옵니다 (Cloudflare D1의 `users` 테이블)
 
     const [rankings, setRankings] = useState([]); 
     const [searchTerm, setSearchTerm] = useState(""); 
     const [searchResult, setSearchResult] = useState(null); 
 
-    // 1. 확인용 로직: 처음 실행될 때 테스트 데이터를 상태에 저장합니다.
-    useEffect(() => {
-        // 나중에 서버를 연결할 때는 이 부분을 fetch 코드로 바꾸면 됩니다.
-        const sorted = [...dummyData].sort((a, b) => b.score - a.score);
-        setRankings(sorted);
+    // Fetch users from API (fallback to dummyData)
+    const fetchUsers = useCallback(async (opts = {}) => {
+        let cancelled = false;
+        try {
+            const res = await fetch('/api/users');
+            const payload = await res.json().catch(() => null);
+            if (!res.ok || !payload?.success || !Array.isArray(payload.users)) {
+                console.warn('Failed to load /api/users', payload);
+                if (!cancelled) setRankings([]);
+                return;
+            }
+            const users = payload.users.map((u) => ({ id: u.userId || u.username, username: u.username, score: Number(u.score) || 0 }));
+            if (!cancelled) setRankings(users);
+        } catch (e) {
+            console.error('Error fetching /api/users', e);
+            if (!cancelled) setRankings([]);
+        }
+        return () => { cancelled = true; };
     }, []);
+
+    useEffect(() => {
+        fetchUsers();
+
+        const handler = (event) => {
+            // on pointsUpdated, re-fetch rankings to reflect score/tier changes
+            fetchUsers();
+        };
+
+        window.addEventListener('pointsUpdated', handler);
+        return () => {
+            window.removeEventListener('pointsUpdated', handler);
+        };
+    }, [fetchUsers]);
 
     // 2. 검색 기능 확인 함수
     const handleSearch = () => {
@@ -35,7 +53,7 @@ function Ranking() {
         }
 
         const found = rankings.find(user => 
-            user.author.toLowerCase().includes(searchTerm.toLowerCase())
+            String(user.username || '').toLowerCase().includes(searchTerm.toLowerCase())
         );
         
         if (found) {
@@ -50,9 +68,6 @@ function Ranking() {
     const top1 = rankings[0];
     const top2 = rankings[1];
     const top3 = rankings[2];
-    const top1Tier = top1 ? getTierByScore(top1.score) : null;
-    const top2Tier = top2 ? getTierByScore(top2.score) : null;
-    const top3Tier = top3 ? getTierByScore(top3.score) : null;
 
     return (
         <div id="ranking-view" className="ranking-view">
@@ -66,7 +81,7 @@ function Ranking() {
                     <div className="rank-user-name">{top2?.username || "데이터 없음"}</div>
                     <div className="rank-user-label">점수</div>
                     <div className="rank-user-score">{top2?.score.toLocaleString() || 0}</div>
-                    {top2Tier && <img src={top2Tier.image} alt={top2Tier.name} style={{ width: 28, marginLeft: 8 }} />}
+                    
                 </div>
 
                 {/* 1등 */}
@@ -77,7 +92,7 @@ function Ranking() {
                     <div className="rank-user-name">{top1?.username || "데이터 없음"}</div>
                     <div className="rank-user-label">점수</div>
                     <div className="rank-user-score">{top1?.score.toLocaleString() || 0}</div>
-                    {top1Tier && <img src={top1Tier.image} alt={top1Tier.name} style={{ width: 28, marginLeft: 8 }} />}
+                    
                 </div>
 
                 {/* 3등 */}
@@ -88,7 +103,7 @@ function Ranking() {
                     <div className="rank-user-name">{top3?.username || "데이터 없음"}</div>
                     <div className="rank-user-label">점수</div>
                     <div className="rank-user-score">{top3?.score.toLocaleString() || 0}</div>
-                    {top3Tier && <img src={top3Tier.image} alt={top3Tier.name} style={{ width: 28, marginLeft: 8 }} />}
+                    
                 </div>
             </div>
 
@@ -121,9 +136,7 @@ function Ranking() {
                             <div className="r-right">
                                 <span className="r-label">점수</span>
                                 <span className="r-score">{searchResult.score.toLocaleString()}</span>
-                                {getTierByScore(searchResult.score) && (
-                                  <img src={getTierByScore(searchResult.score).image} alt={getTierByScore(searchResult.score).name} style={{ width: 22, marginLeft: 8 }} />
-                                )}
+                                
                             </div>
                         </div>
                     ) : (
@@ -136,9 +149,7 @@ function Ranking() {
                                 <div className="r-right">
                                     <span className="r-label">점수</span>
                                     <span className="r-score">{user.score.toLocaleString()}</span>
-                                    {getTierByScore(user.score) && (
-                                      <img src={getTierByScore(user.score).image} alt={getTierByScore(user.score).name} style={{ width: 22, marginLeft: 8 }} />
-                                    )}
+                                    
                                 </div>
                             </div>
                         ))
