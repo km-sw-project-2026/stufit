@@ -57,8 +57,11 @@ function MyPage({ isOpen, onClose }) {
       const currentRankNum = meIndex >= 0 ? meIndex + 1 : null;
 
       const storedBest = Number(localStorage.getItem('bestRank') || '0');
-      let bestRankNum = storedBest > 0 ? storedBest : (currentRankNum || 0);
-      if (currentRankNum && (bestRankNum === 0 || currentRankNum < bestRankNum)) {
+      // bestRank는 로컬에 이미 저장된 값이 있을 때만 사용합니다.
+      // 최초에는 자동으로 현재 순위로 초기화하지 않습니다.
+      let bestRankNum = storedBest > 0 ? storedBest : null;
+      // 저장된 최고 기록이 있고, 새로 산출된 currentRank가 더 높(숫자가 작)으면 갱신
+      if (currentRankNum && storedBest > 0 && currentRankNum < storedBest) {
         bestRankNum = currentRankNum;
         localStorage.setItem('bestRank', String(bestRankNum));
       }
