@@ -1177,7 +1177,6 @@
 // ---------------------------------실험코드 좋아요1
 
 
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import CommunityRewardModal from '../modal/CommunityRewardModal';
@@ -1234,6 +1233,7 @@ function Community() {
             const list = (payload.data || []).map(mapPost);
 
             const categorized = {
+                // 좋아요 1개 이상인 글들을 인기글 목록에 포함
                 popular: list.filter(p => p.category === 'popular' || p.likes >= 1),
                 tips: list.filter(p => p.category === 'tips'),
                 data: list.filter(p => p.category === 'data'),
@@ -1258,7 +1258,6 @@ function Community() {
         }
     }, []);
     
-    // [수정된 로직] 좋아요 상태 유지 및 깜빡임 해결 [cite: 2026-02-13]
     const handleToggleLike = async (postId) => {
         const username = localStorage.getItem('username');
         if (!username) return alert('로그인이 필요합니다.');
@@ -1277,7 +1276,7 @@ function Community() {
 
             const { liked, count } = payload.data;
 
-            // 1. 먼저 UI 상태를 업데이트하여 하트 색상을 고정시킵니다. [cite: 2026-02-13]
+            // 1. UI 상태 즉시 업데이트 (색상 유지)
             setPosts(prev => {
                 const newState = { ...prev };
                 Object.keys(newState).forEach(cat => {
@@ -1288,19 +1287,16 @@ function Community() {
                 return newState;
             });
 
-            // 2. 좋아요가 1개가 되어 인기글이 되었을 때 알림을 띄웁니다. [cite: 2026-02-15]
-            // 여기서 fetchPosts()를 바로 호출하지 않고, 필요한 경우에만 호출하도록 조정합니다. [cite: 2026-02-13]
-            if (count === 1 && liked === true) {
-                showAlert('축하합니다! 좋아요 1개를 달성하여 인기글로 등록되었습니다.');
-                // 알림창을 닫은 후나 혹은 약간의 지연 후에 데이터를 갱신하여 색상 사라짐 방지 [cite: 2026-02-13]
-                setTimeout(() => fetchPosts(), 500);
+            // 2. [수정] 팝업창(showAlert) 로직을 제거하고 데이터만 동기화합니다.
+            // 좋아요 1개가 되면 인기글 목록을 갱신하기 위해 지연 호출을 유지합니다.
+            if (count >= 1 && liked === true) {
+                setTimeout(() => fetchPosts(), 300);
             }
         } catch (error) {
             console.error('좋아요 에러:', error);
         }
     };
 
-    // ... (이하 기존 함수들: newPost, handleAddPost, detailPostView 등 동일하게 유지) [cite: 2026-02-13]
     const newPost = (category) => {
         setCurrentCategory(category || activeTab);
         setNewPostModalOpen(true);
