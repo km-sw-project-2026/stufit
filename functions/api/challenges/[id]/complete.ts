@@ -9,7 +9,13 @@ interface Env {
 type PagesFunction<T = any> = (context: { params: { id: string }, env: T }) => Promise<Response>;
 
 export const onRequestPatch: PagesFunction<Env> = async ({ params, env }) => {
-  const challengeId = params.id;
+  const challengeId = Number(params.id);
+  
+  // 유효성 검사
+  if (!challengeId || Number.isNaN(challengeId)) {
+    return Response.json({ success: false, message: "Invalid challenge ID" }, { status: 400 });
+  }
+  
   try {
     // 완료된 챌린지는 deleted_at을 설정하여 목록에서 제거
     await env.D1_DB.prepare("UPDATE challenges SET deleted_at = CURRENT_TIMESTAMP WHERE challenge_id = ?")
