@@ -1209,6 +1209,7 @@ function Community() {
         mypost: []
     });
 
+    // [중요] row.user_liked 값을 불리언(true/false)으로 정확히 변환하여 전달 [cite: 2026-02-13]
     const mapPost = (row) => ({
         id: row.post_id,
         title: row.title,
@@ -1216,7 +1217,7 @@ function Community() {
         author: row.username || '익명',
         likes: Number(row.like_count) || 0,
         comments: Number(row.comment_count) || 0,
-        liked: Boolean(row.user_liked),
+        liked: row.user_liked === 1 || row.user_liked === true, // 서버 응답에 따른 불리언 처리 [cite: 2026-02-13]
         date: row.created_at ? new Date(row.created_at).toLocaleString('ko-KR') : '',
         category: row.category || 'data'
     });
@@ -1225,6 +1226,7 @@ function Community() {
         try {
             const username = localStorage.getItem('username');
             const headers = {};
+            // 서버가 "누가" 요청했는지 알아야 좋아요 여부를 알려줄 수 있습니다 [cite: 2026-02-13]
             if (username) headers['X-Username'] = username;
             
             const response = await fetch('/api/posts', { headers });
@@ -1233,7 +1235,6 @@ function Community() {
             const payload = await response.json();
             const list = (payload.data || []).map(mapPost);
 
-            // [테스트용 수정] 좋아요 1개 이상이면 무조건 인기글에 노출 [cite: 2026-02-15]
             const categorized = {
                 popular: list.filter(p => p.category === 'popular' || p.likes >= 1),
                 tips: list.filter(p => p.category === 'tips'),
@@ -1266,31 +1267,35 @@ function Community() {
         try {
             const response = await fetch(`/api/post/${postId}/like`, {
                 method: 'POST',
-                headers: { 'X-Username': username, 'Content-Type': 'application/json' }
+                headers: { 
+                    'X-Username': username,
+                    'Content-Type': 'application/json'
+                }
             });
 
             const payload = await response.json();
-            if (!response.ok) return alert(payload.message || '좋아요 실패');
+            if (!response.ok) return alert(payload.message || '좋아요 처리 실패');
 
+            // 서버에서 넘어온 최신 좋아요 상태(liked)와 개수(count) 반영 [cite: 2026-02-13]
             const { liked, count } = payload.data;
 
             setPosts(prev => {
                 const newState = { ...prev };
                 Object.keys(newState).forEach(cat => {
                     newState[cat] = newState[cat].map(p => 
-                        p.id === postId ? { ...p, liked, likes: count } : p
+                        p.id === postId ? { ...p, liked: liked, likes: count } : p
                     );
                 });
                 return newState;
             });
 
-            // [테스트용 수정] 좋아요가 1개가 되는 순간 즉시 인기글 승격 알림 [cite: 2026-02-15]
             if (count >= 1) {
+                // 이미 알림을 본 글이라면 중복 알림을 방지하기 위해 추가 로직이 필요할 수 있으나 현재는 1개 기준 알림 유지 [cite: 2026-02-15]
                 showAlert('축하합니다! 좋아요 1개를 달성하여 인기글로 등록되었습니다.');
                 await fetchPosts(); 
             }
         } catch (error) {
-            console.error(error);
+            console.error('좋아요 에러:', error);
         }
     };
 
