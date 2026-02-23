@@ -37,6 +37,42 @@ function MyPage({ isOpen, onClose }) {
     return numeric;
   };
 
+  // 랭킹을 불러와 현재 순위와 최고 순위를 계산해 userData에 반영
+  const updateRanks = async (username, userId) => {
+    if (!username && !userId) return;
+    try {
+      const res = await fetch('/api/users', { cache: 'no-cache' });
+      const payload = await res.json().catch(() => null);
+      if (!res.ok || !Array.isArray(payload?.users)) return;
+
+      const users = payload.users.map((u) => ({
+        username: u.username,
+        score: Number(u.score) || 0,
+        userId: u.user_id ?? u.userId ?? null,
+      }));
+
+      users.sort((a, b) => b.score - a.score);
+
+      const meIndex = users.findIndex((u) => (username && String(u.username) === String(username)) || (userId && Number(u.userId) === Number(userId)));
+      const currentRankNum = meIndex >= 0 ? meIndex + 1 : null;
+
+      const storedBest = Number(localStorage.getItem('bestRank') || '0');
+      let bestRankNum = storedBest > 0 ? storedBest : (currentRankNum || 0);
+      if (currentRankNum && (bestRankNum === 0 || currentRankNum < bestRankNum)) {
+        bestRankNum = currentRankNum;
+        localStorage.setItem('bestRank', String(bestRankNum));
+      }
+
+      setUserData((prev) => (prev ? {
+        ...prev,
+        currentRank: currentRankNum ? `${currentRankNum}위` : prev.currentRank,
+        rank: bestRankNum ? `${bestRankNum}위` : prev.rank,
+      } : prev));
+    } catch (err) {
+      console.warn('Failed to update ranks:', err);
+    }
+  };
+
   const fetchCommunityCountsFromPosts = async (username) => {
     if (!username) {
       return { posts: 0, comments: 0 };
@@ -207,6 +243,8 @@ function MyPage({ isOpen, onClose }) {
         console.log('🟢 MyPage: userData 업데이트 완료', updated);
         return updated;
       });
+      // 포인트/스코어 업데이트 후 랭킹 갱신
+      try { updateRanks(localStorage.getItem('username'), getStoredUserId()); } catch (e) { console.warn(e); }
     };
 
     window.addEventListener('pointsUpdated', handlePointsUpdated);
@@ -328,6 +366,8 @@ function MyPage({ isOpen, onClose }) {
             posts: `${posts}개`,
             comments: `${comments}개`
           } : prev));
+          // 초기 stats 반영 후 랭킹 갱신
+          try { updateRanks(username, userId); } catch (e) { console.warn(e); }
         } else {
           debugStatsLog('initial stats missing payload', data);
           const fallbackCounts = await fetchCommunityCountsFromPosts(username);
@@ -557,6 +597,8 @@ function MyPage({ isOpen, onClose }) {
             posts: `${posts}개`,
             comments: `${comments}개`
           } : prev));
+          // 이벤트 기반 stats 갱신 후 랭킹 갱신
+          try { updateRanks(username, userId); } catch (e) { console.warn(e); }
         })
         .catch(async (err) => {
           debugStatsLog('event stats exception', err);
