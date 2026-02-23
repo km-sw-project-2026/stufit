@@ -37,6 +37,11 @@ function MyPage({ isOpen, onClose }) {
     return numeric;
   };
 
+  const getBestRankLabel = () => {
+    const stored = Number(localStorage.getItem('bestRank') || '0');
+    return stored > 0 ? `${stored}위` : '-';
+  };
+
   // 랭킹을 불러와 현재 순위와 최고 순위를 계산해 userData에 반영
   const updateRanks = async (username, userId) => {
     if (!username && !userId) return;
@@ -120,6 +125,19 @@ function MyPage({ isOpen, onClose }) {
   const handleTierGuideClick = () => {
     onClose();
     navigate('/tier-guide');
+  };
+
+  const handleResetBestRank = () => {
+    if (!confirm('최고 기록을 초기화하시겠습니까?')) return;
+    try {
+      localStorage.removeItem('bestRank');
+      setUserData((prev) => (prev ? { ...prev, rank: getBestRankLabel() } : prev));
+      const username = localStorage.getItem('username');
+      updateRanks(username, getStoredUserId());
+      alert('최고 기록이 초기화되었습니다.');
+    } catch (e) {
+      console.warn('reset bestRank failed', e);
+    }
   };
 
   const handleMyItemsClick = () => {
@@ -231,8 +249,8 @@ function MyPage({ isOpen, onClose }) {
           username: localStorage.getItem('username') || '',
           score: cachedScore ? Number(cachedScore) : 0,
           joinDate: localStorage.getItem('joinDate') || '2024년 7월 1일',
-          rank: '1위',
-          currentRank: '1위',
+          rank: getBestRankLabel(),
+          currentRank: '-',
           challenges: `${cachedSuccessful}개`,
           points: cachedPoints ? Number(cachedPoints) : 0,
           posts: `${cachedCommunity.posts}개`,
@@ -269,8 +287,8 @@ function MyPage({ isOpen, onClose }) {
         username: username || '',
         score: cachedScore ? Number(cachedScore) : 0,
         joinDate: localStorage.getItem('joinDate') || '2024년 7월 1일',
-        rank: '1위',
-        currentRank: '1위',
+        rank: getBestRankLabel(),
+        currentRank: '-',
         challenges: `${cachedSuccessful}개`,
         points: cachedPoints ? Number(cachedPoints) : 0,
         posts: `${cachedCommunity.posts}개`,
@@ -403,6 +421,31 @@ function MyPage({ isOpen, onClose }) {
 
     return () => {
       window.removeEventListener('pointsUpdated', handlePointsUpdated);
+    };
+  }, [isOpen]);
+
+  // MyPage 열려있을 때 랭킹을 주기적으로 동기화 및 포커스/visibility 시 동기화
+  useEffect(() => {
+    if (!isOpen) return;
+    const username = localStorage.getItem('username');
+    const userId = getStoredUserId();
+    const sync = () => {
+      try { updateRanks(username, userId); } catch (e) { console.warn(e); }
+    };
+
+    // 즉시 동기화
+    sync();
+    const id = setInterval(sync, 30000);
+
+    const onFocus = () => sync();
+    const onVisibility = () => { if (document.visibilityState === 'visible') sync(); };
+    window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onVisibility);
+
+    return () => {
+      clearInterval(id);
+      window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onVisibility);
     };
   }, [isOpen]);
 
@@ -749,7 +792,12 @@ function MyPage({ isOpen, onClose }) {
         <div className="mypage-stats">
           <div className="stat-item">
             <div className="stat-label">최고 기록</div>
-            <div className="stat-value">{userData.rank}</div>
+            <div className="stat-value">
+              {userData.rank}
+              <button onClick={handleResetBestRank} style={{ marginLeft: '10px', padding: '4px 8px', fontSize: '12px', cursor: 'pointer' }}>
+                초기화
+              </button>
+            </div>
           </div>
           <div className="stat-divider"></div>
           <div className="stat-item">
