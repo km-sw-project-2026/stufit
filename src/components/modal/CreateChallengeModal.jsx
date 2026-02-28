@@ -83,7 +83,10 @@ function CreateChallengeModal({ closeCreateChallengeModal, onCreateSuccess }) {
       const result = await response.json();
 
       if (!response.ok) {
-        alert(result.message || '챌린지 생성에 실패했습니다.');
+        console.error('챌린지 생성 실패 응답:', result);
+        const errMsg = result.message || '챌린지 생성에 실패했습니다.';
+        const errDetail = result.error ? `\n\n상세: ${result.error}` : '';
+        alert(errMsg + errDetail);
         return;
       }
 
@@ -113,7 +116,9 @@ function CreateChallengeModal({ closeCreateChallengeModal, onCreateSuccess }) {
       closeCreateChallengeModal();
     } catch (error) {
       console.error('챌린지 생성 오류:', error);
-      alert('서버 오류가 발생했습니다.');
+      // show error details to help debug DB issues
+      const message = error instanceof Error ? error.message : String(error);
+      alert('서버 오류가 발생했습니다.\n\n' + message);
     }
   };
 
