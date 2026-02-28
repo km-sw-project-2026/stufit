@@ -68,10 +68,42 @@ export default async function onRequestPost(request: Request, { env, params, use
     }
 
     // 참가자 추가
+    // 배팅 정보 조회 (있으면 입장 시 차감 필요)
+    const betRow = await env.D1_DB.prepare('SELECT bet_points FROM challenge_bets WHERE challenge_id = ?').bind(id).first();
+    const betPoints = betRow ? Number((betRow as any).bet_points || 0) : 0;
+
+    if (betPoints > 0) {
+      // ensure user_profiles row exists
+      try {
+        await env.D1_DB.prepare("INSERT OR IGNORE INTO user_profiles (user_id, tier, score, points) VALUES (?, 'bronze', 0, 0)")
+          .bind(userId)
+          .run();
+      } catch (e) {
+        // ignore
+      }
+      const scoreRow = await env.D1_DB.prepare('SELECT score FROM user_profiles WHERE user_id = ?').bind(userId).first();
+      const currentScore = Number((scoreRow as any)?.score || 0);
+      if (currentScore < betPoints) {
+        return Response.json({ success: false, message: '점수가 부족합니다.' }, { status: 400 });
+      }
+    }
+
     await env.D1_DB
       .prepare("INSERT INTO challenge_members (challenge_id, user_id, joined_at) VALUES (?, ?, datetime('now'))")
       .bind(id, userId)
       .run();
+
+    // 배팅 점수 차감 (참가자 전원 차감 동작)
+    if (betPoints > 0) {
+      try {
+        await env.D1_DB.prepare('UPDATE user_profiles SET score = score - ? WHERE user_id = ?')
+          .bind(betPoints, userId)
+          .run();
+      } catch (e) {
+        console.error('참가자 점수 차감 실패:', e instanceof Error ? e.message : String(e));
+        // proceed even if deduction failed
+      }
+    }
 
     const memberCountAfter = await env.D1_DB
       .prepare('SELECT COUNT(*) AS count FROM challenge_members WHERE challenge_id = ?')

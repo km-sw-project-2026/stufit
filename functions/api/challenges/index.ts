@@ -337,6 +337,21 @@ export default async function handler(request: Request, { env, userId }: Handler
       }
     }
 
+    // 배팅 정보 저장: challenge_bets 테이블에 매핑 저장
+    if (typeof betPoints !== 'undefined' && betPoints !== null && Number(betPoints) > 0) {
+      try {
+        await env.D1_DB.prepare(`CREATE TABLE IF NOT EXISTS challenge_bets (
+            challenge_id INTEGER PRIMARY KEY,
+            bet_points INTEGER NOT NULL
+          )`).run();
+        await env.D1_DB.prepare('INSERT OR REPLACE INTO challenge_bets (challenge_id, bet_points) VALUES (?, ?)')
+          .bind(challengeId, Number(betPoints))
+          .run();
+      } catch (e) {
+        console.error('challenge_bets 저장 오류:', e instanceof Error ? e.message : String(e));
+      }
+    }
+
     const createdChallenge = await env.D1_DB
       .prepare('SELECT * FROM challenges WHERE challenge_id = ?')
       .bind(challengeId)
