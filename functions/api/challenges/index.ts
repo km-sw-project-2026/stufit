@@ -141,7 +141,7 @@ export default async function handler(request: Request, { env, userId }: Handler
     );
   }
 
-  const { challengeName, category, maxParticipants, endDate, goalDescription, inviteCode, timerHours, timerMinutes, duration } = body;
+  const { challengeName, category, maxParticipants, endDate, goalDescription, inviteCode, timerHours, timerMinutes, duration, betPoints } = body;
   const normalizedInviteCode = typeof inviteCode === 'string' ? inviteCode.trim() : '';
 
   console.log('Received data:', { challengeName, category, maxParticipants, endDate, goalDescription, inviteCode, timerHours, timerMinutes });
@@ -164,6 +164,17 @@ export default async function handler(request: Request, { env, userId }: Handler
       { success: false, message: '최대 참가자 수는 1 이상의 숫자여야 합니다.' },
       { status: 400 }
     );
+  }
+
+  // betPoints 타입 검증 (선택 항목)
+  if (typeof betPoints !== 'undefined' && betPoints !== null && betPoints !== '') {
+    if (isNaN(Number(betPoints)) || Number(betPoints) < 0) {
+      console.error('betPoints 타입 오류:', betPoints);
+      return Response.json(
+        { success: false, message: '점수 배팅은 0 이상의 숫자여야 합니다.' },
+        { status: 400 }
+      );
+    }
   }
 
   // category 값 검증
@@ -208,6 +219,32 @@ export default async function handler(request: Request, { env, userId }: Handler
         return Response.json(
           { success: false, message: '이미 사용 중인 초대 코드입니다.' },
           { status: 409 } // Conflict
+        );
+      }
+    }
+
+    // 배팅 점수 처리 전 유저 잔액 검사 (선택)
+    if (typeof betPoints !== 'undefined' && betPoints !== null && Number(betPoints) > 0) {
+      // ensure user_profiles row exists
+      try {
+        await env.D1_DB
+          .prepare("INSERT OR IGNORE INTO user_profiles (user_id, tier, score, points) VALUES (?, 'bronze', 0, 0)")
+          .bind(userId)
+          .run();
+      } catch (e) {
+        // ignore insert-or-ignore errors
+      }
+
+      const scoreRow = await env.D1_DB
+        .prepare('SELECT score FROM user_profiles WHERE user_id = ?')
+        .bind(userId)
+        .first();
+      const currentScore = Number((scoreRow as any)?.score || 0);
+      if (currentScore < Number(betPoints)) {
+        console.error('betPoints 부족: current=', currentScore, 'required=', betPoints);
+        return Response.json(
+          { success: false, message: '점수가 부족합니다.' },
+          { status: 400 }
         );
       }
     }
@@ -285,6 +322,19 @@ export default async function handler(request: Request, { env, userId }: Handler
       }
     } catch (e) {
       console.error('참가자 추가 중 오류(무시):', e instanceof Error ? e.message : String(e));
+    }
+
+    // 배팅 점수 차감: 챌린지 생성 후에 실제로 참가자가 되었다고 판단하여 차감
+    if (typeof betPoints !== 'undefined' && betPoints !== null && Number(betPoints) > 0) {
+      try {
+        await env.D1_DB
+          .prepare('UPDATE user_profiles SET score = score - ? WHERE user_id = ?')
+          .bind(Number(betPoints), userId)
+          .run();
+      } catch (e) {
+        console.error('점수 차감 오류:', e instanceof Error ? e.message : String(e));
+        // 차감 실패 시에도 진행은 가능하지만 로그를 남깁니다.
+      }
     }
 
     const createdChallenge = await env.D1_DB
