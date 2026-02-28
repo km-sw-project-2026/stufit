@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import GiveUpModal from "./modal/GiveUpModal";
 import HostGiveUpModal from "./modal/HostGiveUpModal";
 import FinalGiveUpModal from "./modal/FinalGiveUpModal";
-import QuotePopup from "./modal/QuotePopup";
 import CustomAlertModal from "./modal/CustomAlertModal";
 import ChallengeOverModal from "./modals/ChallengeOverModal";
 
@@ -189,7 +188,6 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
     const [modalOpen, setModalOpen] = useState(false);
     const [hostModalOpen, setHostModalOpen] = useState(false);
     const [finalModalOpen, setFinalModalOpen] = useState(false);
-    const [quotePopupOpen, setQuotePopupOpen] = useState(false);
     const [alertOpen, setAlertOpen] = useState(false);
     const [timerSeconds, setTimerSeconds] = useState(0);
     const [isTimerRunning, setIsTimerRunning] = useState(false);
@@ -820,6 +818,14 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
                     if (Array.isArray(e.detail.members)) {
                         console.debug('challenge-joined: updating members from event', e.detail.members);
                         setMembers(e.detail.members);
+                        // If the current user just joined, clear submittedToday to ensure submit button is enabled
+                        try {
+                            const username = localStorage.getItem('username');
+                            if (username && e.detail.members.some(m => m.username === username)) {
+                                setSubmittedToday(false);
+                                setRefreshKey(prev => prev + 1);
+                            }
+                        } catch (err) { console.warn('clear submitted on joined failed', err); }
                     } else {
                         console.debug('challenge-joined: members not in event, reloading from server');
                         // if members not provided, reload from server
@@ -840,6 +846,16 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
                     if (Array.isArray(e.detail.members)) {
                         console.debug('challenge-updated: updating members', e.detail.members);
                         setMembers(e.detail.members);
+                        // If our member status changed (re-joined), ensure submittedToday reflects server state
+                        try {
+                            const username = localStorage.getItem('username');
+                            if (username) {
+                                const myRec = e.detail.members.find(m => m.username === username);
+                                if (myRec && myRec.status !== 'submitted') {
+                                    setSubmittedToday(false);
+                                }
+                            }
+                        } catch (err) { console.warn('sync submitted on update failed', err); }
                     }
                 }
             } catch (err) { console.error('challenge-updated handler error', err); }
@@ -998,11 +1014,7 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
                 </div>
             </div>
 
-            {modalOpen && <GiveUpModal setModalOpen={setModalOpen} setQuotePopupOpen={setQuotePopupOpen} />}
-            {quotePopupOpen && <QuotePopup isOpen={quotePopupOpen} onClose={() => {
-                setQuotePopupOpen(false);
-                setFinalModalOpen(true);
-            }} />}
+            {modalOpen && <GiveUpModal setModalOpen={setModalOpen} setFinalModalOpen={setFinalModalOpen} />}
             {hostModalOpen && <HostGiveUpModal setModalOpen={setHostModalOpen} setFinalModalOpen={setFinalModalOpen} challenge={challenge} onLeave={handleLeaveSuccess} />}
             {finalModalOpen && (
                 <FinalGiveUpModal
