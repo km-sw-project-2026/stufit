@@ -228,6 +228,7 @@ function CreateChallengeModal({ closeCreateChallengeModal, onCreateSuccess }) {
               min="0"
               value={betPoints}
               onChange={(e) => setBetPoints(e.target.value)}
+              style={{ padding: '12px 15px', border: '1px solid #096B68', borderRadius: '10px', fontSize: '14px', color: '#333', boxSizing: 'border-box', width: '100%' }}
             />
           </div>
         </div>
