@@ -974,10 +974,16 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
                             <button
                                 className="submit-btn"
                                 onClick={handleSubmitProgress}
-                                disabled={submittedToday || submitLoading}
+                                disabled={submittedToday || submitLoading || members.length < challenge?.max_members}
                                 style={{ marginTop: '-4px' }}
                             >
-                                {submittedToday ? '제출이 완료되었습니다' : submitLoading ? '제출 중...' : '제출하기'}
+                                {members.length < challenge?.max_members 
+                                    ? `인원 대기 중... (${members.length}/${challenge?.max_members})`
+                                    : submittedToday 
+                                    ? '제출이 완료되었습니다' 
+                                    : submitLoading 
+                                    ? '제출 중...' 
+                                    : '제출하기'}
                             </button>
                         </div>
 
