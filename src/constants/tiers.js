@@ -1,12 +1,12 @@
 export const TIER_GUIDE = [
   { name: 'Bronze', minScore: 0, image: '/img/Bronze.png', progressColor: '#A97142' },
-  { name: 'Silver', minScore: 200, image: '/img/Silver.png', progressColor: '#8B949E' },
-  { name: 'Gold', minScore: 500, image: '/img/Gold.png', progressColor: '#D4AF37' },
-  { name: 'Platinum', minScore: 800, image: '/img/Platinum.png', progressColor: '#4FB1C6' },
-  { name: 'Emerald', minScore: 1200, image: '/img/Emerald.png', progressColor: '#2FA66A' },
-  { name: 'Diamond', minScore: 1600, image: '/img/Diamond.png', progressColor: '#3C84FF' },
-  { name: 'Master', minScore: 3000, image: '/img/Master.png', progressColor: '#7E57C2' },
-  { name: 'Challenger', minScore: 6000, image: '/img/Challenger.png', progressColor: '#E53935' }
+  { name: 'Silver', minScore: 400, image: '/img/Silver.png', progressColor: '#8B949E' },
+  { name: 'Gold', minScore: 1000, image: '/img/Gold.png', progressColor: '#D4AF37' },
+  { name: 'Platinum', minScore: 1600, image: '/img/Platinum.png', progressColor: '#4FB1C6' },
+  { name: 'Emerald', minScore: 2400, image: '/img/Emerald.png', progressColor: '#2FA66A' },
+  { name: 'Diamond', minScore: 3200, image: '/img/Diamond.png', progressColor: '#3C84FF' },
+  { name: 'Master', minScore: 6000, image: '/img/Master.png', progressColor: '#7E57C2' },
+  { name: 'Challenger', minScore: 12000, image: '/img/Challenger.png', progressColor: '#E53935' }
 ];
 
 const normalizeScore = (score) => {
