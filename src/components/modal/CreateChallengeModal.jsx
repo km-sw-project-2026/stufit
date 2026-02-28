@@ -8,7 +8,7 @@ function CreateChallengeModal({ closeCreateChallengeModal, onCreateSuccess }) {
   const [timerMinutes, setTimerMinutes] = useState('');
   const [goalDescription, setGoalDescription] = useState('');
   const [inviteCode, setInviteCode] = useState('');
-  const [maxParticipants, setMaxParticipants] = useState('10');
+  const [maxParticipants, setMaxParticipants] = useState('');
   const [betPoints, setBetPoints] = useState('');
 
   const createChallenge = async () => {
@@ -56,12 +56,16 @@ function CreateChallengeModal({ closeCreateChallengeModal, onCreateSuccess }) {
     try {
       const normalizedInviteCode = inviteCode.trim();
 
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+      if (username) headers['X-Username'] = encodeURIComponent(username);
+      const storedUserId = localStorage.getItem('userId');
+      if (storedUserId) headers['X-User-Id'] = storedUserId;
+
       const response = await fetch('/api/challenges', {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'X-Username': encodeURIComponent(username)
-        },
+        headers,
           body: JSON.stringify({
           challengeName,
           category,
@@ -79,7 +83,10 @@ function CreateChallengeModal({ closeCreateChallengeModal, onCreateSuccess }) {
       const result = await response.json();
 
       if (!response.ok) {
-        alert(result.message || '챌린지 생성에 실패했습니다.');
+        console.error('챌린지 생성 실패 응답:', result);
+        const errMsg = result.message || '챌린지 생성에 실패했습니다.';
+        const errDetail = result.error ? `\n\n상세: ${result.error}` : '';
+        alert(errMsg + errDetail);
         return;
       }
 
@@ -109,7 +116,9 @@ function CreateChallengeModal({ closeCreateChallengeModal, onCreateSuccess }) {
       closeCreateChallengeModal();
     } catch (error) {
       console.error('챌린지 생성 오류:', error);
-      alert('서버 오류가 발생했습니다.');
+      // show error details to help debug DB issues
+      const message = error instanceof Error ? error.message : String(error);
+      alert('서버 오류가 발생했습니다.\n\n' + message);
     }
   };
 
@@ -210,7 +219,7 @@ function CreateChallengeModal({ closeCreateChallengeModal, onCreateSuccess }) {
           </div>
 
           <div className="form-group half">
-            <label>점수 배팅 (선택)</label>
+            <label>점수 배팅</label>
             <input
               type="number"
               id="new-challenge-bet-points"
