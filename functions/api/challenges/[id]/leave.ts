@@ -168,43 +168,57 @@ export default async function handler(
         const betPoints = betRow ? Number((betRow as any).bet_points || 0) : 0;
 
         if (!challengeIsStarted && betPoints > 0) {
-          try {
-            const payRow = await env.D1_DB.prepare('SELECT amount FROM challenge_bet_payments WHERE challenge_id = ? AND user_id = ?')
-              .bind(challengeId, userId).first();
-            const paidAmount = payRow ? Number((payRow as any).amount || 0) : 0;
-            if (paidAmount > 0) {
-              await env.D1_DB.prepare(
-                "INSERT OR IGNORE INTO user_profiles (user_id, profile_image_item_id, profile_border_item_id, profile_background_item_id, tier, score, points) VALUES (?, NULL, NULL, NULL, 'bronze', 0, 0)"
-              ).bind(userId).run();
-              await env.D1_DB.prepare('UPDATE user_profiles SET score = COALESCE(score,0) + ? WHERE user_id = ?')
-                .bind(paidAmount, userId).run();
-              await env.D1_DB.prepare('INSERT INTO point_logs (user_id, point, reason) VALUES (?, ?, ?)')
-                .bind(userId, paidAmount, '챌린지 이탈 환불 (배팅)').run();
-              await env.D1_DB.prepare('DELETE FROM challenge_bet_payments WHERE challenge_id = ? AND user_id = ?')
-                .bind(challengeId, userId).run();
-              console.log(`✅ 환불 완료: +${paidAmount} score`);
-            } else {
-              // 결제 기록이 없으면 페널티 적용
-              await env.D1_DB.prepare(
-                "INSERT OR IGNORE INTO user_profiles (user_id, score, points) VALUES (?, 0, 0)"
-              ).bind(userId).run();
-              const currentProfile = await env.D1_DB.prepare(
-                "SELECT points FROM user_profiles WHERE user_id = ?"
-              ).bind(userId).first();
-              const currentPoints = currentProfile?.points || 0;
-              const newPoints = Math.max(0, currentPoints - 100);
-              await env.D1_DB.prepare(
-                "UPDATE user_profiles SET points = ? WHERE user_id = ?"
-              ).bind(newPoints, userId).run();
-              await env.D1_DB.prepare(
-                "INSERT INTO point_logs (user_id, point, reason) VALUES (?, ?, ?)"
-              ).bind(userId, -100, "챌린지 포기").run();
-              console.log(`✅ 페널티 처리 완료: -100 points`);
-            }
-          } catch (e) {
-            console.error('멤버 환불 처리 중 오류:', e instanceof Error ? e.message : String(e));
+          // 시작 전 이탈: 실제 결제 기록이 있는 경우에만 환불
+          const payRow = await env.D1_DB.prepare('SELECT amount FROM challenge_bet_payments WHERE challenge_id = ? AND user_id = ?')
+            .bind(challengeId, userId).first();
+          const paidAmount = payRow ? Number((payRow as any).amount || 0) : 0;
+          if (paidAmount > 0) {
+            await env.D1_DB.prepare(
+              "INSERT OR IGNORE INTO user_profiles (user_id, profile_image_item_id, profile_border_item_id, profile_background_item_id, tier, score, points) VALUES (?, NULL, NULL, NULL, 'bronze', 0, 0)"
+            ).bind(userId).run();
+            await env.D1_DB.prepare('UPDATE user_profiles SET score = COALESCE(score,0) + ? WHERE user_id = ?')
+              .bind(paidAmount, userId).run();
+            await env.D1_DB.prepare('INSERT INTO point_logs (user_id, point, reason) VALUES (?, ?, ?)')
+              .bind(userId, paidAmount, '챌린지 이탈 환불 (배팅)').run();
+            await env.D1_DB.prepare('DELETE FROM challenge_bet_payments WHERE challenge_id = ? AND user_id = ?')
+              .bind(challengeId, userId).run();
+            console.log(`✅ 환불 완료: +${paidAmount} score`);
+          } else {
+            // 결제 기록이 없으면 페널티 적용
+            await env.D1_DB.prepare(
+              "INSERT OR IGNORE INTO user_profiles (user_id, score, points) VALUES (?, 0, 0)"
+            ).bind(userId).run();
+            const currentProfile = await env.D1_DB.prepare(
+              "SELECT points FROM user_profiles WHERE user_id = ?"
+            ).bind(userId).first();
+            const currentPoints = currentProfile?.points || 0;
+            const newPoints = Math.max(0, currentPoints - 100);
+            await env.D1_DB.prepare(
+              "UPDATE user_profiles SET points = ? WHERE user_id = ?"
+            ).bind(newPoints, userId).run();
+            await env.D1_DB.prepare(
+              "INSERT INTO point_logs (user_id, point, reason) VALUES (?, ?, ?)"
+            ).bind(userId, -100, "챌린지 포기").run();
+            console.log(`✅ 페널티 처리 완료: -100 points`);
           }
         } else {
+          // 시작 후 이탈 또는 배팅이 없는 경우 기존 페널티(100 points 차감)
+          await env.D1_DB.prepare(
+            "INSERT OR IGNORE INTO user_profiles (user_id, score, points) VALUES (?, 0, 0)"
+          ).bind(userId).run();
+          const currentProfile = await env.D1_DB.prepare(
+            "SELECT points FROM user_profiles WHERE user_id = ?"
+          ).bind(userId).first();
+          const currentPoints = currentProfile?.points || 0;
+          const newPoints = Math.max(0, currentPoints - 100);
+          await env.D1_DB.prepare(
+            "UPDATE user_profiles SET points = ? WHERE user_id = ?"
+          ).bind(newPoints, userId).run();
+          await env.D1_DB.prepare(
+            "INSERT INTO point_logs (user_id, point, reason) VALUES (?, ?, ?)"
+          ).bind(userId, -100, "챌린지 포기").run();
+          console.log(`✅ 페널티 처리 완료: -100 points`);
+        }
       } catch (e) {
         console.error('멤버 환불/페널티 처리 중 오류:', e instanceof Error ? e.message : String(e));
       }
