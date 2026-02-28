@@ -331,6 +331,20 @@ export default async function handler(request: Request, { env, userId }: Handler
           .prepare('UPDATE user_profiles SET score = score - ? WHERE user_id = ?')
           .bind(Number(betPoints), userId)
           .run();
+        // 결제 기록 테이블 생성 및 결제 기록 삽입 (idempotent)
+        try {
+          await env.D1_DB.prepare(`CREATE TABLE IF NOT EXISTS challenge_bet_payments (
+            challenge_id INTEGER NOT NULL,
+            user_id INTEGER NOT NULL,
+            amount INTEGER NOT NULL,
+            paid_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (challenge_id, user_id)
+          )`).run();
+          await env.D1_DB.prepare('INSERT OR REPLACE INTO challenge_bet_payments (challenge_id, user_id, amount) VALUES (?, ?, ?)')
+            .bind(challengeId, userId, Number(betPoints)).run();
+        } catch (e) {
+          console.error('challenge_bet_payments 저장 오류:', e instanceof Error ? e.message : String(e));
+        }
       } catch (e) {
         console.error('점수 차감 오류:', e instanceof Error ? e.message : String(e));
         // 차감 실패 시에도 진행은 가능하지만 로그를 남깁니다.
