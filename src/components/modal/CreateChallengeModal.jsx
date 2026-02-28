@@ -24,9 +24,9 @@ function CreateChallengeModal({ closeCreateChallengeModal, onCreateSuccess }) {
       return;
     }
 
-    // 인원 수 검증
-    if (!maxParticipants || Number(maxParticipants) <= 0) {
-      alert('유효한 인원 수를 입력해주세요.');
+    // 인원 수 검증: 최소 2명 이상
+    if (!maxParticipants || isNaN(Number(maxParticipants)) || Number(maxParticipants) < 2) {
+      alert('인원 수는 2명 이상이어야 합니다.');
       return;
     }
 
