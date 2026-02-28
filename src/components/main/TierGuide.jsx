@@ -22,15 +22,39 @@ function TierGuide() {
             <div className="tier-section">
               <h2 className="tier-section-title">티어 산정 기준</h2>
               <p className="tier-description">티어는 점수 기준으로 산정되며, 승급 점수 간격은 다음과 같습니다:</p>
-              <div className="tier-guide-list">
-                <p><strong>Bronze:</strong> 0점 이상</p>
-                <p><strong>Silver:</strong> 400점 이상</p>
-                <p><strong>Gold:</strong> 1000점 이상</p>
-                <p><strong>Platinum:</strong> 1600점 이상</p>
-                <p><strong>Emerald:</strong> 2400점 이상</p>
-                <p><strong>Diamond:</strong> 3200점 이상</p>
-                <p><strong>Master:</strong> 6000점 이상</p>
-                <p><strong>Challenger:</strong> 12000점 이상</p>
+              <div className="tier-guide-list" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px', marginTop: '20px' }}>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <img src="/img/Bronze.png" alt="Bronze" style={{ width: '40px', marginRight: '10px' }} />
+                  <span><strong>Bronze:</strong> 0점 이상</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <img src="/img/Silver.png" alt="Silver" style={{ width: '40px', marginRight: '10px' }} />
+                  <span><strong>Silver:</strong> 400점 이상</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <img src="/img/Gold.png" alt="Gold" style={{ width: '40px', marginRight: '10px' }} />
+                  <span><strong>Gold:</strong> 1000점 이상</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <img src="/img/Platinum.png" alt="Platinum" style={{ width: '40px', marginRight: '10px' }} />
+                  <span><strong>Platinum:</strong> 1600점 이상</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <img src="/img/Emerald.png" alt="Emerald" style={{ width: '40px', marginRight: '10px' }} />
+                  <span><strong>Emerald:</strong> 2400점 이상</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <img src="/img/Diamond.png" alt="Diamond" style={{ width: '40px', marginRight: '10px' }} />
+                  <span><strong>Diamond:</strong> 3200점 이상</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <img src="/img/Master.png" alt="Master" style={{ width: '40px', marginRight: '10px' }} />
+                  <span><strong>Master:</strong> 6000점 이상</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <img src="/img/Challenger.png" alt="Challenger" style={{ width: '40px', marginRight: '10px' }} />
+                  <span><strong>Challenger:</strong> 12000점 이상</span>
+                </div>
               </div>
               
               <div className="tier-calculation">
