@@ -788,6 +788,7 @@ function OngoingChallenge() {
     const ChallengeCard = ({ challenge }) => {
         const startDate = formatDate(challenge.created_at);
         const endDate = formatDate(challenge.end_date);
+        const isStarted = Number(challenge.is_started || 0) === 1 || Number(challenge.member_count || 0) >= Number(challenge.max_members || 0);
 
         return (
             <div className="challenge-card" style={{ 
@@ -805,6 +806,9 @@ function OngoingChallenge() {
                     <div className="challenge-card-header" style={{ marginBottom: '25px' }}>
                         <h3 style={{ display: 'inline', fontSize: '1.5rem', fontWeight: 'bold', margin: 0 }}>{challenge.title}</h3>
                         <span style={{ color: '#888', marginLeft: '12px', fontSize: '0.95rem' }}>({getCategoryName(challenge.category)})</span>
+                        <span style={{ marginLeft: '12px', fontSize: '0.9rem', color: isStarted ? '#247b7b' : '#b08900', fontWeight: 'bold' }}>
+                            {isStarted ? '진행중' : '대기중'}
+                        </span>
                     </div>
                     <div className="challenge-card-body" style={{ color: '#555', fontSize: '1rem', lineHeight: '2' }}>
                         <p style={{ margin: '10px 0' }}>참여 인원 - {Number(challenge.member_count || 0)} / {challenge.max_members}</p>
