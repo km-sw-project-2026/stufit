@@ -24,9 +24,9 @@ function CreateChallengeModal({ closeCreateChallengeModal, onCreateSuccess }) {
       return;
     }
 
-    // 인원 수 검증
-    if (!maxParticipants || Number(maxParticipants) <= 0) {
-      alert('유효한 인원 수를 입력해주세요.');
+    // 인원 수 검증: 최소 2명 이상
+    if (!maxParticipants || isNaN(Number(maxParticipants)) || Number(maxParticipants) < 2) {
+      alert('인원 수는 2명 이상이어야 합니다.');
       return;
     }
 
@@ -44,12 +44,11 @@ function CreateChallengeModal({ closeCreateChallengeModal, onCreateSuccess }) {
     }
 
     // 오늘 날짜 기준으로 종료일 계산 (로컬 날짜 기준 포맷)
-    // 사용자가 입력한 "기간(일)"이 예: 1이면 당일만 해당하므로
-    // 종료일을 (duration - 1)일 뒤로 설정해 기간이 정확히 일치하도록 보정합니다.
+    // 사용자가 입력한 "기간(일)"이 정확히 반영되도록 합니다.
+    // 예: duration=30 → 30일간의 기간 (시작일 포함)
     const start = new Date();
-    const daysToAdd = Math.max(0, Number(duration) - 1);
     const endDateObj = new Date(start);
-    endDateObj.setDate(start.getDate() + daysToAdd);
+    endDateObj.setDate(start.getDate() + Number(duration) - 1);
     const pad = (n) => String(n).padStart(2, '0');
     const endDateStr = `${endDateObj.getFullYear()}-${pad(endDateObj.getMonth() + 1)}-${pad(endDateObj.getDate())}`;
 
