@@ -206,13 +206,15 @@ export default async function handler(request: Request, { env, userId }: Handler
 
     // 챌린지 생성
     console.log('Inserting challenge...');
-    const insertResult = await env.D1_DB
-      .prepare(
-        `INSERT INTO challenges 
+    // 일부 DB 인스턴스(예: 오래된 마이그레이션)를 위해 컬럼 존재 여부에 따라 INSERT 문을 다르게 구성
+    const includeIsStarted = await hasColumn('challenges', 'is_started');
+    let insertSql: string;
+    let bindValues: any[];
+    if (includeIsStarted) {
+      insertSql = `INSERT INTO challenges 
          (title, description, category, max_members, goal, end_date, challenge_code, created_by_user_id, timer_hours, timer_minutes, is_started, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, datetime('now'))`
-      )
-      .bind(
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, datetime('now'))`;
+      bindValues = [
         challengeName,
         goalDescription,
         category,
@@ -223,8 +225,26 @@ export default async function handler(request: Request, { env, userId }: Handler
         userId,
         timerHours || 0,
         timerMinutes || 0
-      )
-      .run();
+      ];
+    } else {
+      insertSql = `INSERT INTO challenges 
+         (title, description, category, max_members, goal, end_date, challenge_code, created_by_user_id, timer_hours, timer_minutes, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`;
+      bindValues = [
+        challengeName,
+        goalDescription,
+        category,
+        Number(maxParticipants),
+        goalDescription,
+        endDate,
+        normalizedInviteCode || null,
+        userId,
+        timerHours || 0,
+        timerMinutes || 0
+      ];
+    }
+
+    const insertResult = await env.D1_DB.prepare(insertSql).bind(...bindValues).run();
 
     const challengeId = insertResult.meta.last_row_id || insertResult.lastInsertRowid;
     
