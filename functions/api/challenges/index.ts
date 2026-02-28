@@ -18,23 +18,38 @@ export default async function handler(request: Request, { env, userId }: Handler
     try {
       const url = new URL(request.url);
       const code = url.searchParams.get('code');
+      const hasIsStarted = await hasColumn('challenges', 'is_started');
 
       // If a code query param is provided, return the matching challenge (used for "join by code")
       if (code) {
         console.log('Looking up challenge by code:', code);
-        // case-insensitive match for code, but exclude full challenges
-        const row = await env.D1_DB
-          .prepare(
-            `SELECT c.*, 
-              (SELECT COUNT(*) FROM challenge_members cm WHERE cm.challenge_id = c.challenge_id) AS member_count
-             FROM challenges c
-             WHERE lower(c.challenge_code) = lower(?)
-               AND c.deleted_at IS NULL
-               AND (SELECT COUNT(*) FROM challenge_members cm2 WHERE cm2.challenge_id = c.challenge_id) < c.max_members
-             LIMIT 1`
-          )
-          .bind(code)
-          .first();
+        // case-insensitive match for code, but exclude full/started challenges
+        const row = hasIsStarted
+          ? await env.D1_DB
+              .prepare(
+                `SELECT c.*, 
+                  (SELECT COUNT(*) FROM challenge_members cm WHERE cm.challenge_id = c.challenge_id) AS member_count
+                 FROM challenges c
+                 WHERE lower(c.challenge_code) = lower(?)
+                   AND c.deleted_at IS NULL
+                   AND c.is_started = 0
+                   AND (SELECT COUNT(*) FROM challenge_members cm2 WHERE cm2.challenge_id = c.challenge_id) < c.max_members
+                 LIMIT 1`
+              )
+              .bind(code)
+              .first()
+          : await env.D1_DB
+              .prepare(
+                `SELECT c.*, 
+                  (SELECT COUNT(*) FROM challenge_members cm WHERE cm.challenge_id = c.challenge_id) AS member_count
+                 FROM challenges c
+                 WHERE lower(c.challenge_code) = lower(?)
+                   AND c.deleted_at IS NULL
+                   AND (SELECT COUNT(*) FROM challenge_members cm2 WHERE cm2.challenge_id = c.challenge_id) < c.max_members
+                 LIMIT 1`
+              )
+              .bind(code)
+              .first();
 
         if (!row) {
           return Response.json({ success: false, message: '코드에 해당하는 챌린지를 찾을 수 없습니다.' }, { status: 404 });
@@ -65,8 +80,6 @@ export default async function handler(request: Request, { env, userId }: Handler
           count: completedCount?.count || 0
         });
       }
-
-      const hasIsStarted = await hasColumn('challenges', 'is_started');
 
       const userChallenges = hasIsStarted
         ? await env.D1_DB

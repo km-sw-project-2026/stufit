@@ -2,24 +2,44 @@ export default async function handler(request: Request, { env }: { env: any }) {
   console.log('=== Public Challenges API Handler ===');
   console.log('Method:', request.method);
 
+  const hasColumn = async (tableName: string, columnName: string) => {
+    const pragma = await env.D1_DB.prepare(`PRAGMA table_info('${tableName}')`).all();
+    return (pragma.results || []).some((c: any) => c.name === columnName);
+  };
+
   // GET만 허용
   if (request.method !== 'GET') {
     return new Response('Method not allowed', { status: 405 });
   }
 
   try {
+    const hasIsStarted = await hasColumn('challenges', 'is_started');
+
     // 코드가 없는 공개 챌린지만 조회
-    const publicChallenges = await env.D1_DB
-      .prepare(
-        `SELECT c.*, 
-            (SELECT COUNT(*) FROM challenge_members cm WHERE cm.challenge_id = c.challenge_id) AS member_count
-         FROM challenges c
-         WHERE (c.challenge_code IS NULL OR c.challenge_code = '')
-         AND c.deleted_at IS NULL
-         AND (SELECT COUNT(*) FROM challenge_members cm2 WHERE cm2.challenge_id = c.challenge_id) < c.max_members
-         ORDER BY created_at DESC`
-      )
-      .all();
+    const publicChallenges = hasIsStarted
+      ? await env.D1_DB
+          .prepare(
+            `SELECT c.*, 
+                (SELECT COUNT(*) FROM challenge_members cm WHERE cm.challenge_id = c.challenge_id) AS member_count
+             FROM challenges c
+             WHERE (c.challenge_code IS NULL OR c.challenge_code = '')
+             AND c.deleted_at IS NULL
+             AND c.is_started = 0
+             AND (SELECT COUNT(*) FROM challenge_members cm2 WHERE cm2.challenge_id = c.challenge_id) < c.max_members
+             ORDER BY created_at DESC`
+          )
+          .all()
+      : await env.D1_DB
+          .prepare(
+            `SELECT c.*, 
+                (SELECT COUNT(*) FROM challenge_members cm WHERE cm.challenge_id = c.challenge_id) AS member_count
+             FROM challenges c
+             WHERE (c.challenge_code IS NULL OR c.challenge_code = '')
+             AND c.deleted_at IS NULL
+             AND (SELECT COUNT(*) FROM challenge_members cm2 WHERE cm2.challenge_id = c.challenge_id) < c.max_members
+             ORDER BY created_at DESC`
+          )
+          .all();
 
     console.log('Found public challenges:', publicChallenges.results?.length || 0);
 
