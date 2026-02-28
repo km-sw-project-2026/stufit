@@ -432,6 +432,7 @@ function Challenge({ closeChallengeModal, onCreateSuccess }) {
                 <div>
                     <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{challenge.title}</h3>
                     <div style={{ color: '#555', marginTop: '15px', lineHeight: '1.8' }}>
+                        <p>참여 인원: {Number(challenge.member_count || 0)} / {challenge.max_members}</p>
                         <p>기간: {challenge.created_at?.split('T')[0]} ~ {challenge.end_date?.split('T')[0]}</p>
                         <p>목표: {challenge.goal}</p>
                     </div>

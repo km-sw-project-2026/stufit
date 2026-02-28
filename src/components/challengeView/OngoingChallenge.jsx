@@ -807,7 +807,7 @@ function OngoingChallenge() {
                         <span style={{ color: '#888', marginLeft: '12px', fontSize: '0.95rem' }}>({getCategoryName(challenge.category)})</span>
                     </div>
                     <div className="challenge-card-body" style={{ color: '#555', fontSize: '1rem', lineHeight: '2' }}>
-                        <p style={{ margin: '10px 0' }}>참여 인원 - 현재 한명 참여중</p>
+                        <p style={{ margin: '10px 0' }}>참여 인원 - {Number(challenge.member_count || 0)} / {challenge.max_members}</p>
                         <p style={{ margin: '10px 0' }}>기간 - {startDate} ~ {endDate}</p>
                         <p style={{ margin: '10px 0' }}>목표 - {challenge.goal}</p>
                     </div>

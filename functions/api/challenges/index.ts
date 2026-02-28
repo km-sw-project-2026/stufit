@@ -8,6 +8,11 @@ export default async function handler(request: Request, { env, userId }: Handler
   console.log('Method:', request.method);
   console.log('userId:', userId);
 
+  const hasColumn = async (tableName: string, columnName: string) => {
+    const pragma = await env.D1_DB.prepare(`PRAGMA table_info('${tableName}')`).all();
+    return (pragma.results || []).some((c: any) => c.name === columnName);
+  };
+
   // ========== GET: 챌린지 목록 조회 ==========
   if (request.method === 'GET') {
     try {
@@ -17,9 +22,17 @@ export default async function handler(request: Request, { env, userId }: Handler
       // If a code query param is provided, return the matching challenge (used for "join by code")
       if (code) {
         console.log('Looking up challenge by code:', code);
-        // case-insensitive match for code
+        // case-insensitive match for code, but exclude full challenges
         const row = await env.D1_DB
-          .prepare("SELECT * FROM challenges WHERE lower(challenge_code) = lower(?) AND deleted_at IS NULL LIMIT 1")
+          .prepare(
+            `SELECT c.*, 
+              (SELECT COUNT(*) FROM challenge_members cm WHERE cm.challenge_id = c.challenge_id) AS member_count
+             FROM challenges c
+             WHERE lower(c.challenge_code) = lower(?)
+               AND c.deleted_at IS NULL
+               AND (SELECT COUNT(*) FROM challenge_members cm2 WHERE cm2.challenge_id = c.challenge_id) < c.max_members
+             LIMIT 1`
+          )
           .bind(code)
           .first();
 
@@ -53,27 +66,44 @@ export default async function handler(request: Request, { env, userId }: Handler
         });
       }
 
-      const userChallenges = await env.D1_DB
-        .prepare(
-          `SELECT c.* FROM challenges c
-           INNER JOIN challenge_members cm ON c.challenge_id = cm.challenge_id
-           WHERE cm.user_id = ? AND c.deleted_at IS NULL
-           ORDER BY c.created_at DESC`
-        )
-        .bind(userId)
-        .all();
+      const hasIsStarted = await hasColumn('challenges', 'is_started');
+
+      const userChallenges = hasIsStarted
+        ? await env.D1_DB
+            .prepare(
+              `SELECT c.*, 
+                 (SELECT COUNT(*) FROM challenge_members cm2 WHERE cm2.challenge_id = c.challenge_id) AS member_count
+               FROM challenges c
+               INNER JOIN challenge_members cm ON c.challenge_id = cm.challenge_id
+               WHERE cm.user_id = ?
+                 AND c.deleted_at IS NULL
+                 AND (
+                   c.is_started = 1
+                   OR (SELECT COUNT(*) FROM challenge_members cm3 WHERE cm3.challenge_id = c.challenge_id) >= c.max_members
+                 )
+               ORDER BY c.created_at DESC`
+            )
+            .bind(userId)
+            .all()
+        : await env.D1_DB
+            .prepare(
+              `SELECT c.*, 
+                 (SELECT COUNT(*) FROM challenge_members cm2 WHERE cm2.challenge_id = c.challenge_id) AS member_count
+               FROM challenges c
+               INNER JOIN challenge_members cm ON c.challenge_id = cm.challenge_id
+               WHERE cm.user_id = ?
+                 AND c.deleted_at IS NULL
+                 AND (SELECT COUNT(*) FROM challenge_members cm3 WHERE cm3.challenge_id = c.challenge_id) >= c.max_members
+               ORDER BY c.created_at DESC`
+            )
+            .bind(userId)
+            .all();
 
       console.log('Found challenges:', userChallenges.results?.length || 0);
 
-      // attach member count and maybe other info from challenge_members
-      const challengesWithCounts = (userChallenges.results || []).map((ch: any) => ({
-        ...ch,
-        memberCount: 0 // frontend can fetch members if needed
-      }));
-
       return Response.json({
         success: true,
-        challenges: challengesWithCounts
+        challenges: userChallenges.results || []
       });
 
     } catch (err: unknown) {
@@ -179,8 +209,8 @@ export default async function handler(request: Request, { env, userId }: Handler
     const insertResult = await env.D1_DB
       .prepare(
         `INSERT INTO challenges 
-         (title, description, category, max_members, goal, end_date, challenge_code, created_by_user_id, timer_hours, timer_minutes, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`
+         (title, description, category, max_members, goal, end_date, challenge_code, created_by_user_id, timer_hours, timer_minutes, is_started, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, datetime('now'))`
       )
       .bind(
         challengeName,
@@ -212,6 +242,19 @@ export default async function handler(request: Request, { env, userId }: Handler
         .prepare("INSERT OR IGNORE INTO challenge_members (challenge_id, user_id, joined_at) VALUES (?, ?, datetime('now'))")
         .bind(challengeId, userId)
         .run();
+
+      const memberCountRow = await env.D1_DB
+        .prepare('SELECT COUNT(*) AS count FROM challenge_members WHERE challenge_id = ?')
+        .bind(challengeId)
+        .first();
+      const currentMemberCount = Number((memberCountRow as any)?.count || 0);
+      const hasIsStarted = await hasColumn('challenges', 'is_started');
+      if (hasIsStarted && currentMemberCount >= Number(maxParticipants)) {
+        await env.D1_DB
+          .prepare('UPDATE challenges SET is_started = 1 WHERE challenge_id = ?')
+          .bind(challengeId)
+          .run();
+      }
     } catch (e) {
       console.error('참가자 추가 중 오류(무시):', e instanceof Error ? e.message : String(e));
     }
