@@ -510,6 +510,7 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
 
     const handleSubmitProgress = async () => {
         console.log('[handleSubmitProgress] 시작, submittedToday:', submittedToday);
+        console.log('[handleSubmitProgress] members:', members.length, 'maxMembers:', challenge?.max_members);
         
         if (submitLoading) {
             console.log('[handleSubmitProgress] 이미 제출 중');
@@ -519,6 +520,13 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
         if (submittedToday) {
             console.log('[handleSubmitProgress] 이미 오늘 제출함');
             alert('오늘은 이미 제출했습니다.');
+            return;
+        }
+
+        // 인원 충족 여부 체크
+        if (members.length < challenge?.max_members) {
+            console.log('[handleSubmitProgress] 인원 미충족');
+            alert(`인원을 모두 모아야 합니다. (현재 ${members.length}명 / 필요 ${challenge?.max_members}명)`);
             return;
         }
 
@@ -770,11 +778,19 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
                 return;
             }
             const payload = await res.json();
+            
+            // challenge 정보 업데이트
+            if (payload?.data) {
+                console.log('[fetchMembers] challenge max_members:', payload.data.max_members);
+                setChallenge(payload.data);
+            }
+            
             const list = (payload?.data && payload.data.members) ? payload.data.members : (payload?.members || []);
             // If members list empty but server marks user as joined, show current user as member
             if ((list.length === 0) && payload?.data?.isJoined && username) {
                 list.push({ user_id: null, username, status: 'not_submitted' });
             }
+            console.log('[fetchMembers] members count:', list.length, 'payload:', payload);
             setMembers(list || []);
         } catch (e) {
             console.error('멤버 목록 로드 실패:', e);
@@ -792,6 +808,12 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
             const res = await fetch(`/api/challenges/${challenge.challenge_id}`, { headers });
             if (!res.ok) return;
             const payload = await res.json();
+            
+            // challenge 정보 업데이트
+            if (payload?.data) {
+                setChallenge(payload.data);
+            }
+            
             const list = (payload?.data && payload.data.members) ? payload.data.members : (payload?.members || []);
             setMembers(list || []);
         } catch (e) {
