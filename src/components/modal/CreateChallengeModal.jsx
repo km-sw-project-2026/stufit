@@ -8,7 +8,7 @@ function CreateChallengeModal({ closeCreateChallengeModal, onCreateSuccess }) {
   const [timerMinutes, setTimerMinutes] = useState('');
   const [goalDescription, setGoalDescription] = useState('');
   const [inviteCode, setInviteCode] = useState('');
-  const [maxParticipants, setMaxParticipants] = useState('10');
+  const [maxParticipants, setMaxParticipants] = useState('');
   const [betPoints, setBetPoints] = useState('');
 
   const createChallenge = async () => {
@@ -56,12 +56,16 @@ function CreateChallengeModal({ closeCreateChallengeModal, onCreateSuccess }) {
     try {
       const normalizedInviteCode = inviteCode.trim();
 
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+      if (username) headers['X-Username'] = encodeURIComponent(username);
+      const storedUserId = localStorage.getItem('userId');
+      if (storedUserId) headers['X-User-Id'] = storedUserId;
+
       const response = await fetch('/api/challenges', {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'X-Username': encodeURIComponent(username)
-        },
+        headers,
           body: JSON.stringify({
           challengeName,
           category,
