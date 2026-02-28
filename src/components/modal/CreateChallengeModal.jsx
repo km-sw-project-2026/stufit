@@ -8,6 +8,8 @@ function CreateChallengeModal({ closeCreateChallengeModal, onCreateSuccess }) {
   const [timerMinutes, setTimerMinutes] = useState('');
   const [goalDescription, setGoalDescription] = useState('');
   const [inviteCode, setInviteCode] = useState('');
+  const [maxParticipants, setMaxParticipants] = useState('10');
+  const [betPoints, setBetPoints] = useState('');
 
   const createChallenge = async () => {
     // inviteCode는 선택사항으로 변경
@@ -19,6 +21,18 @@ function CreateChallengeModal({ closeCreateChallengeModal, onCreateSuccess }) {
     // 공부, 운동 카테고리는 타이머 필수
     if ((category === 'STUDY' || category === 'EXERCISE') && (!timerHours || !timerMinutes)) {
       alert('공부/운동 카테고리는 타이머 시간을 설정해주세요.');
+      return;
+    }
+
+    // 인원 수 검증
+    if (!maxParticipants || Number(maxParticipants) <= 0) {
+      alert('유효한 인원 수를 입력해주세요.');
+      return;
+    }
+
+    // 점수 배팅은 선택이지만 입력 시 음수 불가
+    if (betPoints && Number(betPoints) < 0) {
+      alert('점수 배팅은 0 이상이어야 합니다.');
       return;
     }
 
@@ -51,13 +65,14 @@ function CreateChallengeModal({ closeCreateChallengeModal, onCreateSuccess }) {
           body: JSON.stringify({
           challengeName,
           category,
-          maxParticipants: 10, // 기본값
+          maxParticipants: Number(maxParticipants) || 10,
           endDate: endDateStr,
           duration: Number(duration) || null,
           goalDescription,
           inviteCode: normalizedInviteCode || null,
           timerHours: category === 'STUDY' || category === 'EXERCISE' ? Number(timerHours) : null,
-          timerMinutes: category === 'STUDY' || category === 'EXERCISE' ? Number(timerMinutes) : null
+          timerMinutes: category === 'STUDY' || category === 'EXERCISE' ? Number(timerMinutes) : null,
+          betPoints: betPoints ? Number(betPoints) : null
         }),
       });
 
@@ -180,6 +195,32 @@ function CreateChallengeModal({ closeCreateChallengeModal, onCreateSuccess }) {
             </div>
           </div>
         )}
+
+        <div className="form-row">
+          <div className="form-group half">
+            <label>인원 수</label>
+            <input
+              type="number"
+              id="new-challenge-max-participants"
+              placeholder="예: 10"
+              min="1"
+              value={maxParticipants}
+              onChange={(e) => setMaxParticipants(e.target.value)}
+            />
+          </div>
+
+          <div className="form-group half">
+            <label>점수 배팅 (선택)</label>
+            <input
+              type="number"
+              id="new-challenge-bet-points"
+              placeholder="예: 100"
+              min="0"
+              value={betPoints}
+              onChange={(e) => setBetPoints(e.target.value)}
+            />
+          </div>
+        </div>
 
         <div className="form-group">
           <label>목표</label>
