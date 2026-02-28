@@ -333,6 +333,50 @@ function Attendance() {
     window.dispatchEvent(new CustomEvent('pointsUpdated', { detail: { points: nextPoints } }));
   };
 
+  const getConsecutiveStreak = (arr) => {
+    let maxStreak = 0;
+    let currentStreak = 0;
+    for (let i = 0; i < arr.length; i++) {
+      if (arr[i]) {
+        currentStreak++;
+        maxStreak = Math.max(maxStreak, currentStreak);
+      } else {
+        currentStreak = 0;
+      }
+    }
+    return maxStreak;
+  };
+
+  const hasSevenConsecutiveDays = (logs) => {
+    if (!logs || logs.length < 7) return false;
+
+    // 날짜 문자열 추출 및 정렬
+    const dateStrings = logs
+      .map(log => (typeof log === 'string' ? log : log.date))
+      .sort();
+
+    // 최근부터 역순으로 연속 7일 확인
+    for (let i = dateStrings.length - 1; i >= 6; i--) {
+      const sevenDates = dateStrings.slice(i - 6, i + 1).reverse();
+      let isConsecutive = true;
+
+      for (let j = 0; j < 6; j++) {
+        const date1 = new Date(sevenDates[j] + 'T00:00:00');
+        const date2 = new Date(sevenDates[j + 1] + 'T00:00:00');
+        const diffDays = (date1 - date2) / (1000 * 60 * 60 * 24);
+
+        if (diffDays !== 1) {
+          isConsecutive = false;
+          break;
+        }
+      }
+
+      if (isConsecutive) return true;
+    }
+
+    return false;
+  };
+
   const handleCardClick = async (index) => {
     if (index !== todayIndex) {
       showAlert(`오늘은 ${days[todayIndex]}요일입니다. 해당 요일에만 출석 가능해요!`);
@@ -363,8 +407,25 @@ function Attendance() {
         setCheckedDays(nextCheckedDays);
         setLastCheckDate(todayDateString);
 
-        applyPointsUpdate(responseData?.rewardPoints);
-        showAlert(`${days[index]}요일 출석 완료!`);
+        let totalPoints = responseData?.rewardPoints || 0;
+        let alertMsg = `${days[index]}요일 출석 완료!`;
+
+        // 조건 1: 현재 주(일월화수목금토) 7일 모두 출석
+        const isFullWeek = nextCheckedDays.every(day => day === true);
+        if (isFullWeek) {
+          totalPoints += 400;
+          alertMsg += '\n🎉 일주일 완성! 400포인트 보너스!';
+        } else {
+          // 조건 2: 최근 7일 연속 출석 (주를 넘어갈 수 있음)
+          const logs = responseData?.logs;
+          if (logs && hasSevenConsecutiveDays(logs)) {
+            totalPoints += 400;
+            alertMsg += '\n🎉 7일 연속 출석! 400포인트 보너스!';
+          }
+        }
+
+        applyPointsUpdate(totalPoints);
+        showAlert(alertMsg);
       } else {
         showAlert(responseData?.message || '출석 처리 중 오류가 발생했습니다.');
       }
@@ -404,7 +465,7 @@ function Attendance() {
           </div>
         </div>
         <div className="attendance-footer-outside">
-          총 이번 주 출석일 수 : <span className="total-days-count">{checkedDays.filter(Boolean).length}</span>일
+          연속 출석 일수 : <span className="total-days-count">{getConsecutiveStreak(checkedDays)}</span>일
         </div>
       </div>
       {isAlertOpen && <CustomAlertModal message={alertMessage} onClose={() => setIsAlertOpen(false)} />}
