@@ -75,8 +75,8 @@ function TierGuide() {
 
             <div className="tier-section">
               <h2 className="tier-section-title">챌린지 점수 지급 기준</h2>
-              <p className="tier-subtitle">개인 진행도 기반 순위 보상 안내</p>
-              <p className="tier-note">(1등 제외 후 비율 산정, 1등은 +150)</p>
+              <p className="tier-subtitle">1등에게 점수를 몰아주는 방식으로 변경되었습니다.</p>
+              <p className="tier-note">(1등은 +200, 나머지 순위는 점수 지급 없음)</p>
               
               <table className="tier-score-table">
                 <thead>
@@ -87,16 +87,12 @@ function TierGuide() {
                 </thead>
                 <tbody>
                   <tr>
-                    <td>상위</td>
-                    <td>+120</td>
+                    <td>1등</td>
+                    <td>+200</td>
                   </tr>
                   <tr>
-                    <td>중위</td>
-                    <td>+60</td>
-                  </tr>
-                  <tr>
-                    <td>하위</td>
-                    <td>-40</td>
+                    <td>2등 이하</td>
+                    <td>0</td>
                   </tr>
                 </tbody>
               </table>
