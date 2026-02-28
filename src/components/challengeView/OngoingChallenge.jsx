@@ -807,7 +807,7 @@ function OngoingChallenge() {
                         <h3 style={{ display: 'inline', fontSize: '1.5rem', fontWeight: 'bold', margin: 0 }}>{challenge.title}</h3>
                         <span style={{ color: '#888', marginLeft: '12px', fontSize: '0.95rem' }}>({getCategoryName(challenge.category)})</span>
                         <span style={{ marginLeft: '12px', fontSize: '0.9rem', color: isStarted ? '#247b7b' : '#b08900', fontWeight: 'bold' }}>
-                            {isStarted ? '진행중' : '대기중'}
+                            {isStarted ? '진행중' : '인원 충족 대기중'}
                         </span>
                     </div>
                     <div className="challenge-card-body" style={{ color: '#555', fontSize: '1rem', lineHeight: '2' }}>
