@@ -1,0 +1,1 @@
+ALTER TABLE challenges ADD COLUMN is_started INTEGER NOT NULL DEFAULT 0;

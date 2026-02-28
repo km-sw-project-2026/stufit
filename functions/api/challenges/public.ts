@@ -11,9 +11,12 @@ export default async function handler(request: Request, { env }: { env: any }) {
     // 코드가 없는 공개 챌린지만 조회
     const publicChallenges = await env.D1_DB
       .prepare(
-        `SELECT * FROM challenges 
-         WHERE (challenge_code IS NULL OR challenge_code = '')
-         AND deleted_at IS NULL
+        `SELECT c.*, 
+            (SELECT COUNT(*) FROM challenge_members cm WHERE cm.challenge_id = c.challenge_id) AS member_count
+         FROM challenges c
+         WHERE (c.challenge_code IS NULL OR c.challenge_code = '')
+         AND c.deleted_at IS NULL
+         AND (SELECT COUNT(*) FROM challenge_members cm2 WHERE cm2.challenge_id = c.challenge_id) < c.max_members
          ORDER BY created_at DESC`
       )
       .all();
