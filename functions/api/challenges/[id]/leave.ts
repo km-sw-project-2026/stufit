@@ -28,12 +28,22 @@ export default async function handler(
     const challengeId = Number(params.id);
     console.log("Challenge ID:", challengeId, "Type:", typeof challengeId);
 
-    // 챌린지 존재 확인 (is_started, max_members 정보 포함)
-    const challenge = await env.D1_DB.prepare(
-      "SELECT created_by_user_id, is_started, max_members FROM challenges WHERE challenge_id = ?"
-    ).bind(challengeId).first();
+    // 챌린지 존재 확인: 먼저 컬럼 유무를 확인해 안전하게 조회합니다.
+    const challengePragma = await env.D1_DB.prepare("PRAGMA table_info('challenges')").all();
+    const hasIsStartedCol = (challengePragma.results || []).some((c: any) => c.name === 'is_started');
 
-    console.log("Challenge:", challenge);
+    let challenge: any = null;
+    if (hasIsStartedCol) {
+      challenge = await env.D1_DB.prepare(
+        "SELECT created_by_user_id, is_started, max_members FROM challenges WHERE challenge_id = ?"
+      ).bind(challengeId).first();
+    } else {
+      challenge = await env.D1_DB.prepare(
+        "SELECT created_by_user_id, max_members FROM challenges WHERE challenge_id = ?"
+      ).bind(challengeId).first();
+    }
+
+    console.log("Challenge:", challenge, "hasIsStartedCol:", hasIsStartedCol);
 
     if (!challenge) {
       console.log("❌ Challenge not found");
@@ -44,7 +54,7 @@ export default async function handler(
     }
 
     const isOwner = challenge.created_by_user_id === userId;
-    const challengeIsStarted = Boolean((challenge as any)?.is_started);
+    const challengeIsStarted = hasIsStartedCol ? Boolean((challenge as any)?.is_started) : false;
     const maxMembers = Number((challenge as any)?.max_members || 0);
     console.log("Is owner:", isOwner);
 
