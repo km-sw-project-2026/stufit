@@ -21,17 +21,17 @@ function TierGuide() {
           <div className="tier-content-row">
             <div className="tier-section">
               <h2 className="tier-section-title">티어 산정 기준</h2>
-              <p className="tier-description">티어는 점수 기준으로 산정되며, 아래와 같은 점수 간격에 따라 티어가 결정됩니다:</p>
-              <ul>
-                <li>Bronze: 0점 이상</li>
-                <li>Silver: 400점 이상</li>
-                <li>Gold: 1000점 이상</li>
-                <li>Platinum: 1600점 이상</li>
-                <li>Emerald: 2400점 이상</li>
-                <li>Diamond: 3200점 이상</li>
-                <li>Master: 6000점 이상</li>
-                <li>Challenger: 12000점 이상</li>
-              </ul>
+              <p className="tier-description">티어는 점수 기준으로 산정되며, 승급 점수 간격은 다음과 같습니다:</p>
+              <div className="tier-guide-list">
+                <p><strong>Bronze:</strong> 0점 이상</p>
+                <p><strong>Silver:</strong> 400점 이상</p>
+                <p><strong>Gold:</strong> 1000점 이상</p>
+                <p><strong>Platinum:</strong> 1600점 이상</p>
+                <p><strong>Emerald:</strong> 2400점 이상</p>
+                <p><strong>Diamond:</strong> 3200점 이상</p>
+                <p><strong>Master:</strong> 6000점 이상</p>
+                <p><strong>Challenger:</strong> 12000점 이상</p>
+              </div>
               
               <div className="tier-calculation">
                 <h3>1. 점수</h3>
