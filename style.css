@@ -1799,6 +1799,7 @@ body.modal-open {
 .form-row {
     display: flex;
     gap: 15px;
+    align-items: flex-start;
 }
 
 .form-group.half {
@@ -1814,10 +1815,10 @@ body.modal-open {
 .select-wrapper select {
     width: 100%;
     padding: 12px 15px;
-    border: 1.5px solid #145f5c;
-    border-radius: 12px;
-    font-size: 1rem;
-    color: #555;
+    border: 1px solid #096B68;
+    border-radius: 10px;
+    font-size: 14px;
+    color: #333;
     outline: none;
     transition: all 0.3s ease;
     appearance: none;

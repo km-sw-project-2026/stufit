@@ -219,7 +219,7 @@ function CreateChallengeModal({ closeCreateChallengeModal, onCreateSuccess }) {
           </div>
 
           <div className="form-group half">
-            <label>점수 배팅 (선택)</label>
+            <label>점수 배팅</label>
             <input
               type="number"
               id="new-challenge-bet-points"
