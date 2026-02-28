@@ -90,10 +90,6 @@ export default async function handler(request: Request, { env, userId }: Handler
                INNER JOIN challenge_members cm ON c.challenge_id = cm.challenge_id
                WHERE cm.user_id = ?
                  AND c.deleted_at IS NULL
-                 AND (
-                   c.is_started = 1
-                   OR (SELECT COUNT(*) FROM challenge_members cm3 WHERE cm3.challenge_id = c.challenge_id) >= c.max_members
-                 )
                ORDER BY c.created_at DESC`
             )
             .bind(userId)
@@ -106,7 +102,6 @@ export default async function handler(request: Request, { env, userId }: Handler
                INNER JOIN challenge_members cm ON c.challenge_id = cm.challenge_id
                WHERE cm.user_id = ?
                  AND c.deleted_at IS NULL
-                 AND (SELECT COUNT(*) FROM challenge_members cm3 WHERE cm3.challenge_id = c.challenge_id) >= c.max_members
                ORDER BY c.created_at DESC`
             )
             .bind(userId)
