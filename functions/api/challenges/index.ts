@@ -157,11 +157,11 @@ export default async function handler(request: Request, { env, userId }: Handler
     );
   }
 
-  // maxParticipants 타입 검증
-  if (isNaN(Number(maxParticipants)) || Number(maxParticipants) <= 0) {
-    console.error('maxParticipants 타입 오류:', maxParticipants);
+  // maxParticipants 타입 검증: 최소 2명 이상만 허용
+  if (isNaN(Number(maxParticipants)) || Number(maxParticipants) < 2) {
+    console.error('maxParticipants 타입 오류 or too small:', maxParticipants);
     return Response.json(
-      { success: false, message: '최대 참가자 수는 1 이상의 숫자여야 합니다.' },
+      { success: false, message: '최대 참가자 수는 2 이상의 숫자여야 합니다.' },
       { status: 400 }
     );
   }
