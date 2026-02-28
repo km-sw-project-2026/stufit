@@ -10,6 +10,11 @@ function HostGiveUpModal({ setModalOpen, setFinalModalOpen, challenge, onLeave }
     const [showQuote, setShowQuote] = useState(false);
 
     const handleConfirm = () => {
+        if (selectedOption === 'delete') {
+            setModalOpen(false);
+            setFinalModalOpen(true);
+            return;
+        }
         setShowQuote(true);
     };
 
