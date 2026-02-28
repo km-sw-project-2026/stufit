@@ -141,7 +141,7 @@ function CreateChallengeModal({ closeCreateChallengeModal, onCreateSuccess }) {
         {/* Removed ‘내 이름’ input — username is taken from localStorage on submit */}
         {/* '내 이름' 입력 제거 */}
 
-        <div className="form-row">
+        <div className="form-row" style={{ alignItems: 'flex-start' }}>
           <div className="form-group half">
             <label>기간 (일)</label>
             <input
@@ -160,6 +160,7 @@ function CreateChallengeModal({ closeCreateChallengeModal, onCreateSuccess }) {
                 id="new-challenge-category"
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
+                style={{ padding: '12px 15px', border: '1px solid #096B68', borderRadius: '10px', fontSize: '14px', color: '#333' }}
               >
                 <option value="" disabled>예: 공부</option>
                 <option value="STUDY">공부</option>
@@ -177,7 +178,7 @@ function CreateChallengeModal({ closeCreateChallengeModal, onCreateSuccess }) {
         </div>
 
         {(category === 'STUDY' || category === 'EXERCISE') && (
-          <div className="form-row">
+          <div className="form-row" style={{ alignItems: 'flex-start' }}>
             <div className="form-group half">
               <label>타이머 시간</label>
               <input
@@ -205,7 +206,7 @@ function CreateChallengeModal({ closeCreateChallengeModal, onCreateSuccess }) {
           </div>
         )}
 
-        <div className="form-row">
+        <div className="form-row" style={{ alignItems: 'flex-start' }}>
           <div className="form-group half">
             <label>인원 수</label>
             <input
