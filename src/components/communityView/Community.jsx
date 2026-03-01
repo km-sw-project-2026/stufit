@@ -1066,6 +1066,13 @@ function Community() {
                 setModalOpen(true);
             }
         }
+
+        // 10초마다 게시글 목록 갱신 → Popular 승격/탈락 실시간 반영
+        const intervalId = setInterval(() => {
+            fetchPosts();
+        }, 10000);
+
+        return () => clearInterval(intervalId);
     }, []);
     
     const handleToggleLike = async (postId) => {
