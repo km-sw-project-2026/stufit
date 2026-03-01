@@ -68,14 +68,17 @@ export default async function handler(request: Request, { env, userId }: Handler
         ? Number((challenge as any)?.is_started || 0) === 1 || memberCount >= maxMembers
         : Boolean(startedFlag) || memberCount >= maxMembers;
 
-      // compute duration to help clients display correct total days
+      // compute duration: created_at을 UTC로 파싱하여 timezone 오차 방지
       try {
         const msPerDay = 24 * 60 * 60 * 1000;
         if (challenge.end_date && challenge.created_at) {
-          const s = new Date(challenge.created_at);
+          // SQLite datetime('now') 형식 "YYYY-MM-DD HH:MM:SS" → UTC로 명시 파싱
+          const createdAtStr = String(challenge.created_at).replace(' ', 'T');
+          const createdAtUTC = createdAtStr.endsWith('Z') ? createdAtStr : createdAtStr + 'Z';
+          const s = new Date(createdAtUTC);
           const e = new Date(challenge.end_date);
-          const sd = Date.UTC(s.getFullYear(), s.getMonth(), s.getDate());
-          const ed = Date.UTC(e.getFullYear(), e.getMonth(), e.getDate());
+          const sd = Date.UTC(s.getUTCFullYear(), s.getUTCMonth(), s.getUTCDate());
+          const ed = Date.UTC(e.getUTCFullYear(), e.getUTCMonth(), e.getUTCDate());
           const diffExclusive = Math.floor((ed - sd) / msPerDay);
           (challenge as any).duration = diffExclusive + 1;
         }

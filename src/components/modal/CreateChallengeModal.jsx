@@ -43,14 +43,14 @@ function CreateChallengeModal({ closeCreateChallengeModal, onCreateSuccess }) {
       return;
     }
 
-    // 오늘 날짜 기준으로 종료일 계산 (로컬 날짜 기준 포맷)
-    // 사용자가 입력한 "기간(일)"이 정확히 반영되도록 합니다.
-    // 예: duration=30 → 30일간의 기간 (시작일 포함)
-    const start = new Date();
-    const endDateObj = new Date(start);
-    endDateObj.setDate(start.getDate() + Number(duration) - 1);
+    // endDate를 서버 created_at(UTC datetime('now'))과 일치하도록 UTC 기준으로 계산
+    const now = new Date();
     const pad = (n) => String(n).padStart(2, '0');
-    const endDateStr = `${endDateObj.getFullYear()}-${pad(endDateObj.getMonth() + 1)}-${pad(endDateObj.getDate())}`;
+    const utcDateStr = `${now.getUTCFullYear()}-${pad(now.getUTCMonth() + 1)}-${pad(now.getUTCDate())}`;
+    const utcStart = new Date(utcDateStr + 'T00:00:00Z');
+    const endDateObj = new Date(utcStart);
+    endDateObj.setUTCDate(utcStart.getUTCDate() + Number(duration) - 1);
+    const endDateStr = `${endDateObj.getUTCFullYear()}-${pad(endDateObj.getUTCMonth() + 1)}-${pad(endDateObj.getUTCDate())}`;
 
     try {
       const normalizedInviteCode = inviteCode.trim();

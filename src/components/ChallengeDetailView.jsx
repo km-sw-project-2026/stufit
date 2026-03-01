@@ -249,18 +249,18 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
         }
 
         // If we have both a start (created_at/start_date) and end_date, compute day difference.
-        // Use exclusive difference (end - start) so storage styles like end = start + duration
-        // don't cause an extra +1 when displayed.
+        // created_at은 UTC로 저장되므로 UTC 기준으로 파싱
         if (challenge?.end_date) {
             try {
                 const startRaw = challenge.created_at || challenge.start_date || null;
                 if (startRaw) {
-                    const start = new Date(startRaw);
+                    const startStr = String(startRaw).replace(' ', 'T');
+                    const startUTC = startStr.endsWith('Z') ? startStr : startStr + 'Z';
+                    const start = new Date(startUTC);
                     const end = new Date(challenge.end_date);
                     const msPerDay = 24 * 60 * 60 * 1000;
-                    const sd = Date.UTC(start.getFullYear(), start.getMonth(), start.getDate());
-                    const ed = Date.UTC(end.getFullYear(), end.getMonth(), end.getDate());
-                    // Use floor on UTC-normalized dates and compute inclusive days
+                    const sd = Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate());
+                    const ed = Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), end.getUTCDate());
                     const diffInclusive = Math.floor((ed - sd) / msPerDay) + 1;
                     if (diffInclusive >= 1) return diffInclusive;
                 }
