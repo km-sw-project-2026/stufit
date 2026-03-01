@@ -1044,7 +1044,7 @@ function Community() {
 
             const categorized = {
                 // 좋아요 1개 이상인 글들을 인기글 목록에 포함
-                popular: list.filter(p => p.category === 'popular' || p.likes >= 1),
+                popular: list.filter(p => p.category === 'popular' || p.likes >= 5),
                 tips: list.filter(p => p.category === 'tips'),
                 data: list.filter(p => p.category === 'data'),
                 mypost: username ? list.filter(p => String(p.author) === String(username)) : []
