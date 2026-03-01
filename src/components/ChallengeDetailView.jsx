@@ -649,10 +649,12 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
     const handleSuccessConfirm = () => {
         setShowSuccessPopup(false);
         setIsChallengeOverOpen(true);
-        finalizeChallenge();
+        if (getChallengeType() !== 'study') {
+            finalizeChallenge();
+        }
     };
 
-    const finalizeChallenge = async () => {
+    const finalizeChallenge = async (overrideStudyScore = null) => {
         if (!challenge?.challenge_id) return;
 
         const syncPointsFromServer = async () => {
@@ -707,8 +709,13 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
             if (username) headers['X-Username'] = username;
 
             const rewardsBody = { action: 'complete' };
-            if (getChallengeType() === 'study' && studyScore !== null) {
-                rewardsBody.score = studyScore;
+            const resolvedStudyScore =
+                overrideStudyScore !== null && overrideStudyScore !== undefined
+                    ? Number(overrideStudyScore)
+                    : studyScore;
+
+            if (getChallengeType() === 'study' && resolvedStudyScore !== null && !Number.isNaN(Number(resolvedStudyScore))) {
+                rewardsBody.score = Number(resolvedStudyScore);
             }
             const rewardsResponse = await fetch(`/api/challenges/${challenge.challenge_id}/rewards`, {
                 method: 'POST',
@@ -773,6 +780,9 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
 
         // 점수를 state에 저장
         setStudyScore(score);
+
+        // study 챌린지는 점수 입력 후 정산을 실행해야 ranking/몰빵 포인트가 정확히 반영됨
+        await finalizeChallenge(score);
         return true;
     };
 
