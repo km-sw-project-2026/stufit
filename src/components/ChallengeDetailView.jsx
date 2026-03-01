@@ -512,7 +512,10 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
         }
     };
 
-    const isChallengeStarted = Number(challenge?.is_started || 0) === 1 || Number(challenge?.member_count || 0) >= Number(challenge?.max_members || 0);
+    const isChallengeStarted =
+        Number(challenge?.is_started || 0) === 1 ||
+        Number(challenge?.member_count || 0) >= Number(challenge?.max_members || 0) ||
+        members.length >= Number(challenge?.max_members || 0);
 
     const handleSubmitProgress = async () => {
         console.log('[handleSubmitProgress] 시작, submittedToday:', submittedToday);

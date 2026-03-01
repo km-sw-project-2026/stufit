@@ -8,6 +8,18 @@ export default async function handler(request: Request, { env, userId }: Handler
     const id = Number(new URL(request.url).pathname.split('/')[3]);
     if (Number.isNaN(id)) return new Response('Invalid challengeId', { status: 400 });
 
+    const hasColumn = async (tableName: string, columnName: string) => {
+      const pragma = await env.D1_DB.prepare(`PRAGMA table_info('${tableName}')`).all();
+      return (pragma.results || []).some((c: any) => c.name === columnName);
+    };
+
+    await env.D1_DB.prepare(`CREATE TABLE IF NOT EXISTS challenge_started_flags (
+      challenge_id INTEGER PRIMARY KEY,
+      started_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )`).run();
+
+    const hasIsStarted = await hasColumn('challenges', 'is_started');
+
     const challenge = await env.D1_DB.prepare('SELECT * FROM challenges WHERE challenge_id = ?').bind(id).first();
     if (!challenge) return Response.json({ success: false, message: '챌린지 없음' }, { status: 404 });
 
@@ -46,6 +58,16 @@ export default async function handler(request: Request, { env, userId }: Handler
         members.results = (members.results || []).map((r: any) => ({ ...r, status: 'not_submitted' }));
       }
 
+      const memberCount = Array.isArray(members?.results) ? members.results.length : 0;
+      const maxMembers = Number((challenge as any)?.max_members || 0);
+      const startedFlag = await env.D1_DB
+        .prepare('SELECT 1 FROM challenge_started_flags WHERE challenge_id = ?')
+        .bind(id)
+        .first();
+      const computedStarted = hasIsStarted
+        ? Number((challenge as any)?.is_started || 0) === 1 || memberCount >= maxMembers
+        : Boolean(startedFlag) || memberCount >= maxMembers;
+
       // compute duration to help clients display correct total days
       try {
         const msPerDay = 24 * 60 * 60 * 1000;
@@ -61,14 +83,32 @@ export default async function handler(request: Request, { env, userId }: Handler
         // ignore
       }
 
-      return Response.json({ success: true, data: { ...challenge, isJoined: !!member, members: members.results || [] }, message: '챌린지 상세 조회' });
+      return Response.json({
+        success: true,
+        data: {
+          ...challenge,
+          is_started: computedStarted ? 1 : 0,
+          member_count: memberCount,
+          isJoined: !!member,
+          members: members.results || []
+        },
+        message: '챌린지 상세 조회'
+      });
     }
 
     if (request.method === 'DELETE') {
       if (challenge.created_by_user_id !== userId) return Response.json({ success: false, message: '권한 없음' }, { status: 403 });
 
-      await env.D1_DB.prepare('DELETE FROM challenges WHERE challenge_id = ?').bind(id).run();
+      await env.D1_DB.prepare('DELETE FROM challenge_results WHERE challenge_id = ?').bind(id).run();
+      await env.D1_DB.prepare('DELETE FROM challenge_daily_progress WHERE challenge_id = ?').bind(id).run();
       await env.D1_DB.prepare('DELETE FROM challenge_members WHERE challenge_id = ?').bind(id).run();
+      await env.D1_DB.prepare('DELETE FROM challenge_started_flags WHERE challenge_id = ?').bind(id).run();
+      await env.D1_DB.prepare(`CREATE TABLE IF NOT EXISTS challenge_bets (
+        challenge_id INTEGER PRIMARY KEY,
+        bet_points INTEGER NOT NULL
+      )`).run();
+      await env.D1_DB.prepare('DELETE FROM challenge_bets WHERE challenge_id = ?').bind(id).run();
+      await env.D1_DB.prepare('DELETE FROM challenges WHERE challenge_id = ?').bind(id).run();
 
       return Response.json({ success: true, data: { challengeId: id }, message: '챌린지 삭제 완료' });
     }
