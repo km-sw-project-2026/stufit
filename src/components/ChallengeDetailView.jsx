@@ -202,6 +202,7 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
     const [showSuccessPopup, setShowSuccessPopup] = useState(false);
     const [rankingData, setRankingData] = useState([]);
     const [studyScore, setStudyScore] = useState(null);
+    const [members, setMembers] = useState([]);
     const [finalAction, setFinalAction] = useState('leave');
     const [leaveAlertMessage, setLeaveAlertMessage] = useState('챌린지를 완전히 포기했습니다.');
 
@@ -768,8 +769,6 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
     const title = challenge?.title || '챌린지';
     const goal = challenge?.goal || '아침 6시 기상';
     const category = challenge?.category || '';
-
-    const [members, setMembers] = useState([]);
 
     // 챌린지 멤버 목록 로드 함수 (초기 전체 상세 조회)
     const fetchMembers = async () => {
