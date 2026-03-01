@@ -1060,7 +1060,7 @@ function Community() {
 
             const { liked, count } = payload.data;
 
-            // 1. UI 상태 즉시 업데이트 (색상 유지)
+            // UI 상태 즉시 업데이트 (색상 유지) — fetchPosts 재호출 없이 상태만 갱신
             setPosts(prev => {
                 const newState = { ...prev };
                 Object.keys(newState).forEach(cat => {
@@ -1070,12 +1070,6 @@ function Community() {
                 });
                 return newState;
             });
-
-            // 2. [수정] 팝업창(showAlert) 로직을 제거하고 데이터만 동기화합니다.
-            // 좋아요 1개가 되면 인기글 목록을 갱신하기 위해 지연 호출을 유지합니다.
-            if (count >= 1 && liked === true) {
-                setTimeout(() => fetchPosts(), 300);
-            }
         } catch (error) {
             console.error('좋아요 에러:', error);
         }
