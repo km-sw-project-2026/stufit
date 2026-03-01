@@ -99,6 +99,56 @@ export default async function handler(request: Request, { env, userId }: Handler
     if (request.method === 'DELETE') {
       if (challenge.created_by_user_id !== userId) return Response.json({ success: false, message: '권한 없음' }, { status: 403 });
 
+      // 시작 전 삭제 시 모든 멤버에게 bet_points 환급
+      const isStartedNow = hasIsStarted
+        ? Number((challenge as any).is_started || 0) === 1
+        : Boolean(await env.D1_DB.prepare('SELECT 1 FROM challenge_started_flags WHERE challenge_id = ?').bind(id).first());
+
+      if (!isStartedNow) {
+        const hasBetCol = await hasColumn('challenges', 'bet_points');
+        let refundAmount = hasBetCol ? Number((challenge as any).bet_points || 0) : 0;
+        if (!hasBetCol) {
+          try {
+            await env.D1_DB.prepare(`CREATE TABLE IF NOT EXISTS challenge_bets (challenge_id INTEGER PRIMARY KEY, bet_points INTEGER NOT NULL)`).run();
+            const betRow = await env.D1_DB.prepare('SELECT bet_points FROM challenge_bets WHERE challenge_id = ?').bind(id).first();
+            refundAmount = Number((betRow as any)?.bet_points || 0);
+          } catch (e) { /* ignore */ }
+        }
+
+        if (refundAmount > 0) {
+          const allMembers = await env.D1_DB
+            .prepare('SELECT user_id FROM challenge_members WHERE challenge_id = ?')
+            .bind(id)
+            .all();
+
+          const pointLogInfo = await env.D1_DB.prepare("PRAGMA table_info('point_logs')").all();
+          const pointLogCols = Array.isArray(pointLogInfo?.results) ? pointLogInfo.results : [];
+          const pointLogCol = pointLogCols.some((c: any) => c.name === 'point') ? 'point'
+            : pointLogCols.some((c: any) => c.name === 'points') ? 'points' : null;
+
+          for (const row of (allMembers.results || [])) {
+            const memberId = (row as any).user_id;
+            await env.D1_DB.prepare("INSERT OR IGNORE INTO user_profiles (user_id, score, points) VALUES (?, 0, 0)").bind(memberId).run();
+            // point_logs에 points 차감 기록이 있으면 points로 환급, 아니면 score로 환급
+            const wasPointLog = pointLogCol
+              ? await env.D1_DB
+                  .prepare(`SELECT 1 FROM point_logs WHERE user_id = ? AND reason LIKE ? AND ${pointLogCol} < 0 LIMIT 1`)
+                  .bind(memberId, `challenge_bet:${id}:%`)
+                  .first()
+              : null;
+            if (wasPointLog && pointLogCol) {
+              await env.D1_DB.prepare('UPDATE user_profiles SET score = score + ? WHERE user_id = ?').bind(refundAmount, memberId).run();
+              await env.D1_DB
+                .prepare(`INSERT INTO point_logs (user_id, ${pointLogCol}, reason, created_at) VALUES (?, ?, ?, ?)`)
+                .bind(memberId, refundAmount, `challenge_bet:${id}:refund`, new Date().toISOString())
+                .run();
+            } else {
+              await env.D1_DB.prepare('UPDATE user_profiles SET score = score + ? WHERE user_id = ?').bind(refundAmount, memberId).run();
+            }
+          }
+        }
+      }
+
       await env.D1_DB.prepare('DELETE FROM challenge_results WHERE challenge_id = ?').bind(id).run();
       await env.D1_DB.prepare('DELETE FROM challenge_daily_progress WHERE challenge_id = ?').bind(id).run();
       await env.D1_DB.prepare('DELETE FROM challenge_members WHERE challenge_id = ?').bind(id).run();

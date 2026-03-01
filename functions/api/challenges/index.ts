@@ -293,16 +293,15 @@ export default async function handler(request: Request, { env, userId }: Handler
       }
 
       const profileRow = await env.D1_DB
-        .prepare('SELECT points, score FROM user_profiles WHERE user_id = ?')
+        .prepare('SELECT score FROM user_profiles WHERE user_id = ?')
         .bind(userId)
         .first();
-      const currentPoints = Number((profileRow as any)?.points || 0);
       const currentScore = Number((profileRow as any)?.score || 0);
       const requiredBet = Number(betPoints);
-      if (currentPoints < requiredBet && currentScore < requiredBet) {
-        console.error('betPoints 부족: points=', currentPoints, 'score=', currentScore, 'required=', betPoints);
+      if (currentScore < requiredBet) {
+        console.error('betPoints 부족: score=', currentScore, 'required=', betPoints);
         return Response.json(
-          { success: false, message: '포인트/점수가 부족합니다.' },
+          { success: false, message: 'score가 부족합니다.' },
           { status: 400 }
         );
       }
@@ -437,16 +436,15 @@ export default async function handler(request: Request, { env, userId }: Handler
             : null;
 
         const profileRow = await env.D1_DB
-          .prepare('SELECT points, score FROM user_profiles WHERE user_id = ?')
+          .prepare('SELECT score FROM user_profiles WHERE user_id = ?')
           .bind(userId)
           .first();
-        const currentPoints = Number((profileRow as any)?.points || 0);
         const currentScore = Number((profileRow as any)?.score || 0);
         const requiredBet = Number(betPoints);
 
-        if (currentPoints >= requiredBet) {
+        if (currentScore >= requiredBet) {
           await env.D1_DB
-            .prepare('UPDATE user_profiles SET points = points - ? WHERE user_id = ?')
+            .prepare('UPDATE user_profiles SET score = score - ? WHERE user_id = ?')
             .bind(requiredBet, userId)
             .run();
 
@@ -456,14 +454,9 @@ export default async function handler(request: Request, { env, userId }: Handler
               .bind(userId, -requiredBet, `challenge_bet:${challengeId}:create`, new Date().toISOString())
               .run();
           }
-        } else if (currentScore >= requiredBet) {
-          await env.D1_DB
-            .prepare('UPDATE user_profiles SET score = score - ? WHERE user_id = ?')
-            .bind(requiredBet, userId)
-            .run();
         } else {
           return Response.json(
-            { success: false, message: '포인트/점수가 부족합니다.' },
+            { success: false, message: 'score가 부족합니다.' },
             { status: 400 }
           );
         }
