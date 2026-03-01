@@ -495,10 +495,12 @@ export default async function handler(request: Request, { env, userId }: Handler
       if (typeof duration !== 'undefined' && duration !== null && !isNaN(Number(duration))) {
         computedDuration = Number(duration);
       } else if (createdChallenge && createdChallenge.end_date && createdChallenge.created_at) {
-        const s = new Date(createdChallenge.created_at);
+        const createdAtStr = String(createdChallenge.created_at).replace(' ', 'T');
+        const createdAtUTC = createdAtStr.endsWith('Z') ? createdAtStr : createdAtStr + 'Z';
+        const s = new Date(createdAtUTC);
         const e = new Date(createdChallenge.end_date);
-        const sd = Date.UTC(s.getFullYear(), s.getMonth(), s.getDate());
-        const ed = Date.UTC(e.getFullYear(), e.getMonth(), e.getDate());
+        const sd = Date.UTC(s.getUTCFullYear(), s.getUTCMonth(), s.getUTCDate());
+        const ed = Date.UTC(e.getUTCFullYear(), e.getUTCMonth(), e.getUTCDate());
         const diffExclusive = Math.floor((ed - sd) / msPerDay);
         computedDuration = diffExclusive + 1;
       }
