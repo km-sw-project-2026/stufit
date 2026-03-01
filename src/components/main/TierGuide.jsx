@@ -21,17 +21,41 @@ function TierGuide() {
           <div className="tier-content-row">
             <div className="tier-section">
               <h2 className="tier-section-title">티어 산정 기준</h2>
-              <p className="tier-description">티어는 점수 기준으로 산정되며, 아래와 같은 점수 간격에 따라 티어가 결정됩니다:</p>
-              <ul>
-                <li>Bronze: 0점 이상</li>
-                <li>Silver: 400점 이상</li>
-                <li>Gold: 1000점 이상</li>
-                <li>Platinum: 1600점 이상</li>
-                <li>Emerald: 2400점 이상</li>
-                <li>Diamond: 3200점 이상</li>
-                <li>Master: 6000점 이상</li>
-                <li>Challenger: 12000점 이상</li>
-              </ul>
+              <p className="tier-description">티어는 점수 기준으로 산정되며, 승급 점수 간격은 다음과 같습니다:</p>
+              <div className="tier-guide-list" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px', marginTop: '20px' }}>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <img src="/img/Bronze.png" alt="Bronze" style={{ width: '40px', marginRight: '10px' }} />
+                  <span><strong>Bronze:</strong> 0점 이상</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <img src="/img/Silver.png" alt="Silver" style={{ width: '40px', marginRight: '10px' }} />
+                  <span><strong>Silver:</strong> 400점 이상</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <img src="/img/Gold.png" alt="Gold" style={{ width: '40px', marginRight: '10px' }} />
+                  <span><strong>Gold:</strong> 1000점 이상</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <img src="/img/Platinum.png" alt="Platinum" style={{ width: '40px', marginRight: '10px' }} />
+                  <span><strong>Platinum:</strong> 1600점 이상</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <img src="/img/Emerald.png" alt="Emerald" style={{ width: '40px', marginRight: '10px' }} />
+                  <span><strong>Emerald:</strong> 2400점 이상</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <img src="/img/Diamond.png" alt="Diamond" style={{ width: '40px', marginRight: '10px' }} />
+                  <span><strong>Diamond:</strong> 3200점 이상</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <img src="/img/Master.png" alt="Master" style={{ width: '40px', marginRight: '10px' }} />
+                  <span><strong>Master:</strong> 6000점 이상</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <img src="/img/Challenger.png" alt="Challenger" style={{ width: '40px', marginRight: '10px' }} />
+                  <span><strong>Challenger:</strong> 12000점 이상</span>
+                </div>
+              </div>
               
               <div className="tier-calculation">
                 <h3>1. 점수</h3>
@@ -51,8 +75,8 @@ function TierGuide() {
 
             <div className="tier-section">
               <h2 className="tier-section-title">챌린지 점수 지급 기준</h2>
-              <p className="tier-subtitle">개인 진행도 기반 순위 보상 안내</p>
-              <p className="tier-note">(1등 제외 후 비율 산정, 1등은 +150)</p>
+              <p className="tier-subtitle">1등: 100% 점수 획득</p>
+              <p className="tier-note">2등 이하: 0% 점수 획득</p>
               
               <table className="tier-score-table">
                 <thead>
@@ -63,16 +87,12 @@ function TierGuide() {
                 </thead>
                 <tbody>
                   <tr>
-                    <td>상위</td>
-                    <td>+120</td>
+                    <td>1등</td>
+                    <td>100%</td>
                   </tr>
                   <tr>
-                    <td>중위</td>
-                    <td>+60</td>
-                  </tr>
-                  <tr>
-                    <td>하위</td>
-                    <td>-40</td>
+                    <td>2등 이하</td>
+                    <td>0%</td>
                   </tr>
                 </tbody>
               </table>
