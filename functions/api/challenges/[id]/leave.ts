@@ -2,237 +2,153 @@ export default async function handler(
   request: Request,
   { env, params, userId }: { env: any; params: { id: string }; userId: number }
 ) {
-  console.log("=== LEAVE HANDLER START ===");
-  console.log("Method:", request.method);
-  console.log("Params:", params);
-  console.log("UserId:", userId);
-  console.log("DB:", !!env?.D1_DB);
-
   try {
-    if (request.method !== "DELETE") {
-      console.error("❌ Wrong method");
-      return new Response(
-        JSON.stringify({ success: false, message: "Method not allowed" }),
-        { status: 405, headers: { "Content-Type": "application/json" } }
-      );
+    if (request.method !== 'DELETE') {
+      return new Response(JSON.stringify({ success: false, message: 'Method not allowed' }), {
+        status: 405,
+        headers: { 'Content-Type': 'application/json' }
+      });
     }
 
     if (!env?.D1_DB) {
-      console.error("❌ D1_DB not found");
-      return new Response(
-        JSON.stringify({ success: false, message: "DB not configured" }),
-        { status: 500, headers: { "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ success: false, message: 'DB not configured' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    if (!userId) {
+      return new Response(JSON.stringify({ success: false, message: '로그인이 필요합니다.' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' }
+      });
     }
 
     const challengeId = Number(params.id);
-    console.log("Challenge ID:", challengeId, "Type:", typeof challengeId);
+    if (Number.isNaN(challengeId)) {
+      return new Response(JSON.stringify({ success: false, message: 'Invalid challenge id' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
 
-    // 챌린지 존재 확인: 먼저 컬럼 유무를 확인해 안전하게 조회합니다.
     const challengePragma = await env.D1_DB.prepare("PRAGMA table_info('challenges')").all();
     const hasIsStartedCol = (challengePragma.results || []).some((c: any) => c.name === 'is_started');
 
-    let challenge: any = null;
-    if (hasIsStartedCol) {
-      challenge = await env.D1_DB.prepare(
-        "SELECT created_by_user_id, is_started, max_members FROM challenges WHERE challenge_id = ?"
-      ).bind(challengeId).first();
-    } else {
-      challenge = await env.D1_DB.prepare(
-        "SELECT created_by_user_id, max_members FROM challenges WHERE challenge_id = ?"
-      ).bind(challengeId).first();
-    }
-
-    console.log("Challenge:", challenge, "hasIsStartedCol:", hasIsStartedCol);
+    const challenge = await env.D1_DB
+      .prepare(
+        hasIsStartedCol
+          ? 'SELECT challenge_id, created_by_user_id, max_members, is_started FROM challenges WHERE challenge_id = ?'
+          : 'SELECT challenge_id, created_by_user_id, max_members FROM challenges WHERE challenge_id = ?'
+      )
+      .bind(challengeId)
+      .first();
 
     if (!challenge) {
-      console.log("❌ Challenge not found");
+      return new Response(JSON.stringify({ success: false, message: 'Challenge not found' }), {
+        status: 404,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    const membership = await env.D1_DB
+      .prepare('SELECT 1 FROM challenge_members WHERE challenge_id = ? AND user_id = ?')
+      .bind(challengeId, userId)
+      .first();
+
+    if (!membership) {
+      return new Response(JSON.stringify({ success: false, message: '참여 중인 챌린지가 아닙니다.' }), {
+        status: 403,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    const pointLogInfo = await env.D1_DB.prepare("PRAGMA table_info('point_logs')").all();
+    const pointLogColumns = Array.isArray(pointLogInfo?.results) ? pointLogInfo.results : [];
+    const pointLogColumn = pointLogColumns.some((col: any) => col.name === 'point')
+      ? 'point'
+      : pointLogColumns.some((col: any) => col.name === 'points')
+        ? 'points'
+        : null;
+
+    const isOwner = Number((challenge as any).created_by_user_id) === Number(userId);
+    let deletedChallenge = false;
+
+    if (isOwner) {
+      const nextOwner = await env.D1_DB
+        .prepare('SELECT user_id FROM challenge_members WHERE challenge_id = ? AND user_id != ? ORDER BY joined_at ASC LIMIT 1')
+        .bind(challengeId, userId)
+        .first();
+
+      if (nextOwner?.user_id) {
+        await env.D1_DB
+          .prepare('UPDATE challenges SET created_by_user_id = ? WHERE challenge_id = ?')
+          .bind(nextOwner.user_id, challengeId)
+          .run();
+
+        await env.D1_DB
+          .prepare('DELETE FROM challenge_members WHERE challenge_id = ? AND user_id = ?')
+          .bind(challengeId, userId)
+          .run();
+      } else {
+        await env.D1_DB.prepare('DELETE FROM challenge_results WHERE challenge_id = ?').bind(challengeId).run();
+        await env.D1_DB.prepare('DELETE FROM challenge_daily_progress WHERE challenge_id = ?').bind(challengeId).run();
+        await env.D1_DB.prepare('DELETE FROM challenge_members WHERE challenge_id = ?').bind(challengeId).run();
+        await env.D1_DB.prepare('DELETE FROM challenges WHERE challenge_id = ?').bind(challengeId).run();
+        deletedChallenge = true;
+      }
+    } else {
+      await env.D1_DB
+        .prepare('DELETE FROM challenge_members WHERE challenge_id = ? AND user_id = ?')
+        .bind(challengeId, userId)
+        .run();
+    }
+
+    // 기존 정책 유지: 챌린지 나가기 시 100 포인트 차감 (삭제로 챌린지가 사라져도 사용자 패널티는 적용)
+    await env.D1_DB
+      .prepare("INSERT OR IGNORE INTO user_profiles (user_id, score, points) VALUES (?, 0, 0)")
+      .bind(userId)
+      .run();
+
+    const currentProfile = await env.D1_DB
+      .prepare('SELECT points FROM user_profiles WHERE user_id = ?')
+      .bind(userId)
+      .first();
+    const currentPoints = Number((currentProfile as any)?.points || 0);
+    const nextPoints = Math.max(0, currentPoints - 100);
+
+    await env.D1_DB
+      .prepare('UPDATE user_profiles SET points = ? WHERE user_id = ?')
+      .bind(nextPoints, userId)
+      .run();
+
+    if (pointLogColumn) {
+      await env.D1_DB
+        .prepare(`INSERT INTO point_logs (user_id, ${pointLogColumn}, reason, created_at) VALUES (?, ?, ?, ?)`)
+        .bind(userId, -100, isOwner ? '챌린지 중도 포기 (방장)' : '챌린지 포기', new Date().toISOString())
+        .run();
+    }
+
+    const updatedProfile = await env.D1_DB
+      .prepare('SELECT points, score FROM user_profiles WHERE user_id = ?')
+      .bind(userId)
+      .first();
+
+    if (deletedChallenge) {
       return new Response(
-        JSON.stringify({ success: false, message: "Challenge not found" }),
-        { status: 404, headers: { "Content-Type": "application/json" } }
+        JSON.stringify({
+          success: true,
+          message: '챌린지가 삭제되었습니다.',
+          deleted: true,
+          challenge: null,
+          members: [],
+          points: updatedProfile?.points || 0,
+          score: updatedProfile?.score || 0
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
       );
     }
 
-    const isOwner = challenge.created_by_user_id === userId;
-    const challengeIsStarted = hasIsStartedCol ? Boolean((challenge as any)?.is_started) : false;
-    const maxMembers = Number((challenge as any)?.max_members || 0);
-    console.log("Is owner:", isOwner);
-
-    if (isOwner) {
-      console.log("📝 Host leaving - transferring ownership");
-      
-      // 다른 멤버 찾기 (방장 제외)
-      const nextOwner = await env.D1_DB.prepare(
-        "SELECT user_id FROM challenge_members WHERE challenge_id = ? AND user_id != ? LIMIT 1"
-      ).bind(challengeId, userId).first();
-
-      if (nextOwner) {
-        console.log("📝 Transferring ownership to user:", nextOwner.user_id);
-        // 방장 권한 이전
-        await env.D1_DB.prepare(
-          "UPDATE challenges SET created_by_user_id = ? WHERE challenge_id = ?"
-        ).bind(nextOwner.user_id, challengeId).run();
-        
-        // 현재 방장 멤버 목록에서 제거
-        await env.D1_DB.prepare(
-          "DELETE FROM challenge_members WHERE challenge_id = ? AND user_id = ?"
-        ).bind(challengeId, userId).run();
-
-        // 시작 여부에 따라 환불 또는 페널티 처리
-        // 배팅 환불: challenge_bets 테이블에서 bet_points 조회
-        try {
-          const betRow = await env.D1_DB.prepare('SELECT bet_points FROM challenge_bets WHERE challenge_id = ?')
-              .bind(challengeId).first();
-            const betPoints = betRow ? Number((betRow as any).bet_points || 0) : 0;
-            if (!challengeIsStarted && betPoints > 0) {
-              // 환불은 실제로 결제된 금액이 있는지 확인 후 진행
-              try {
-                const payRow = await env.D1_DB.prepare('SELECT amount FROM challenge_bet_payments WHERE challenge_id = ? AND user_id = ?')
-                  .bind(challengeId, userId).first();
-                const paidAmount = payRow ? Number((payRow as any).amount || 0) : 0;
-                if (paidAmount > 0) {
-                  // 환불 처리: score 필드에 환불
-                  await env.D1_DB.prepare(
-                    "INSERT OR IGNORE INTO user_profiles (user_id, profile_image_item_id, profile_border_item_id, profile_background_item_id, tier, score, points) VALUES (?, NULL, NULL, NULL, 'bronze', 0, 0)"
-                  ).bind(userId).run();
-                  await env.D1_DB.prepare('UPDATE user_profiles SET score = COALESCE(score,0) + ? WHERE user_id = ?')
-                    .bind(paidAmount, userId).run();
-                  await env.D1_DB.prepare('INSERT INTO point_logs (user_id, point, reason) VALUES (?, ?, ?)')
-                    .bind(userId, paidAmount, '챌린지 이탈 환불 (배팅)').run();
-                  // 결제 기록 제거
-                  await env.D1_DB.prepare('DELETE FROM challenge_bet_payments WHERE challenge_id = ? AND user_id = ?')
-                    .bind(challengeId, userId).run();
-                  console.log(`✅ 방장 환불 완료: +${paidAmount} score`);
-                } else {
-                  console.log('환불 대상 결제 없음 (방장) — 페널티 적용');
-                  // 기존 동작 유지: 방장 포인트 차감 (-100P)
-                  await env.D1_DB.prepare(
-                    "INSERT OR IGNORE INTO user_profiles (user_id, score, points) VALUES (?, 0, 0)"
-                  ).bind(userId).run();
-                  const currentProfile = await env.D1_DB.prepare(
-                    "SELECT points FROM user_profiles WHERE user_id = ?"
-                  ).bind(userId).first();
-                  const currentPoints = currentProfile?.points || 0;
-                  const newPoints = Math.max(0, currentPoints - 100);
-                  await env.D1_DB.prepare(
-                    "UPDATE user_profiles SET points = ? WHERE user_id = ?"
-                  ).bind(newPoints, userId).run();
-                  await env.D1_DB.prepare(
-                    "INSERT INTO point_logs (user_id, point, reason) VALUES (?, ?, ?)"
-                  ).bind(userId, -100, "챌린지 중도 포기 (방장)").run();
-                  console.log(`✅ 방장 페널티 처리 완료 (-100 points)`);
-                }
-              } catch (e) {
-                console.error('방장 환불 처리 중 오류:', e instanceof Error ? e.message : String(e));
-              }
-            } else {
-            // 기존 동작 유지: 방장 포인트 차감 (-100P)
-            await env.D1_DB.prepare(
-              "INSERT OR IGNORE INTO user_profiles (user_id, score, points) VALUES (?, 0, 0)"
-            ).bind(userId).run();
-            const currentProfile = await env.D1_DB.prepare(
-              "SELECT points FROM user_profiles WHERE user_id = ?"
-            ).bind(userId).first();
-            const currentPoints = currentProfile?.points || 0;
-            const newPoints = Math.max(0, currentPoints - 100);
-            await env.D1_DB.prepare(
-              "UPDATE user_profiles SET points = ? WHERE user_id = ?"
-            ).bind(newPoints, userId).run();
-            await env.D1_DB.prepare(
-              "INSERT INTO point_logs (user_id, point, reason) VALUES (?, ?, ?)"
-            ).bind(userId, -100, "챌린지 중도 포기 (방장)").run();
-            console.log(`✅ 방장 페널티 처리 완료 (-100 points)`);
-          }
-        } catch (e) {
-          console.error('방장 환불/페널티 처리 중 오류:', e instanceof Error ? e.message : String(e));
-        }
-      } else {
-        console.log("📝 No other members - deleting challenge");
-        // 멤버가 없으면 챌린지 삭제
-        await env.D1_DB.prepare("DELETE FROM challenge_results WHERE challenge_id = ?")
-          .bind(challengeId).run();
-        await env.D1_DB.prepare("DELETE FROM challenge_daily_progress WHERE challenge_id = ?")
-          .bind(challengeId).run();
-        await env.D1_DB.prepare("DELETE FROM challenge_members WHERE challenge_id = ?")
-          .bind(challengeId).run();
-        await env.D1_DB.prepare("DELETE FROM challenges WHERE challenge_id = ?")
-          .bind(challengeId).run();
-      }
-    } else {
-      console.log("📝 Removing member from challenge");
-
-      // 배팅 정보 조회 (환불 대상인지 확인)
-      try {
-        const betRow = await env.D1_DB.prepare('SELECT bet_points FROM challenge_bets WHERE challenge_id = ?')
-          .bind(challengeId).first();
-        const betPoints = betRow ? Number((betRow as any).bet_points || 0) : 0;
-
-        if (!challengeIsStarted && betPoints > 0) {
-          // 시작 전 이탈: 실제 결제 기록이 있는 경우에만 환불
-          const payRow = await env.D1_DB.prepare('SELECT amount FROM challenge_bet_payments WHERE challenge_id = ? AND user_id = ?')
-            .bind(challengeId, userId).first();
-          const paidAmount = payRow ? Number((payRow as any).amount || 0) : 0;
-          if (paidAmount > 0) {
-            await env.D1_DB.prepare(
-              "INSERT OR IGNORE INTO user_profiles (user_id, profile_image_item_id, profile_border_item_id, profile_background_item_id, tier, score, points) VALUES (?, NULL, NULL, NULL, 'bronze', 0, 0)"
-            ).bind(userId).run();
-            await env.D1_DB.prepare('UPDATE user_profiles SET score = COALESCE(score,0) + ? WHERE user_id = ?')
-              .bind(paidAmount, userId).run();
-            await env.D1_DB.prepare('INSERT INTO point_logs (user_id, point, reason) VALUES (?, ?, ?)')
-              .bind(userId, paidAmount, '챌린지 이탈 환불 (배팅)').run();
-            await env.D1_DB.prepare('DELETE FROM challenge_bet_payments WHERE challenge_id = ? AND user_id = ?')
-              .bind(challengeId, userId).run();
-            console.log(`✅ 환불 완료: +${paidAmount} score`);
-          } else {
-            // 결제 기록이 없으면 페널티 적용
-            await env.D1_DB.prepare(
-              "INSERT OR IGNORE INTO user_profiles (user_id, score, points) VALUES (?, 0, 0)"
-            ).bind(userId).run();
-            const currentProfile = await env.D1_DB.prepare(
-              "SELECT points FROM user_profiles WHERE user_id = ?"
-            ).bind(userId).first();
-            const currentPoints = currentProfile?.points || 0;
-            const newPoints = Math.max(0, currentPoints - 100);
-            await env.D1_DB.prepare(
-              "UPDATE user_profiles SET points = ? WHERE user_id = ?"
-            ).bind(newPoints, userId).run();
-            await env.D1_DB.prepare(
-              "INSERT INTO point_logs (user_id, point, reason) VALUES (?, ?, ?)"
-            ).bind(userId, -100, "챌린지 포기").run();
-            console.log(`✅ 페널티 처리 완료: -100 points`);
-          }
-        } else {
-          // 시작 후 이탈 또는 배팅이 없는 경우 기존 페널티(100 points 차감)
-          await env.D1_DB.prepare(
-            "INSERT OR IGNORE INTO user_profiles (user_id, score, points) VALUES (?, 0, 0)"
-          ).bind(userId).run();
-          const currentProfile = await env.D1_DB.prepare(
-            "SELECT points FROM user_profiles WHERE user_id = ?"
-          ).bind(userId).first();
-          const currentPoints = currentProfile?.points || 0;
-          const newPoints = Math.max(0, currentPoints - 100);
-          await env.D1_DB.prepare(
-            "UPDATE user_profiles SET points = ? WHERE user_id = ?"
-          ).bind(newPoints, userId).run();
-          await env.D1_DB.prepare(
-            "INSERT INTO point_logs (user_id, point, reason) VALUES (?, ?, ?)"
-          ).bind(userId, -100, "챌린지 포기").run();
-          console.log(`✅ 페널티 처리 완료: -100 points`);
-        }
-      } catch (e) {
-        console.error('멤버 환불/페널티 처리 중 오류:', e instanceof Error ? e.message : String(e));
-      }
-
-      // 멤버 삭제
-      await env.D1_DB.prepare(
-        "DELETE FROM challenge_members WHERE challenge_id = ? AND user_id = ?"
-      ).bind(challengeId, userId).run();
-
-      console.log("✅ 멤버 삭제 완료");
-    }
-
-    console.log("✅ Success");
-    // return updated members list and challenge info
     const pragma = await env.D1_DB.prepare("PRAGMA table_info('challenge_members')").all();
     const hasStatus = (pragma.results || []).some((c: any) => c.name === 'status');
     let members;
@@ -249,22 +165,16 @@ export default async function handler(
       members.results = (members.results || []).map((r: any) => ({ ...r, status: 'not_submitted' }));
     }
 
-    // 업데이트된 챌린지 정보 가져오기
-    const updatedChallenge = await env.D1_DB.prepare(
-      'SELECT * FROM challenges WHERE challenge_id = ?'
-    ).bind(challengeId).first();
-
-    // 업데이트된 포인트/score 정보 가져오기
-    const updatedProfile = await env.D1_DB.prepare(
-      'SELECT points, score FROM user_profiles WHERE user_id = ?'
-    ).bind(userId).first();
-
-    console.log(`✅ 최종 응답 준비 - points: ${updatedProfile?.points}, score: ${updatedProfile?.score}`);
+    const updatedChallenge = await env.D1_DB
+      .prepare('SELECT * FROM challenges WHERE challenge_id = ?')
+      .bind(challengeId)
+      .first();
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        message: 'Successfully left challenge', 
+      JSON.stringify({
+        success: true,
+        message: 'Successfully left challenge',
+        deleted: false,
         members: members.results || [],
         challenge: updatedChallenge,
         points: updatedProfile?.points || 0,
@@ -273,15 +183,13 @@ export default async function handler(
       { status: 200, headers: { 'Content-Type': 'application/json' } }
     );
   } catch (err) {
-    console.error("❌ ERROR:", err instanceof Error ? err.message : String(err));
-    console.error("Stack:", err instanceof Error ? err.stack : "");
     return new Response(
-      JSON.stringify({ 
-        success: false, 
-        message: "Server error",
-        error: err instanceof Error ? err.message : "Unknown error"
+      JSON.stringify({
+        success: false,
+        message: 'Server error',
+        error: err instanceof Error ? err.message : String(err)
       }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
   }
 }

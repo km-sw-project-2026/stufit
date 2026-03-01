@@ -202,6 +202,8 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
     const [showSuccessPopup, setShowSuccessPopup] = useState(false);
     const [rankingData, setRankingData] = useState([]);
     const [studyScore, setStudyScore] = useState(null);
+    const [finalAction, setFinalAction] = useState('leave');
+    const [leaveAlertMessage, setLeaveAlertMessage] = useState('챌린지를 완전히 포기했습니다.');
 
     // props로 받은 challenge가 변경되면 state 업데이트
     useEffect(() => {
@@ -502,11 +504,15 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
         const isHost = currentUser && challenge?.created_by_user_id === currentUser.user_id;
 
         if (isHost) {
+            setFinalAction('leave');
             setHostModalOpen(true);
         } else {
+            setFinalAction('leave');
             setModalOpen(true);
         }
     };
+
+    const isChallengeStarted = Number(challenge?.is_started || 0) === 1 || Number(challenge?.member_count || 0) >= Number(challenge?.max_members || 0);
 
     const handleSubmitProgress = async () => {
         console.log('[handleSubmitProgress] 시작, submittedToday:', submittedToday);
@@ -524,7 +530,7 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
         }
 
         // 인원 충족 여부 체크
-        if (members.length < challenge?.max_members) {
+        if (!isChallengeStarted) {
             console.log('[handleSubmitProgress] 인원 미충족');
             alert(`인원을 모두 모아야 합니다. (현재 ${members.length}명 / 필요 ${challenge?.max_members}명)`);
             return;
@@ -591,10 +597,13 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
     };
 
     // 챌린지 나가기 성공 시 호출
-    const handleLeaveSuccess = () => {
+    const handleLeaveSuccess = (actionType = 'leave') => {
         // 멤버 목록 즉시 갱신
         fetchMembers();
         setFinalModalOpen(false);
+        setHostModalOpen(false);
+        setModalOpen(false);
+        setLeaveAlertMessage(actionType === 'delete' ? '챌린지가 삭제되었습니다.' : '챌린지를 완전히 포기했습니다.');
         setAlertOpen(true);
         // 제출 상태 초기화: 챌린지를 나가면 로컬 제출 상태는 제거
         try {
@@ -996,10 +1005,10 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
                             <button
                                 className="submit-btn"
                                 onClick={handleSubmitProgress}
-                                disabled={submittedToday || submitLoading || members.length < challenge?.max_members}
+                                disabled={submittedToday || submitLoading || !isChallengeStarted}
                                 style={{ marginTop: '-4px' }}
                             >
-                                {members.length < challenge?.max_members 
+                                {!isChallengeStarted 
                                     ? `인원 대기 중... (${members.length}/${challenge?.max_members})`
                                     : submittedToday 
                                     ? '제출이 완료되었습니다' 
@@ -1043,17 +1052,18 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
             </div>
 
             {modalOpen && <GiveUpModal setModalOpen={setModalOpen} setFinalModalOpen={setFinalModalOpen} />}
-            {hostModalOpen && <HostGiveUpModal setModalOpen={setHostModalOpen} setFinalModalOpen={setFinalModalOpen} challenge={challenge} onLeave={handleLeaveSuccess} />}
+            {hostModalOpen && <HostGiveUpModal setModalOpen={setHostModalOpen} setFinalModalOpen={setFinalModalOpen} setFinalAction={setFinalAction} challenge={challenge} onLeave={handleLeaveSuccess} />}
             {finalModalOpen && (
                 <FinalGiveUpModal
                     setModalOpen={setFinalModalOpen}
                     challengeId={challenge?.challenge_id}
+                    action={finalAction}
                     onLeave={handleLeaveSuccess}
                 />
             )}
             {alertOpen && (
                 <CustomAlertModal
-                    message="챌린지를 완전히 포기했습니다."
+                    message={leaveAlertMessage}
                     onClose={() => {
                         setAlertOpen(false);
                         if (onClose) {
