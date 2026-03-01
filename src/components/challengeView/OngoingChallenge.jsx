@@ -702,6 +702,10 @@ function OngoingChallenge() {
     };
     const closeChallengeModal = () => setIsChallengeModalVisible(false);
     const openChallengeDetail = (challenge) => {
+        if (!challenge?.challenge_id) {
+            alert('챌린지 정보를 불러오지 못했습니다.');
+            return;
+        }
         navigate(`/challenge/${challenge.challenge_id}`);
     };
 
