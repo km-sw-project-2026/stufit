@@ -148,28 +148,15 @@ export default async function handler(
       .run();
 
     if (!isStarted && betPoints > 0) {
-      // 시작 전 나가기: 배팅 포인트 전액 환급 (패널티 없음)
-      // points에서 차감됐는지 point_logs에서 확인
-      const wasPointDeducted = pointLogColumn
-        ? await env.D1_DB
-            .prepare(`SELECT 1 FROM point_logs WHERE user_id = ? AND reason LIKE ? AND ${pointLogColumn} < 0 LIMIT 1`)
-            .bind(userId, `challenge_bet:${challengeId}:%`)
-            .first()
-        : null;
-
-      if (wasPointDeducted && pointLogColumn) {
-        await env.D1_DB
-          .prepare('UPDATE user_profiles SET points = points + ? WHERE user_id = ?')
-          .bind(betPoints, userId)
-          .run();
+      // 시작 전 나가기: 배팅 score 전액 환급 (패널티 없음)
+      await env.D1_DB
+        .prepare('UPDATE user_profiles SET score = score + ? WHERE user_id = ?')
+        .bind(betPoints, userId)
+        .run();
+      if (pointLogColumn) {
         await env.D1_DB
           .prepare(`INSERT INTO point_logs (user_id, ${pointLogColumn}, reason, created_at) VALUES (?, ?, ?, ?)`)
           .bind(userId, betPoints, `challenge_bet:${challengeId}:refund`, new Date().toISOString())
-          .run();
-      } else {
-        await env.D1_DB
-          .prepare('UPDATE user_profiles SET score = score + ? WHERE user_id = ?')
-          .bind(betPoints, userId)
           .run();
       }
     } else {

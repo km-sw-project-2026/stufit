@@ -137,7 +137,7 @@ export default async function handler(request: Request, { env, userId }: Handler
                   .first()
               : null;
             if (wasPointLog && pointLogCol) {
-              await env.D1_DB.prepare('UPDATE user_profiles SET points = points + ? WHERE user_id = ?').bind(refundAmount, memberId).run();
+              await env.D1_DB.prepare('UPDATE user_profiles SET score = score + ? WHERE user_id = ?').bind(refundAmount, memberId).run();
               await env.D1_DB
                 .prepare(`INSERT INTO point_logs (user_id, ${pointLogCol}, reason, created_at) VALUES (?, ?, ?, ?)`)
                 .bind(memberId, refundAmount, `challenge_bet:${id}:refund`, new Date().toISOString())
