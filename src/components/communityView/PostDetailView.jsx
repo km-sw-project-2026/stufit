@@ -32,6 +32,23 @@ function PostDetailView({ post, onClose, onDeletePost, onEditPost, onUpdatePostS
     const username = localStorage.getItem('username') || '익명';
     const isMyPost = postState?.author === username;
 
+    // localStorage 좋아요 캐시 헬퍼
+    const getLikedCacheKey = (u) => `likedPosts_${u}`;
+    const getLocalLikedIds = (u) => {
+        if (!u) return new Set();
+        try {
+            const raw = localStorage.getItem(getLikedCacheKey(u));
+            return new Set(raw ? JSON.parse(raw) : []);
+        } catch { return new Set(); }
+    };
+    const updateLocalLikedId = (u, id, liked) => {
+        if (!u) return;
+        const set = getLocalLikedIds(u);
+        if (liked) set.add(id);
+        else set.delete(id);
+        localStorage.setItem(getLikedCacheKey(u), JSON.stringify([...set]));
+    };
+
     const mapComment = (row) => ({
         id: row.comment_id,
         author: row.username || '익명',
@@ -44,7 +61,13 @@ function PostDetailView({ post, onClose, onDeletePost, onEditPost, onUpdatePostS
     const [comments, setComments] = useState([]);
 
     useEffect(() => {
-        setPostState(post || {});
+        if (!post) return;
+        const localLiked = getLocalLikedIds(username);
+        // 서버 응답 또는 로컬 캐시 중 하나라도 liked면 true
+        setPostState({
+            ...post,
+            liked: Boolean(post.liked) || localLiked.has(post.id)
+        });
         if (!post?.id) return;
 
         const fetchComments = async () => {
@@ -119,6 +142,8 @@ function PostDetailView({ post, onClose, onDeletePost, onEditPost, onUpdatePostS
                 liked: Boolean(payload.data?.liked),
                 likes: Number(payload.data?.count) || 0
             };
+            // localStorage 캐시 업데이트 (새로고침 후에도 유지)
+            updateLocalLikedId(username, post.id, Boolean(payload.data?.liked));
             setPostState(updatedPost);
             if (onUpdatePostState) onUpdatePostState(updatedPost);
         } catch (error) {

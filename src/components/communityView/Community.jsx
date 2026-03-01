@@ -992,6 +992,26 @@ function Community() {
         mypost: []
     });
 
+    // --- 좋아요 localStorage 캐시 헬퍼 ---
+    const getLikedCacheKey = (username) => `likedPosts_${username}`;
+
+    const getLocalLikedIds = (username) => {
+        if (!username) return new Set();
+        try {
+            const raw = localStorage.getItem(getLikedCacheKey(username));
+            return new Set(raw ? JSON.parse(raw) : []);
+        } catch { return new Set(); }
+    };
+
+    const updateLocalLikedId = (username, postId, liked) => {
+        if (!username) return;
+        const set = getLocalLikedIds(username);
+        if (liked) set.add(postId);
+        else set.delete(postId);
+        localStorage.setItem(getLikedCacheKey(username), JSON.stringify([...set]));
+    };
+    // --- 끝 ---
+
     const mapPost = (row) => ({
         id: row.post_id,
         title: row.title,
@@ -999,7 +1019,7 @@ function Community() {
         author: row.username || '익명',
         likes: Number(row.like_count) || 0,
         comments: Number(row.comment_count) || 0,
-        liked: row.user_liked === 1 || row.user_liked === true,
+        liked: Number(row.user_liked) === 1,
         date: row.created_at ? new Date(row.created_at).toLocaleString('ko-KR') : '',
         category: row.category || 'data'
     });
@@ -1007,6 +1027,7 @@ function Community() {
     const fetchPosts = async () => {
         try {
             const username = localStorage.getItem('username');
+            const localLiked = getLocalLikedIds(username);
             const headers = {};
             if (username) headers['X-Username'] = username;
             
@@ -1014,7 +1035,12 @@ function Community() {
             if (!response.ok) return;
 
             const payload = await response.json();
-            const list = (payload.data || []).map(mapPost);
+            const list = (payload.data || []).map(row => {
+                const post = mapPost(row);
+                // 서버 응답 또는 로컬 캐시 중 하나라도 liked 이면 true
+                post.liked = Number(row.user_liked) === 1 || localLiked.has(row.post_id);
+                return post;
+            });
 
             const categorized = {
                 // 좋아요 1개 이상인 글들을 인기글 목록에 포함
@@ -1060,7 +1086,10 @@ function Community() {
 
             const { liked, count } = payload.data;
 
-            // 1. UI 상태 즉시 업데이트 (색상 유지)
+            // localStorage 캐시 업데이트 (새로고침 / 재방문 시 상태 유지)
+            updateLocalLikedId(username, postId, liked);
+
+            // UI 상태 즉시 업데이트 (색상 유지) — fetchPosts 재호출 없이 상태만 갱신
             setPosts(prev => {
                 const newState = { ...prev };
                 Object.keys(newState).forEach(cat => {
@@ -1070,12 +1099,6 @@ function Community() {
                 });
                 return newState;
             });
-
-            // 2. [수정] 팝업창(showAlert) 로직을 제거하고 데이터만 동기화합니다.
-            // 좋아요 1개가 되면 인기글 목록을 갱신하기 위해 지연 호출을 유지합니다.
-            if (count >= 1 && liked === true) {
-                setTimeout(() => fetchPosts(), 300);
-            }
         } catch (error) {
             console.error('좋아요 에러:', error);
         }

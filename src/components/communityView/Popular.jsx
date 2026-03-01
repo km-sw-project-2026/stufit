@@ -31,11 +31,14 @@ function Popular({ posts = [], onOpenPost, onNewPost, onToggleLike }) {
                                             onClick={(e) => handleLikeToggle(e, p.id)}
                                             style={{ 
                                                 cursor: 'pointer',
-                                                color: likeData.liked ? '#ff6b6b' : 'inherit',
-                                                fontWeight: likeData.liked ? 'bold' : 'normal'
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                gap: '4px',
+                                                color: likeData.liked ? '#e31c1c' : 'inherit'
                                             }}
                                         >
-                                            {likeData.liked ? '♥' : '♡'} {likeData.count}
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill={likeData.liked ? '#e31c1c' : 'none'} stroke={likeData.liked ? '#e31c1c' : 'currentColor'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+                                            {likeData.count}
                                         </span>
                                         <span className="comment-count">💬 {p.comments}</span>
                                     </div>
