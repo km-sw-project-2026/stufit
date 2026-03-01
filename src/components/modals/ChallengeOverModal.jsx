@@ -40,6 +40,12 @@ function ChallengeOverModal({
     onClose?.();
   };
 
+  const winnerTakeAllApplied =
+    Array.isArray(rankingData) &&
+    rankingData.length > 1 &&
+    Number(rankingData?.[0]?.points || 0) > 0 &&
+    rankingData.slice(1).every((entry) => Number(entry?.points || 0) === 0);
+
   return (
     <div className="popup-modal" onClick={handleClose}>
       <div className="popup-overlay"></div>
@@ -72,6 +78,11 @@ function ChallengeOverModal({
         {showRanking && (
           <div id="challenge-over-ranking-view">
             <p className="subtitle">최종순위</p>
+            {winnerTakeAllApplied && (
+              <p className="subtitle" style={{ marginTop: '-6px', color: '#247b7b', fontWeight: 700 }}>
+                베팅 포인트 몰빵 적용
+              </p>
+            )}
             <div className="ranking-list">
               {rankingData.length === 0 ? (
                 <div className="ranking-item">
@@ -89,6 +100,7 @@ function ChallengeOverModal({
                           <span className="label">포인트</span>
                           <span className="value">
                             {item.points > 0 ? `+${item.points}` : `${item.points}`}
+                            {winnerTakeAllApplied && item.rank === 1 ? ' (몰빵)' : ''}
                           </span>
                         </div>
                         <div className="divider" />

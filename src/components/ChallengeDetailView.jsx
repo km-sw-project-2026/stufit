@@ -637,6 +637,15 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
     // 완료하기 버튼 핸들러
     const handleComplete = () => {
         console.log('[handleComplete] click', { remainingDays, challengeId: challenge?.challenge_id });
+
+        const username = localStorage.getItem('username');
+        const currentUser = members.find(m => m.username === username);
+        const isHost = currentUser && challenge?.created_by_user_id === currentUser.user_id;
+        if (!isHost) {
+            alert('방장만 완료 처리가 가능합니다.');
+            return;
+        }
+
         // 챌린지가 아직 진행 중인지 확인
         if (remainingDays > 0) {
             setOngoingAlertOpen(true);
@@ -692,19 +701,6 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
 
         try {
             const username = localStorage.getItem('username');
-            const headers = {};
-            if (username) headers['X-Username'] = username;
-
-            await fetch(`/api/challenges/${challenge.challenge_id}/complete`, {
-                method: 'PATCH',
-                headers
-            });
-        } catch (error) {
-            console.warn('[finalizeChallenge] complete failed:', error);
-        }
-
-        try {
-            const username = localStorage.getItem('username');
             const headers = { 'Content-Type': 'application/json' };
             if (username) headers['X-Username'] = username;
 
@@ -729,39 +725,35 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
                 if (Array.isArray(payload?.ranking)) {
                     console.log('[finalizeChallenge] ranking data:', payload.ranking);
                     setRankingData(payload.ranking);
+
+                    try {
+                        const completeHeaders = {};
+                        if (username) completeHeaders['X-Username'] = username;
+                        await fetch(`/api/challenges/${challenge.challenge_id}/complete`, {
+                            method: 'PATCH',
+                            headers: completeHeaders
+                        });
+                    } catch (completeErr) {
+                        console.warn('[finalizeChallenge] complete failed:', completeErr);
+                    }
+
                     await syncPointsFromServer();
                     return;
                 }
             } else {
-                console.warn('[finalizeChallenge] rewards failed:', rewardsResponse.status);
-            }
-        } catch (error) {
-            console.error('[finalizeChallenge] rewards error:', error);
-        }
-
-        try {
-            const username = localStorage.getItem('username');
-            const headers = {};
-            if (username) headers['X-Username'] = username;
-
-            const response = await fetch(`/api/challenges/${challenge.challenge_id}/progress`, {
-                headers
-            });
-            if (!response.ok) {
-                console.warn('[finalizeChallenge] progress fetch failed:', response.status);
+                const errPayload = await rewardsResponse.json().catch(() => ({}));
+                console.warn('[finalizeChallenge] rewards failed:', rewardsResponse.status, errPayload);
+                alert(errPayload?.message || '보상 정산에 실패했습니다.');
                 setRankingData([]);
                 return;
             }
-
-            const result = await response.json();
-            const rows = Array.isArray(result?.data) ? result.data : [];
-            const rankings = buildRankingData(rows);
-            console.log('[finalizeChallenge] fallback ranking data:', rankings);
-            setRankingData(rankings);
-            await syncPointsFromServer();
         } catch (error) {
-            console.error('[finalizeChallenge] error:', error);
+            console.error('[finalizeChallenge] rewards error:', error);
+            alert('보상 정산 중 오류가 발생했습니다.');
+            setRankingData([]);
+            return;
         }
+
         try {
             window.dispatchEvent(new CustomEvent('challengeCompleted', { detail: { delta: 1 } }));
             console.log('[finalizeChallenge] ✅ challengeCompleted 이벤트 발생!');
