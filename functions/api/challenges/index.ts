@@ -113,11 +113,62 @@ export default async function handler(request: Request, { env, userId }: Handler
             .bind(userId)
             .all();
 
-      console.log('Found challenges:', userChallenges.results?.length || 0);
+      const rawChallenges = Array.isArray(userChallenges?.results) ? userChallenges.results : [];
+      const normalizedChallenges: any[] = [];
+
+      if (hasIsStarted) {
+        for (const row of rawChallenges) {
+          const memberCount = Number((row as any)?.member_count || 0);
+          const maxMembers = Number((row as any)?.max_members || 0);
+          const computedStarted = Number((row as any)?.is_started || 0) === 1 || (maxMembers > 0 && memberCount >= maxMembers);
+          normalizedChallenges.push({
+            ...row,
+            is_started: computedStarted ? 1 : 0,
+            member_count: memberCount
+          });
+        }
+      } else {
+        const startedById = new Map<number, boolean>();
+
+        for (const row of rawChallenges) {
+          const challengeId = Number((row as any)?.challenge_id || 0);
+          if (!challengeId) continue;
+          const flag = await env.D1_DB
+            .prepare('SELECT 1 FROM challenge_started_flags WHERE challenge_id = ?')
+            .bind(challengeId)
+            .first();
+          startedById.set(challengeId, Boolean(flag));
+        }
+
+        for (const row of rawChallenges) {
+          const challengeId = Number((row as any)?.challenge_id || 0);
+          const memberCount = Number((row as any)?.member_count || 0);
+          const maxMembers = Number((row as any)?.max_members || 0);
+          let computedStarted = Boolean(startedById.get(challengeId));
+
+          if (!computedStarted && maxMembers > 0 && memberCount >= maxMembers) {
+            computedStarted = true;
+            if (challengeId) {
+              await env.D1_DB
+                .prepare("INSERT OR REPLACE INTO challenge_started_flags (challenge_id, started_at) VALUES (?, datetime('now'))")
+                .bind(challengeId)
+                .run();
+            }
+          }
+
+          normalizedChallenges.push({
+            ...row,
+            is_started: computedStarted ? 1 : 0,
+            member_count: memberCount
+          });
+        }
+      }
+
+      console.log('Found challenges:', normalizedChallenges.length || 0);
 
       return Response.json({
         success: true,
-        challenges: userChallenges.results || []
+        challenges: normalizedChallenges
       });
 
     } catch (err: unknown) {
