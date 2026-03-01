@@ -11,8 +11,19 @@ export default async function onRequestPost(request: Request, { env, params, use
     const id = Number(params.id);
     if (Number.isNaN(id)) return Response.json({ success: false, message: 'Invalid challenge id' }, { status: 400 });
 
+    const hasColumn = async (tableName: string, columnName: string) => {
+      const pragma = await env.D1_DB.prepare(`PRAGMA table_info('${tableName}')`).all();
+      return (pragma.results || []).some((c: any) => c.name === columnName);
+    };
+
+    const hasBetPointsColumn = await hasColumn('challenges', 'bet_points');
+
     const challenge = await env.D1_DB
-      .prepare('SELECT challenge_id, max_members, deleted_at FROM challenges WHERE challenge_id = ?')
+      .prepare(
+        hasBetPointsColumn
+          ? 'SELECT challenge_id, max_members, deleted_at, bet_points FROM challenges WHERE challenge_id = ?'
+          : 'SELECT challenge_id, max_members, deleted_at FROM challenges WHERE challenge_id = ?'
+      )
       .bind(id)
       .first();
 
@@ -21,6 +32,7 @@ export default async function onRequestPost(request: Request, { env, params, use
     }
 
     const maxMembers = Number((challenge as any).max_members || 0);
+    const challengeBetPoints = hasBetPointsColumn ? Number((challenge as any).bet_points || 0) : 0;
     if (!maxMembers || maxMembers < 1) {
       return Response.json({ success: false, message: '챌린지 정원 정보가 올바르지 않습니다.' }, { status: 400 });
     }
@@ -67,55 +79,60 @@ export default async function onRequestPost(request: Request, { env, params, use
       return Response.json({ success: false, message: '정원이 가득 차 참가할 수 없습니다.' }, { status: 409 });
     }
 
-    // 참가자 추가
-    // 배팅 정보 조회 (있으면 입장 시 차감 필요)
-    const betRow = await env.D1_DB.prepare('SELECT bet_points FROM challenge_bets WHERE challenge_id = ?').bind(id).first();
-    const betPoints = betRow ? Number((betRow as any).bet_points || 0) : 0;
+    if (challengeBetPoints > 0) {
+      await env.D1_DB
+        .prepare("INSERT OR IGNORE INTO user_profiles (user_id, tier, score, points) VALUES (?, 'bronze', 0, 0)")
+        .bind(userId)
+        .run();
 
-    if (betPoints > 0) {
-      // ensure user_profiles row exists
-      try {
-        await env.D1_DB.prepare("INSERT OR IGNORE INTO user_profiles (user_id, tier, score, points) VALUES (?, 'bronze', 0, 0)")
-          .bind(userId)
-          .run();
-      } catch (e) {
-        // ignore
-      }
-      const scoreRow = await env.D1_DB.prepare('SELECT score FROM user_profiles WHERE user_id = ?').bind(userId).first();
-      const currentScore = Number((scoreRow as any)?.score || 0);
-      if (currentScore < betPoints) {
-        return Response.json({ success: false, message: '점수가 부족합니다.' }, { status: 400 });
+      const profile = await env.D1_DB
+        .prepare('SELECT points FROM user_profiles WHERE user_id = ?')
+        .bind(userId)
+        .first();
+
+      const currentPoints = Number((profile as any)?.points || 0);
+      if (currentPoints < challengeBetPoints) {
+        return Response.json({ success: false, message: '베팅 포인트가 부족합니다.' }, { status: 400 });
       }
     }
 
+    // 참가자 추가
     await env.D1_DB
       .prepare("INSERT INTO challenge_members (challenge_id, user_id, joined_at) VALUES (?, ?, datetime('now'))")
       .bind(id, userId)
       .run();
 
-    // 배팅 점수 차감 (참가자 전원 차감 동작)
-    if (betPoints > 0) {
+    if (challengeBetPoints > 0) {
       try {
-        await env.D1_DB.prepare('UPDATE user_profiles SET score = score - ? WHERE user_id = ?')
-          .bind(betPoints, userId)
+        const pointLogInfo = await env.D1_DB.prepare("PRAGMA table_info('point_logs')").all();
+        const pointLogColumns = Array.isArray(pointLogInfo?.results) ? pointLogInfo.results : [];
+        const pointLogColumn = pointLogColumns.some((col: any) => col.name === 'point')
+          ? 'point'
+          : pointLogColumns.some((col: any) => col.name === 'points')
+            ? 'points'
+            : null;
+
+        await env.D1_DB
+          .prepare('UPDATE user_profiles SET points = points - ? WHERE user_id = ?')
+          .bind(challengeBetPoints, userId)
           .run();
-        // 결제 기록 남기기
-        try {
-          await env.D1_DB.prepare(`CREATE TABLE IF NOT EXISTS challenge_bet_payments (
-            challenge_id INTEGER NOT NULL,
-            user_id INTEGER NOT NULL,
-            amount INTEGER NOT NULL,
-            paid_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            PRIMARY KEY (challenge_id, user_id)
-          )`).run();
-          await env.D1_DB.prepare('INSERT OR REPLACE INTO challenge_bet_payments (challenge_id, user_id, amount) VALUES (?, ?, ?)')
-            .bind(id, userId, betPoints).run();
-        } catch (e) {
-          console.error('challenge_bet_payments 저장 오류 (join):', e instanceof Error ? e.message : String(e));
+
+        if (pointLogColumn) {
+          await env.D1_DB
+            .prepare(`INSERT INTO point_logs (user_id, ${pointLogColumn}, reason, created_at) VALUES (?, ?, ?, ?)`)
+            .bind(userId, -challengeBetPoints, `challenge_bet:${id}:join`, new Date().toISOString())
+            .run();
         }
-      } catch (e) {
-        console.error('참가자 점수 차감 실패:', e instanceof Error ? e.message : String(e));
-        // proceed even if deduction failed
+      } catch (betErr: any) {
+        try {
+          await env.D1_DB
+            .prepare('DELETE FROM challenge_members WHERE challenge_id = ? AND user_id = ?')
+            .bind(id, userId)
+            .run();
+        } catch (rollbackErr) {
+          console.error('베팅 포인트 차감 롤백 실패:', rollbackErr);
+        }
+        return Response.json({ success: false, message: '베팅 포인트 차감에 실패했습니다.' }, { status: 500 });
       }
     }
 
