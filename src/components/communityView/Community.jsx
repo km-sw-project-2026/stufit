@@ -1066,6 +1066,13 @@ function Community() {
                 setModalOpen(true);
             }
         }
+
+        // 10초마다 게시글 목록 갱신 → Popular 승격/탈락 실시간 반영
+        const intervalId = setInterval(() => {
+            fetchPosts();
+        }, 10000);
+
+        return () => clearInterval(intervalId);
     }, []);
     
     const handleToggleLike = async (postId) => {
@@ -1089,16 +1096,20 @@ function Community() {
             // localStorage 캐시 업데이트 (새로고침 / 재방문 시 상태 유지)
             updateLocalLikedId(username, postId, liked);
 
-            // UI 상태 즉시 업데이트 (색상 유지) — fetchPosts 재호출 없이 상태만 갱신
+            // 1. 즉시 liked/likes 업데이트 (하트 색깔 반응 즉각 반영)
             setPosts(prev => {
                 const newState = { ...prev };
                 Object.keys(newState).forEach(cat => {
-                    newState[cat] = newState[cat].map(p => 
-                        p.id === postId ? { ...p, liked: liked, likes: count } : p
+                    newState[cat] = newState[cat].map(p =>
+                        p.id === postId ? { ...p, liked, likes: count } : p
                     );
                 });
                 return newState;
             });
+
+            // 2. 서버에서 최신 목록 재조회 → Popular 승격 등 카테고리 변경 즉시 반영
+            //    (localStorage 캐시로 liked 상태 유지되므로 색깔 초기화 없음)
+            await fetchPosts();
         } catch (error) {
             console.error('좋아요 에러:', error);
         }
