@@ -94,6 +94,16 @@ export default async function handler(
         await env.D1_DB.prepare('DELETE FROM challenge_results WHERE challenge_id = ?').bind(challengeId).run();
         await env.D1_DB.prepare('DELETE FROM challenge_daily_progress WHERE challenge_id = ?').bind(challengeId).run();
         await env.D1_DB.prepare('DELETE FROM challenge_members WHERE challenge_id = ?').bind(challengeId).run();
+        await env.D1_DB.prepare(`CREATE TABLE IF NOT EXISTS challenge_bets (
+          challenge_id INTEGER PRIMARY KEY,
+          bet_points INTEGER NOT NULL
+        )`).run();
+        await env.D1_DB.prepare('DELETE FROM challenge_bets WHERE challenge_id = ?').bind(challengeId).run();
+        await env.D1_DB.prepare(`CREATE TABLE IF NOT EXISTS challenge_started_flags (
+          challenge_id INTEGER PRIMARY KEY,
+          started_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )`).run();
+        await env.D1_DB.prepare('DELETE FROM challenge_started_flags WHERE challenge_id = ?').bind(challengeId).run();
         await env.D1_DB.prepare('DELETE FROM challenges WHERE challenge_id = ?').bind(challengeId).run();
         deletedChallenge = true;
       }

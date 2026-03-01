@@ -66,6 +66,11 @@ export default async function onRequestPost(request: Request, { env, params, use
       };
     })();
 
+    await env.D1_DB.prepare(`CREATE TABLE IF NOT EXISTS challenge_started_flags (
+      challenge_id INTEGER PRIMARY KEY,
+      started_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )`).run();
+
     // 이미 참가했는지 확인
     const exists = await env.D1_DB
       .prepare('SELECT 1 FROM challenge_members WHERE challenge_id = ? AND user_id = ?')
@@ -184,6 +189,11 @@ export default async function onRequestPost(request: Request, { env, params, use
           .bind(id)
           .run();
       }
+    } else if (joinedMembers >= maxMembers) {
+      await env.D1_DB
+        .prepare("INSERT OR REPLACE INTO challenge_started_flags (challenge_id, started_at) VALUES (?, datetime('now'))")
+        .bind(id)
+        .run();
     }
 
     // 멤버 목록 조회 (status 컬럼 유무에 따라 쿼리 조정)

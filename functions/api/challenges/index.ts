@@ -20,6 +20,11 @@ export default async function handler(request: Request, { env, userId }: Handler
       const code = url.searchParams.get('code');
       const hasIsStarted = await hasColumn('challenges', 'is_started');
 
+      await env.D1_DB.prepare(`CREATE TABLE IF NOT EXISTS challenge_started_flags (
+        challenge_id INTEGER PRIMARY KEY,
+        started_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+      )`).run();
+
       // If a code query param is provided, return the matching challenge (used for "join by code")
       if (code) {
         console.log('Looking up challenge by code:', code);
@@ -45,6 +50,7 @@ export default async function handler(request: Request, { env, userId }: Handler
                  FROM challenges c
                  WHERE lower(c.challenge_code) = lower(?)
                    AND c.deleted_at IS NULL
+                   AND c.challenge_id NOT IN (SELECT challenge_id FROM challenge_started_flags)
                    AND (SELECT COUNT(*) FROM challenge_members cm2 WHERE cm2.challenge_id = c.challenge_id) < c.max_members
                  LIMIT 1`
               )
