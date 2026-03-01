@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import GiveUpModal from "./modal/GiveUpModal";
 import HostGiveUpModal from "./modal/HostGiveUpModal";
 import FinalGiveUpModal from "./modal/FinalGiveUpModal";
@@ -205,6 +205,7 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
     const [members, setMembers] = useState([]);
     const [finalAction, setFinalAction] = useState('leave');
     const [leaveAlertMessage, setLeaveAlertMessage] = useState('챌린지를 완전히 포기했습니다.');
+    const timerInitializedForChallengeRef = useRef(null);
 
     // props로 받은 challenge가 변경되면 state 업데이트
     useEffect(() => {
@@ -221,13 +222,23 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
         return () => document.body.classList.remove('modal-open');
     }, []);
 
-    // 타이머 초기화
+    // 타이머 초기화 (챌린지 진입 시 1회만)
     useEffect(() => {
-        if (challenge?.timer_hours || challenge?.timer_minutes) {
-            const totalSeconds = (challenge.timer_hours || 0) * 3600 + (challenge.timer_minutes || 0) * 60;
-            setTimerSeconds(totalSeconds);
+        const challengeId = challenge?.challenge_id;
+        if (!challengeId) return;
+
+        if (timerInitializedForChallengeRef.current === challengeId) {
+            return;
         }
-    }, [challenge]);
+
+        const timerHours = Number(challenge?.timer_hours || 0);
+        const timerMinutes = Number(challenge?.timer_minutes || 0);
+        const totalSeconds = Math.max(0, timerHours * 3600 + timerMinutes * 60);
+
+        setTimerSeconds(totalSeconds);
+        setIsTimerRunning(false);
+        timerInitializedForChallengeRef.current = challengeId;
+    }, [challenge?.challenge_id, challenge?.timer_hours, challenge?.timer_minutes]);
 
     // 타이머 시작/종료
     useEffect(() => {
