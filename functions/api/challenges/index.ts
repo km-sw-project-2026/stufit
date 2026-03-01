@@ -235,15 +235,17 @@ export default async function handler(request: Request, { env, userId }: Handler
         // ignore insert-or-ignore errors
       }
 
-      const pointsRow = await env.D1_DB
-        .prepare('SELECT points FROM user_profiles WHERE user_id = ?')
+      const profileRow = await env.D1_DB
+        .prepare('SELECT points, score FROM user_profiles WHERE user_id = ?')
         .bind(userId)
         .first();
-      const currentPoints = Number((pointsRow as any)?.points || 0);
-      if (currentPoints < Number(betPoints)) {
-        console.error('betPoints 부족: current=', currentPoints, 'required=', betPoints);
+      const currentPoints = Number((profileRow as any)?.points || 0);
+      const currentScore = Number((profileRow as any)?.score || 0);
+      const requiredBet = Number(betPoints);
+      if (currentPoints < requiredBet && currentScore < requiredBet) {
+        console.error('betPoints 부족: points=', currentPoints, 'score=', currentScore, 'required=', betPoints);
         return Response.json(
-          { success: false, message: '포인트가 부족합니다.' },
+          { success: false, message: '포인트/점수가 부족합니다.' },
           { status: 400 }
         );
       }
@@ -377,20 +379,56 @@ export default async function handler(request: Request, { env, userId }: Handler
             ? 'points'
             : null;
 
-        await env.D1_DB
-          .prepare('UPDATE user_profiles SET points = points - ? WHERE user_id = ?')
-          .bind(Number(betPoints), userId)
-          .run();
+        const profileRow = await env.D1_DB
+          .prepare('SELECT points, score FROM user_profiles WHERE user_id = ?')
+          .bind(userId)
+          .first();
+        const currentPoints = Number((profileRow as any)?.points || 0);
+        const currentScore = Number((profileRow as any)?.score || 0);
+        const requiredBet = Number(betPoints);
 
-        if (pointLogColumn) {
+        if (currentPoints >= requiredBet) {
           await env.D1_DB
-            .prepare(`INSERT INTO point_logs (user_id, ${pointLogColumn}, reason, created_at) VALUES (?, ?, ?, ?)`)
-            .bind(userId, -Number(betPoints), `challenge_bet:${challengeId}:create`, new Date().toISOString())
+            .prepare('UPDATE user_profiles SET points = points - ? WHERE user_id = ?')
+            .bind(requiredBet, userId)
             .run();
+
+          if (pointLogColumn) {
+            await env.D1_DB
+              .prepare(`INSERT INTO point_logs (user_id, ${pointLogColumn}, reason, created_at) VALUES (?, ?, ?, ?)`)
+              .bind(userId, -requiredBet, `challenge_bet:${challengeId}:create`, new Date().toISOString())
+              .run();
+          }
+        } else if (currentScore >= requiredBet) {
+          await env.D1_DB
+            .prepare('UPDATE user_profiles SET score = score - ? WHERE user_id = ?')
+            .bind(requiredBet, userId)
+            .run();
+        } else {
+          return Response.json(
+            { success: false, message: '포인트/점수가 부족합니다.' },
+            { status: 400 }
+          );
         }
       } catch (e) {
         console.error('포인트 차감 오류:', e instanceof Error ? e.message : String(e));
         // 차감 실패 시에도 진행은 가능하지만 로그를 남깁니다.
+      }
+    }
+
+    // 구 스키마 호환: challenges.bet_points 컬럼이 없는 경우 매핑 테이블에 저장
+    if (typeof betPoints !== 'undefined' && betPoints !== null && Number(betPoints) > 0 && !includeBetPoints) {
+      try {
+        await env.D1_DB.prepare(`CREATE TABLE IF NOT EXISTS challenge_bets (
+          challenge_id INTEGER PRIMARY KEY,
+          bet_points INTEGER NOT NULL
+        )`).run();
+        await env.D1_DB
+          .prepare('INSERT OR REPLACE INTO challenge_bets (challenge_id, bet_points) VALUES (?, ?)')
+          .bind(challengeId, Number(betPoints))
+          .run();
+      } catch (e) {
+        console.error('challenge_bets 저장 오류:', e instanceof Error ? e.message : String(e));
       }
     }
 

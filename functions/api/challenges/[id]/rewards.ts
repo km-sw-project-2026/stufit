@@ -456,6 +456,25 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
         }
       }
 
+      if (betPool <= 0 && !hasBetPointsColumn) {
+        try {
+          await env.D1_DB.prepare(`CREATE TABLE IF NOT EXISTS challenge_bets (
+            challenge_id INTEGER PRIMARY KEY,
+            bet_points INTEGER NOT NULL
+          )`).run();
+          const betRow = await env.D1_DB
+            .prepare('SELECT bet_points FROM challenge_bets WHERE challenge_id = ?')
+            .bind(challengeId)
+            .first();
+          const perUserBet = Number((betRow as any)?.bet_points || 0);
+          if (perUserBet > 0) {
+            betPool = perUserBet * memberList.length;
+          }
+        } catch (err) {
+          console.warn('[rewards] challenge_bets fallback failed:', err);
+        }
+      }
+
       if (betPool > 0) {
         ranking = ranking.map((entry, idx) => ({
           ...entry,

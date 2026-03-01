@@ -2,7 +2,7 @@ import { useState } from "react";
 import QuotePopup from "./QuotePopup";
 import CustomAlertModal from "./CustomAlertModal";
 
-function HostGiveUpModal({ setModalOpen, setFinalModalOpen, challenge, onLeave }) {
+function HostGiveUpModal({ setModalOpen, setFinalModalOpen, challenge, onLeave, setFinalAction }) {
     const [selectedOption, setSelectedOption] = useState('leave'); // 'leave' 또는 'delete'
     const [loading, setLoading] = useState(false);
     const [alertOpen, setAlertOpen] = useState(false);
@@ -11,10 +11,12 @@ function HostGiveUpModal({ setModalOpen, setFinalModalOpen, challenge, onLeave }
 
     const handleConfirm = () => {
         if (selectedOption === 'delete') {
+            if (setFinalAction) setFinalAction('delete');
             setModalOpen(false);
             setFinalModalOpen(true);
             return;
         }
+        if (setFinalAction) setFinalAction('leave');
         setShowQuote(true);
     };
 

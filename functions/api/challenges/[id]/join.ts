@@ -32,7 +32,22 @@ export default async function onRequestPost(request: Request, { env, params, use
     }
 
     const maxMembers = Number((challenge as any).max_members || 0);
-    const challengeBetPoints = hasBetPointsColumn ? Number((challenge as any).bet_points || 0) : 0;
+    let challengeBetPoints = hasBetPointsColumn ? Number((challenge as any).bet_points || 0) : 0;
+    if (!hasBetPointsColumn) {
+      try {
+        await env.D1_DB.prepare(`CREATE TABLE IF NOT EXISTS challenge_bets (
+          challenge_id INTEGER PRIMARY KEY,
+          bet_points INTEGER NOT NULL
+        )`).run();
+        const betRow = await env.D1_DB
+          .prepare('SELECT bet_points FROM challenge_bets WHERE challenge_id = ?')
+          .bind(id)
+          .first();
+        challengeBetPoints = Number((betRow as any)?.bet_points || 0);
+      } catch (err) {
+        console.warn('challenge_bets 조회 실패:', err);
+      }
+    }
     if (!maxMembers || maxMembers < 1) {
       return Response.json({ success: false, message: '챌린지 정원 정보가 올바르지 않습니다.' }, { status: 400 });
     }
@@ -86,13 +101,14 @@ export default async function onRequestPost(request: Request, { env, params, use
         .run();
 
       const profile = await env.D1_DB
-        .prepare('SELECT points FROM user_profiles WHERE user_id = ?')
+        .prepare('SELECT points, score FROM user_profiles WHERE user_id = ?')
         .bind(userId)
         .first();
 
       const currentPoints = Number((profile as any)?.points || 0);
-      if (currentPoints < challengeBetPoints) {
-        return Response.json({ success: false, message: '베팅 포인트가 부족합니다.' }, { status: 400 });
+      const currentScore = Number((profile as any)?.score || 0);
+      if (currentPoints < challengeBetPoints && currentScore < challengeBetPoints) {
+        return Response.json({ success: false, message: '베팅 포인트/점수가 부족합니다.' }, { status: 400 });
       }
     }
 
@@ -112,16 +128,32 @@ export default async function onRequestPost(request: Request, { env, params, use
             ? 'points'
             : null;
 
-        await env.D1_DB
-          .prepare('UPDATE user_profiles SET points = points - ? WHERE user_id = ?')
-          .bind(challengeBetPoints, userId)
-          .run();
+        const profile = await env.D1_DB
+          .prepare('SELECT points, score FROM user_profiles WHERE user_id = ?')
+          .bind(userId)
+          .first();
+        const currentPoints = Number((profile as any)?.points || 0);
+        const currentScore = Number((profile as any)?.score || 0);
 
-        if (pointLogColumn) {
+        if (currentPoints >= challengeBetPoints) {
           await env.D1_DB
-            .prepare(`INSERT INTO point_logs (user_id, ${pointLogColumn}, reason, created_at) VALUES (?, ?, ?, ?)`)
-            .bind(userId, -challengeBetPoints, `challenge_bet:${id}:join`, new Date().toISOString())
+            .prepare('UPDATE user_profiles SET points = points - ? WHERE user_id = ?')
+            .bind(challengeBetPoints, userId)
             .run();
+
+          if (pointLogColumn) {
+            await env.D1_DB
+              .prepare(`INSERT INTO point_logs (user_id, ${pointLogColumn}, reason, created_at) VALUES (?, ?, ?, ?)`)
+              .bind(userId, -challengeBetPoints, `challenge_bet:${id}:join`, new Date().toISOString())
+              .run();
+          }
+        } else if (currentScore >= challengeBetPoints) {
+          await env.D1_DB
+            .prepare('UPDATE user_profiles SET score = score - ? WHERE user_id = ?')
+            .bind(challengeBetPoints, userId)
+            .run();
+        } else {
+          throw new Error('INSUFFICIENT_BALANCE');
         }
       } catch (betErr: any) {
         try {
@@ -131,6 +163,9 @@ export default async function onRequestPost(request: Request, { env, params, use
             .run();
         } catch (rollbackErr) {
           console.error('베팅 포인트 차감 롤백 실패:', rollbackErr);
+        }
+        if ((betErr?.message || '').includes('INSUFFICIENT_BALANCE')) {
+          return Response.json({ success: false, message: '베팅 포인트/점수가 부족합니다.' }, { status: 400 });
         }
         return Response.json({ success: false, message: '베팅 포인트 차감에 실패했습니다.' }, { status: 500 });
       }

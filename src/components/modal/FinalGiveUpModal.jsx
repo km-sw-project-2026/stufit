@@ -13,7 +13,7 @@ const quotes = [
     "힘들다는 이유로 멈추는 순간, 당신의 목표도 당신을 포기한다."
 ];
 
-function FinalGiveUpModal({ setModalOpen, challengeId, onLeave }) {
+function FinalGiveUpModal({ setModalOpen, challengeId, onLeave, action = 'leave' }) {
     const [randomQuote] = useState(() => {
         const randomIndex = Math.floor(Math.random() * quotes.length);
         return quotes[randomIndex];
@@ -21,7 +21,7 @@ function FinalGiveUpModal({ setModalOpen, challengeId, onLeave }) {
 
     const handleConfirmLeave = async () => {
         try {
-            console.log("🔵 챌린지 나가기 시작:", { challengeId });
+            console.log("🔵 챌린지 처리 시작:", { challengeId, action });
             
             const username = localStorage.getItem('username');
             if (!username) {
@@ -31,7 +31,11 @@ function FinalGiveUpModal({ setModalOpen, challengeId, onLeave }) {
 
             console.log("🟡 API 호출 준비:", { challengeId, username });
 
-            const response = await fetch(`/api/challenges/${challengeId}/leave`, {
+            const endpoint = action === 'delete'
+                ? `/api/challenges/${challengeId}`
+                : `/api/challenges/${challengeId}/leave`;
+
+            const response = await fetch(endpoint, {
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json',
@@ -74,25 +78,26 @@ function FinalGiveUpModal({ setModalOpen, challengeId, onLeave }) {
                     }
                 }
                 
-                // 시도: 사용자의 제출 기록도 삭제 요청
-                try {
-                    await fetch(`/api/challenges/${challengeId}/progress`, {
-                        method: 'DELETE',
-                        headers: { 'X-Username': username }
-                    });
-                    console.log('🔵 progress 삭제 요청 전송');
-                } catch (e) {
-                    console.warn('progress 삭제 요청 실패', e);
+                if (action !== 'delete') {
+                    try {
+                        await fetch(`/api/challenges/${challengeId}/progress`, {
+                            method: 'DELETE',
+                            headers: { 'X-Username': username }
+                        });
+                        console.log('🔵 progress 삭제 요청 전송');
+                    } catch (e) {
+                        console.warn('progress 삭제 요청 실패', e);
+                    }
                 }
 
                 setModalOpen(false);
                 // 부모 컴포넌트에 콜백
                 if (onLeave) {
                     console.log("🟢 onLeave 콜백 호출");
-                    onLeave();
+                    onLeave(action);
                 }
             } else {
-                alert(data?.message || '챌린지 나가기에 실패했습니다.');
+                alert(data?.message || (action === 'delete' ? '챌린지 삭제에 실패했습니다.' : '챌린지 나가기에 실패했습니다.'));
             }
         } catch (error) {
             console.error('❌ 챌린지 나가기 오류:', error);
@@ -108,11 +113,15 @@ function FinalGiveUpModal({ setModalOpen, challengeId, onLeave }) {
                     <h3 className="confirm-title" style={{ wordBreak: 'keep-all', lineHeight: '1.4', marginBottom: '20px' }}>
                         {randomQuote}
                     </h3>
-                    <p className="confirm-subtitle" style={{ marginTop: '30px' }}>챌린지를 포기하시겠습니까?</p>
+                    <p className="confirm-subtitle" style={{ marginTop: '30px' }}>
+                        {action === 'delete' ? '챌린지를 삭제하시겠습니까?' : '챌린지를 포기하시겠습니까?'}
+                    </p>
                 </div>
                 <div className="confirm-buttons">
                     <button className="confirm-btn cancel" onClick={() => setModalOpen(false)}>취소</button>
-                    <button className="confirm-btn real-giveup" onClick={handleConfirmLeave}>정말 포기하기</button>
+                    <button className="confirm-btn real-giveup" onClick={handleConfirmLeave}>
+                        {action === 'delete' ? '정말 삭제하기' : '정말 포기하기'}
+                    </button>
                 </div>
             </div>
         </div>
