@@ -35,11 +35,17 @@ export default async function handler(
     const challengePragma = await env.D1_DB.prepare("PRAGMA table_info('challenges')").all();
     const hasIsStartedCol = (challengePragma.results || []).some((c: any) => c.name === 'is_started');
 
+    const hasBetPointsCol = (challengePragma.results || []).some((c: any) => c.name === 'bet_points');
+
     const challenge = await env.D1_DB
       .prepare(
         hasIsStartedCol
-          ? 'SELECT challenge_id, created_by_user_id, max_members, is_started FROM challenges WHERE challenge_id = ?'
-          : 'SELECT challenge_id, created_by_user_id, max_members FROM challenges WHERE challenge_id = ?'
+          ? hasBetPointsCol
+            ? 'SELECT challenge_id, created_by_user_id, max_members, is_started, bet_points FROM challenges WHERE challenge_id = ?'
+            : 'SELECT challenge_id, created_by_user_id, max_members, is_started FROM challenges WHERE challenge_id = ?'
+          : hasBetPointsCol
+            ? 'SELECT challenge_id, created_by_user_id, max_members, bet_points FROM challenges WHERE challenge_id = ?'
+            : 'SELECT challenge_id, created_by_user_id, max_members FROM challenges WHERE challenge_id = ?'
       )
       .bind(challengeId)
       .first();
@@ -50,6 +56,27 @@ export default async function handler(
         headers: { 'Content-Type': 'application/json' }
       });
     }
+
+    // bet_points 조회 (쿨럼 없으면 challenge_bets 테이블 타입)
+    let betPoints = hasBetPointsCol ? Number((challenge as any).bet_points || 0) : 0;
+    if (!hasBetPointsCol) {
+      try {
+        await env.D1_DB.prepare(`CREATE TABLE IF NOT EXISTS challenge_bets (
+          challenge_id INTEGER PRIMARY KEY,
+          bet_points INTEGER NOT NULL
+        )`).run();
+        const betRow = await env.D1_DB
+          .prepare('SELECT bet_points FROM challenge_bets WHERE challenge_id = ?')
+          .bind(challengeId)
+          .first();
+        betPoints = Number((betRow as any)?.bet_points || 0);
+      } catch (e) { /* ignore */ }
+    }
+
+    // 치리 전 시작 여부 확인
+    const isStarted = hasIsStartedCol
+      ? Number((challenge as any).is_started || 0) === 1
+      : Boolean(await env.D1_DB.prepare('SELECT 1 FROM challenge_started_flags WHERE challenge_id = ?').bind(challengeId).first());
 
     const membership = await env.D1_DB
       .prepare('SELECT 1 FROM challenge_members WHERE challenge_id = ? AND user_id = ?')
@@ -114,29 +141,57 @@ export default async function handler(
         .run();
     }
 
-    // 기존 정책 유지: 챌린지 나가기 시 100 포인트 차감 (삭제로 챌린지가 사라져도 사용자 패널티는 적용)
+    // 시작 전 나가기: bet_points 환급 / 시작 후 나가기: 100포인트 패널티
     await env.D1_DB
       .prepare("INSERT OR IGNORE INTO user_profiles (user_id, score, points) VALUES (?, 0, 0)")
       .bind(userId)
       .run();
 
-    const currentProfile = await env.D1_DB
-      .prepare('SELECT points FROM user_profiles WHERE user_id = ?')
-      .bind(userId)
-      .first();
-    const currentPoints = Number((currentProfile as any)?.points || 0);
-    const nextPoints = Math.max(0, currentPoints - 100);
+    if (!isStarted && betPoints > 0) {
+      // 시작 전 나가기: 배팅 포인트 전액 환급 (패널티 없음)
+      // points에서 차감됐는지 point_logs에서 확인
+      const wasPointDeducted = pointLogColumn
+        ? await env.D1_DB
+            .prepare(`SELECT 1 FROM point_logs WHERE user_id = ? AND reason LIKE ? AND ${pointLogColumn} < 0 LIMIT 1`)
+            .bind(userId, `challenge_bet:${challengeId}:%`)
+            .first()
+        : null;
 
-    await env.D1_DB
-      .prepare('UPDATE user_profiles SET points = ? WHERE user_id = ?')
-      .bind(nextPoints, userId)
-      .run();
+      if (wasPointDeducted && pointLogColumn) {
+        await env.D1_DB
+          .prepare('UPDATE user_profiles SET points = points + ? WHERE user_id = ?')
+          .bind(betPoints, userId)
+          .run();
+        await env.D1_DB
+          .prepare(`INSERT INTO point_logs (user_id, ${pointLogColumn}, reason, created_at) VALUES (?, ?, ?, ?)`)
+          .bind(userId, betPoints, `challenge_bet:${challengeId}:refund`, new Date().toISOString())
+          .run();
+      } else {
+        await env.D1_DB
+          .prepare('UPDATE user_profiles SET score = score + ? WHERE user_id = ?')
+          .bind(betPoints, userId)
+          .run();
+      }
+    } else {
+      // 시작 후 나가기: 기존 100포인트 패널티 유지
+      const currentProfile = await env.D1_DB
+        .prepare('SELECT points FROM user_profiles WHERE user_id = ?')
+        .bind(userId)
+        .first();
+      const currentPoints = Number((currentProfile as any)?.points || 0);
+      const nextPoints = Math.max(0, currentPoints - 100);
 
-    if (pointLogColumn) {
       await env.D1_DB
-        .prepare(`INSERT INTO point_logs (user_id, ${pointLogColumn}, reason, created_at) VALUES (?, ?, ?, ?)`)
-        .bind(userId, -100, isOwner ? '챌린지 중도 포기 (방장)' : '챌린지 포기', new Date().toISOString())
+        .prepare('UPDATE user_profiles SET points = ? WHERE user_id = ?')
+        .bind(nextPoints, userId)
         .run();
+
+      if (pointLogColumn) {
+        await env.D1_DB
+          .prepare(`INSERT INTO point_logs (user_id, ${pointLogColumn}, reason, created_at) VALUES (?, ?, ?, ?)`)
+          .bind(userId, -100, isOwner ? '챌린지 중도 포기 (방장)' : '챌린지 포기', new Date().toISOString())
+          .run();
+      }
     }
 
     const updatedProfile = await env.D1_DB
