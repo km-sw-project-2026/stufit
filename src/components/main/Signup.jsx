@@ -1,23 +1,35 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Footer from './Footer';
+import CustomAlertModal from '../modal/CustomAlertModal';
 
 function Signup() {
     const [id, setId] = useState('');
     const [pw, setPw] = useState('');
     const [pwConfirm, setPwConfirm] = useState('');
     const navigate = useNavigate();
+    const [alertModal, setAlertModal] = useState({ show: false, message: '', onClose: null });
+
+    const showAlert = (message, onClose) => {
+        setAlertModal({ show: true, message, onClose: onClose || null });
+    };
+
+    const closeAlert = () => {
+        const cb = alertModal.onClose;
+        setAlertModal({ show: false, message: '', onClose: null });
+        if (cb) cb();
+    };
 
     const handleSignup = async () => {
         // 1. 입력값 검증
         if (!id || !pw || !pwConfirm) {
-            alert('모든 항목을 입력해주세요.');
+            showAlert('모든 항목을 입력해주세요.');
             return;
         }
 
         // 2. 비밀번호 확인
         if (pw !== pwConfirm) {
-            alert('비밀번호가 일치하지 않습니다.');
+            showAlert('비밀번호가 일치하지 않습니다.');
             return;
         }
 
@@ -32,15 +44,14 @@ function Signup() {
             const data = await res.json();
 
             if (!res.ok) {
-                alert(data.message);
+                showAlert(data.message);
                 return;
             }
 
             // 4. 성공 시 로그인 페이지로 이동
-            alert('회원가입 성공! 로그인해주세요.');
-            navigate('/');
+            showAlert('회원가입이 완료되었습니다! 로그인해주세요.', () => navigate('/'));
         } catch {
-            alert('서버 오류');
+            showAlert('서버 오류가 발생했습니다.');
         }
     };
 
@@ -84,6 +95,10 @@ function Signup() {
                 </div>
             </div>
             <Footer />
+
+            {alertModal.show && (
+                <CustomAlertModal message={alertModal.message} onClose={closeAlert} />
+            )}
         </>
     );
 };
