@@ -223,7 +223,7 @@ export default async function handler(request: Request, { env, userId }: Handler
       }
     }
 
-    // 배팅 점수 처리 전 유저 잔액 검사 (선택)
+    // 배팅 포인트 처리 전 유저 잔액 검사 (선택)
     if (typeof betPoints !== 'undefined' && betPoints !== null && Number(betPoints) > 0) {
       // ensure user_profiles row exists
       try {
@@ -235,15 +235,15 @@ export default async function handler(request: Request, { env, userId }: Handler
         // ignore insert-or-ignore errors
       }
 
-      const scoreRow = await env.D1_DB
-        .prepare('SELECT score FROM user_profiles WHERE user_id = ?')
+      const pointsRow = await env.D1_DB
+        .prepare('SELECT points FROM user_profiles WHERE user_id = ?')
         .bind(userId)
         .first();
-      const currentScore = Number((scoreRow as any)?.score || 0);
-      if (currentScore < Number(betPoints)) {
-        console.error('betPoints 부족: current=', currentScore, 'required=', betPoints);
+      const currentPoints = Number((pointsRow as any)?.points || 0);
+      if (currentPoints < Number(betPoints)) {
+        console.error('betPoints 부족: current=', currentPoints, 'required=', betPoints);
         return Response.json(
-          { success: false, message: '점수가 부족합니다.' },
+          { success: false, message: '포인트가 부족합니다.' },
           { status: 400 }
         );
       }
@@ -253,40 +253,82 @@ export default async function handler(request: Request, { env, userId }: Handler
     console.log('Inserting challenge...');
     // 일부 DB 인스턴스(예: 오래된 마이그레이션)를 위해 컬럼 존재 여부에 따라 INSERT 문을 다르게 구성
     const includeIsStarted = await hasColumn('challenges', 'is_started');
+    const includeBetPoints = await hasColumn('challenges', 'bet_points');
+    const normalizedBetPoints = typeof betPoints !== 'undefined' && betPoints !== null && betPoints !== ''
+      ? Number(betPoints)
+      : 0;
     let insertSql: string;
     let bindValues: any[];
     if (includeIsStarted) {
-      insertSql = `INSERT INTO challenges 
+      if (includeBetPoints) {
+        insertSql = `INSERT INTO challenges 
+         (title, description, category, max_members, goal, end_date, challenge_code, created_by_user_id, timer_hours, timer_minutes, bet_points, is_started, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, datetime('now'))`;
+        bindValues = [
+          challengeName,
+          goalDescription,
+          category,
+          Number(maxParticipants),
+          goalDescription,
+          endDate,
+          normalizedInviteCode || null,
+          userId,
+          timerHours || 0,
+          timerMinutes || 0,
+          normalizedBetPoints
+        ];
+      } else {
+        insertSql = `INSERT INTO challenges 
          (title, description, category, max_members, goal, end_date, challenge_code, created_by_user_id, timer_hours, timer_minutes, is_started, created_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, datetime('now'))`;
-      bindValues = [
-        challengeName,
-        goalDescription,
-        category,
-        Number(maxParticipants),
-        goalDescription,
-        endDate,
-        normalizedInviteCode || null,
-        userId,
-        timerHours || 0,
-        timerMinutes || 0
-      ];
+        bindValues = [
+          challengeName,
+          goalDescription,
+          category,
+          Number(maxParticipants),
+          goalDescription,
+          endDate,
+          normalizedInviteCode || null,
+          userId,
+          timerHours || 0,
+          timerMinutes || 0
+        ];
+      }
     } else {
-      insertSql = `INSERT INTO challenges 
+      if (includeBetPoints) {
+        insertSql = `INSERT INTO challenges 
+         (title, description, category, max_members, goal, end_date, challenge_code, created_by_user_id, timer_hours, timer_minutes, bet_points, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`;
+        bindValues = [
+          challengeName,
+          goalDescription,
+          category,
+          Number(maxParticipants),
+          goalDescription,
+          endDate,
+          normalizedInviteCode || null,
+          userId,
+          timerHours || 0,
+          timerMinutes || 0,
+          normalizedBetPoints
+        ];
+      } else {
+        insertSql = `INSERT INTO challenges 
          (title, description, category, max_members, goal, end_date, challenge_code, created_by_user_id, timer_hours, timer_minutes, created_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`;
-      bindValues = [
-        challengeName,
-        goalDescription,
-        category,
-        Number(maxParticipants),
-        goalDescription,
-        endDate,
-        normalizedInviteCode || null,
-        userId,
-        timerHours || 0,
-        timerMinutes || 0
-      ];
+        bindValues = [
+          challengeName,
+          goalDescription,
+          category,
+          Number(maxParticipants),
+          goalDescription,
+          endDate,
+          normalizedInviteCode || null,
+          userId,
+          timerHours || 0,
+          timerMinutes || 0
+        ];
+      }
     }
 
     const insertResult = await env.D1_DB.prepare(insertSql).bind(...bindValues).run();
@@ -324,15 +366,30 @@ export default async function handler(request: Request, { env, userId }: Handler
       console.error('참가자 추가 중 오류(무시):', e instanceof Error ? e.message : String(e));
     }
 
-    // 배팅 점수 차감: 챌린지 생성 후에 실제로 참가자가 되었다고 판단하여 차감
+    // 배팅 포인트 차감: 챌린지 생성 후에 실제로 참가자가 되었다고 판단하여 차감
     if (typeof betPoints !== 'undefined' && betPoints !== null && Number(betPoints) > 0) {
       try {
+        const pointLogInfo = await env.D1_DB.prepare("PRAGMA table_info('point_logs')").all();
+        const pointLogColumns = Array.isArray(pointLogInfo?.results) ? pointLogInfo.results : [];
+        const pointLogColumn = pointLogColumns.some((col: any) => col.name === 'point')
+          ? 'point'
+          : pointLogColumns.some((col: any) => col.name === 'points')
+            ? 'points'
+            : null;
+
         await env.D1_DB
-          .prepare('UPDATE user_profiles SET score = score - ? WHERE user_id = ?')
+          .prepare('UPDATE user_profiles SET points = points - ? WHERE user_id = ?')
           .bind(Number(betPoints), userId)
           .run();
+
+        if (pointLogColumn) {
+          await env.D1_DB
+            .prepare(`INSERT INTO point_logs (user_id, ${pointLogColumn}, reason, created_at) VALUES (?, ?, ?, ?)`)
+            .bind(userId, -Number(betPoints), `challenge_bet:${challengeId}:create`, new Date().toISOString())
+            .run();
+        }
       } catch (e) {
-        console.error('점수 차감 오류:', e instanceof Error ? e.message : String(e));
+        console.error('포인트 차감 오류:', e instanceof Error ? e.message : String(e));
         // 차감 실패 시에도 진행은 가능하지만 로그를 남깁니다.
       }
     }

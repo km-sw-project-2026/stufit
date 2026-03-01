@@ -101,8 +101,21 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
 
   const action = body?.action === 'giveup' ? 'giveup' : 'complete';
 
+  let hasBetPointsColumn = false;
+  try {
+    const challengeInfo = await env.D1_DB.prepare("PRAGMA table_info('challenges')").all();
+    const columns = Array.isArray(challengeInfo?.results) ? challengeInfo.results : [];
+    hasBetPointsColumn = columns.some((col: any) => col.name === 'bet_points');
+  } catch (err) {
+    console.warn('[rewards] challenges schema check failed:', err);
+  }
+
   const challenge = await env.D1_DB
-    .prepare('SELECT challenge_id, created_by_user_id, category, type, mode, created_at, start_date, end_date, duration FROM challenges WHERE challenge_id = ?')
+    .prepare(
+      hasBetPointsColumn
+        ? 'SELECT challenge_id, created_by_user_id, category, type, mode, created_at, start_date, end_date, duration, bet_points FROM challenges WHERE challenge_id = ?'
+        : 'SELECT challenge_id, created_by_user_id, category, type, mode, created_at, start_date, end_date, duration FROM challenges WHERE challenge_id = ?'
+    )
     .bind(challengeId)
     .first();
 
@@ -420,6 +433,35 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
           totalDays
         };
       });
+    }
+
+    let betPool = 0;
+    if (ranking.length > 0) {
+      if (pointLogColumn) {
+        try {
+          const pool = await env.D1_DB
+            .prepare(`SELECT SUM(CASE WHEN ${pointLogColumn} < 0 THEN -${pointLogColumn} ELSE 0 END) AS total FROM point_logs WHERE reason LIKE ?`)
+            .bind(`challenge_bet:${challengeId}:%`)
+            .first();
+          betPool = Number((pool as any)?.total || 0);
+        } catch (err) {
+          console.warn('[rewards] bet pool from logs failed:', err);
+        }
+      }
+
+      if (betPool <= 0 && hasBetPointsColumn) {
+        const perUserBet = Number((challenge as any)?.bet_points || 0);
+        if (perUserBet > 0) {
+          betPool = perUserBet * memberList.length;
+        }
+      }
+
+      if (betPool > 0) {
+        ranking = ranking.map((entry, idx) => ({
+          ...entry,
+          points: idx === 0 ? betPool : 0
+        }));
+      }
     }
 
     if (mode === 'practice') {

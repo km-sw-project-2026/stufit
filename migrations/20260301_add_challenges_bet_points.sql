@@ -1,0 +1,1 @@
+ALTER TABLE challenges ADD COLUMN bet_points INTEGER NOT NULL DEFAULT 0;
