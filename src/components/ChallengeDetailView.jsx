@@ -638,9 +638,8 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
     const handleComplete = () => {
         console.log('[handleComplete] click', { remainingDays, challengeId: challenge?.challenge_id });
 
-        const username = localStorage.getItem('username');
-        const currentUser = members.find(m => m.username === username);
-        const isHost = currentUser && challenge?.created_by_user_id === currentUser.user_id;
+        const myUserId = Number(localStorage.getItem('userId'));
+        const isHost = !Number.isNaN(myUserId) && Number(challenge?.created_by_user_id) === myUserId;
         if (!isHost) {
             alert('방장만 완료 처리가 가능합니다.');
             return;
@@ -666,16 +665,22 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
     const finalizeChallenge = async (overrideStudyScore = null) => {
         if (!challenge?.challenge_id) return;
 
+        const username = localStorage.getItem('username');
+        const myUserId = Number(localStorage.getItem('userId'));
+        const buildAuthHeaders = (base = {}) => {
+            const headers = { ...base };
+            if (username) headers['X-Username'] = encodeURIComponent(username);
+            if (!Number.isNaN(myUserId) && myUserId > 0) headers['X-User-Id'] = String(myUserId);
+            return headers;
+        };
+
         const syncPointsFromServer = async () => {
-            const username = localStorage.getItem('username');
-            const userId = Number(localStorage.getItem('userId'));
-            if (!userId || Number.isNaN(userId)) return;
+            if (!myUserId || Number.isNaN(myUserId)) return;
 
             try {
-                const headers = {};
-                if (username) headers['X-Username'] = username;
+                const headers = buildAuthHeaders();
 
-                const response = await fetch(`/api/user/stats?userId=${userId}&t=${Date.now()}`, {
+                const response = await fetch(`/api/user/stats?userId=${myUserId}&t=${Date.now()}`, {
                     headers
                 });
                 if (!response.ok) return;
@@ -700,9 +705,7 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
         };
 
         try {
-            const username = localStorage.getItem('username');
-            const headers = { 'Content-Type': 'application/json' };
-            if (username) headers['X-Username'] = username;
+            const headers = buildAuthHeaders({ 'Content-Type': 'application/json' });
 
             const rewardsBody = { action: 'complete' };
             const resolvedStudyScore =
@@ -727,8 +730,7 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
                     setRankingData(payload.ranking);
 
                     try {
-                        const completeHeaders = {};
-                        if (username) completeHeaders['X-Username'] = username;
+                        const completeHeaders = buildAuthHeaders();
                         await fetch(`/api/challenges/${challenge.challenge_id}/complete`, {
                             method: 'PATCH',
                             headers: completeHeaders
@@ -741,9 +743,10 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
                     return;
                 }
             } else {
-                const errPayload = await rewardsResponse.json().catch(() => ({}));
+                const errPayload = await rewardsResponse.json().catch(() => null);
+                const errText = errPayload?.message || errPayload?.error || `보상 정산에 실패했습니다. (status ${rewardsResponse.status})`;
                 console.warn('[finalizeChallenge] rewards failed:', rewardsResponse.status, errPayload);
-                alert(errPayload?.message || '보상 정산에 실패했습니다.');
+                alert(errText);
                 setRankingData([]);
                 return;
             }
