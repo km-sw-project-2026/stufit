@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 function ChallengeOverModal({
   isOpen,
@@ -6,10 +7,17 @@ function ChallengeOverModal({
   showScoreInput = false,
   onSubmitScore,
   rankingData = [],
-  title = 'Challenge Over'
+  title = 'Challenge Over',
+  // 동점자 관련 props
+  hasTie = false,
+  tiedPlayers = [],
+  challengeId = null,
+  onStartMiniGame = null,
 }) {
   const [score, setScore] = useState('');
   const [showRanking, setShowRanking] = useState(!showScoreInput);
+  const [miniGameCreating, setMiniGameCreating] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     setShowRanking(!showScoreInput);
@@ -40,6 +48,22 @@ function ChallengeOverModal({
     onClose?.();
   };
 
+  // 미니게임 세션 생성 후 이동
+  const handleJoinMiniGame = async () => {
+    if (!challengeId || tiedPlayers.length < 2) return;
+    setMiniGameCreating(true);
+    try {
+      if (onStartMiniGame) {
+        await onStartMiniGame(tiedPlayers);
+      }
+      navigate(`/challenge/${challengeId}/minigame`);
+    } catch {
+      alert('미니게임 시작에 실패했습니다.');
+    } finally {
+      setMiniGameCreating(false);
+    }
+  };
+
   const winnerTakeAllApplied =
     Array.isArray(rankingData) &&
     rankingData.length > 1 &&
@@ -50,9 +74,49 @@ function ChallengeOverModal({
     <div className="popup-modal" onClick={handleClose}>
       <div className="popup-overlay"></div>
       <div className="popup-content challenge-over-content" onClick={(e) => e.stopPropagation()}>
-        <h2>{title}</h2>
+        {/* ──── 동점자 미니게임 안내 뷰 ──── */}
+        {hasTie && (
+          <div style={{ textAlign: 'center', padding: '8px 0 4px' }}>
+            <p style={{ fontFamily: 'Georgia, serif', fontSize: '1.5rem', fontWeight: 900, color: '#1d6b4f', margin: '0 0 10px' }}>
+              stu<span style={{ color: '#247b7b' }}>fit</span>
+            </p>
+            <h2 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#1d3d28', margin: '0 0 12px' }}>
+              챌린지 최종 순위 안내
+            </h2>
+            <p style={{ fontSize: '0.9rem', color: '#333', lineHeight: 1.7, margin: '0 0 6px' }}>
+              현재 동점자가 발생했습니다.<br />
+              최종 순위는 미니게임을 통해 다시 결정됩니다.<br />
+              대상자는&nbsp;<span
+                style={{ color: '#1d8c66', fontWeight: 700, cursor: 'pointer', textDecoration: 'underline' }}
+                onClick={handleJoinMiniGame}
+              >미니게임</span>에 참여해 주세요.
+            </p>
+            <p style={{ fontSize: '0.78rem', color: '#aaa', margin: '0 0 16px' }}>
+              미니게임은 끝말잇기 게임입니다
+            </p>
+            <button
+              onClick={handleJoinMiniGame}
+              disabled={miniGameCreating}
+              style={{
+                background: miniGameCreating ? '#a0c8b0' : 'linear-gradient(135deg,#1d8c66,#247b7b)',
+                border: 'none',
+                color: '#fff',
+                fontSize: '1rem',
+                fontWeight: 700,
+                borderRadius: '10px',
+                padding: '12px 40px',
+                cursor: miniGameCreating ? 'not-allowed' : 'pointer',
+                width: '100%',
+              }}
+            >
+              {miniGameCreating ? '생성 중...' : '참여하기'}
+            </button>
+          </div>
+        )}
 
-        {showScoreInput && !showRanking && (
+        {!hasTie && <h2>{title}</h2>}
+
+        {showScoreInput && !showRanking && !hasTie && (
           <div id="challenge-over-score-view">
             <p className="subtitle">최종 점수입력</p>
             <div className="score-card">
@@ -75,7 +139,7 @@ function ChallengeOverModal({
           </div>
         )}
 
-        {showRanking && (
+        {showRanking && !hasTie && (
           <div id="challenge-over-ranking-view">
             <p className="subtitle">최종순위</p>
             {winnerTakeAllApplied && (
