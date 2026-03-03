@@ -980,7 +980,7 @@ function Community() {
     const [currentCategory, setCurrentCategory] = useState('popular');
     const [isAlertOpen, setIsAlertOpen] = useState(false);
     const [alertMessage, setAlertMessage] = useState('');
-    const [profileModal, setProfileModal] = useState({ open: false, userId: null, username: '' });
+    const [profileModal, setProfileModal] = useState({ open: false, userId: null, username: '', anchorPosition: null });
 
     const showAlert = (msg) => {
         setAlertMessage(msg);
@@ -1144,9 +1144,15 @@ function Community() {
     const [selectedPost, setSelectedPost] = useState(null);
     const detailPostView = (post) => { setSelectedPost(post); setShowPostDetail(true); };
     const closeDetailView = () => { setShowPostDetail(false); setSelectedPost(null); };
-    const openUserProfile = (userId, username) => {
-        if (!userId) return;
-        setProfileModal({ open: true, userId: Number(userId), username: username || '' });
+    const openUserProfile = (userId, username, event) => {
+        const resolvedUserId = Number(userId);
+        const rect = event?.currentTarget?.getBoundingClientRect ? event.currentTarget.getBoundingClientRect() : null;
+        setProfileModal({
+            open: true,
+            userId: Number.isNaN(resolvedUserId) ? null : resolvedUserId,
+            username: username || '',
+            anchorPosition: rect,
+        });
     };
 
     const handleDeletePost = async (postId) => {
@@ -1210,7 +1216,8 @@ function Community() {
                 isOpen={profileModal.open}
                 userId={profileModal.userId}
                 username={profileModal.username}
-                onClose={() => setProfileModal({ open: false, userId: null, username: '' })}
+                anchorPosition={profileModal.anchorPosition}
+                onClose={() => setProfileModal({ open: false, userId: null, username: '', anchorPosition: null })}
             />
         </div>
     );

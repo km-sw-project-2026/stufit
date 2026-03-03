@@ -22,101 +22,74 @@ export const onRequestGet = async (context: { request: Request; env: any; userId
       return Response.json({ error: 'DB not configured' }, { status: 500 });
     }
 
-    let userId: number | null = resolvedMiddlewareUserId;
+    let targetUserId: number | null = parsedUserId || resolvedMiddlewareUserId;
 
-    if (!userId && username) {
+    if (!targetUserId && username) {
       const user = await env.D1_DB.prepare("SELECT user_id FROM users WHERE username = ?").bind(username).first();
       const resolved = Number(user?.user_id);
       if (Number.isInteger(resolved) && resolved > 0) {
-        userId = resolved;
+        targetUserId = resolved;
       }
     }
 
-    // fallback: username 해석이 안될 때만 query userId 사용
-    if (!userId) {
-      userId = parsedUserId;
-    }
-
-    if (!userId) {
+    if (!targetUserId) {
       return Response.json({ error: 'User ID or Username required' }, { status: 400 });
     }
 
     let postCountResult: any = null;
     let commentCountResult: any = null;
     let profileResult: any = { points: 0, score: 0 };
+    let joinDateResult: any = null;
+    let completedChallengesResult: any = null;
 
-    if (username) {
-      try {
+    try {
+      postCountResult = await env.D1_DB.prepare(
+        "SELECT COUNT(*) as count FROM posts WHERE user_id = ? AND deleted_at IS NULL"
+      ).bind(targetUserId).first();
+    } catch (postCountErr) {
+      const message = String((postCountErr as any)?.message || postCountErr || '');
+      if (message.includes('no such column') && message.includes('deleted_at')) {
         postCountResult = await env.D1_DB.prepare(
-          `SELECT COUNT(*) as count
-           FROM posts p
-           JOIN users u ON u.user_id = p.user_id
-           WHERE u.username = ? AND p.deleted_at IS NULL`
-        ).bind(username).first();
-      } catch (postCountErr) {
-        const message = String((postCountErr as any)?.message || postCountErr || '');
-        if (message.includes('no such column') && message.includes('deleted_at')) {
-          postCountResult = await env.D1_DB.prepare(
-            `SELECT COUNT(*) as count
-             FROM posts p
-             JOIN users u ON u.user_id = p.user_id
-             WHERE u.username = ?`
-          ).bind(username).first();
-        } else {
-          throw postCountErr;
-        }
+          "SELECT COUNT(*) as count FROM posts WHERE user_id = ?"
+        ).bind(targetUserId).first();
+      } else {
+        throw postCountErr;
       }
+    }
 
-      // 댓글 수 기준: 내가 작성한 글들에 달린 댓글 총합
-      commentCountResult = await env.D1_DB.prepare(
+    commentCountResult = await env.D1_DB.prepare(
+      `SELECT COUNT(*) as count
+       FROM comments c
+       JOIN posts p ON p.post_id = c.post_id
+       WHERE p.user_id = ?`
+    ).bind(targetUserId).first();
+
+    try {
+      profileResult = await env.D1_DB.prepare(
+        "SELECT points, score FROM user_profiles WHERE user_id = ?"
+      ).bind(targetUserId).first();
+    } catch {
+      profileResult = { points: 0, score: 0 };
+    }
+
+    try {
+      joinDateResult = await env.D1_DB.prepare(
+        "SELECT created_at FROM users WHERE user_id = ?"
+      ).bind(targetUserId).first();
+    } catch {
+      joinDateResult = null;
+    }
+
+    try {
+      completedChallengesResult = await env.D1_DB.prepare(
         `SELECT COUNT(*) as count
-         FROM comments c
-         JOIN posts p ON p.post_id = c.post_id
-         JOIN users u ON u.user_id = p.user_id
-         WHERE u.username = ?`
-      ).bind(username).first();
-
-      try {
-        profileResult = await env.D1_DB.prepare(
-          `SELECT up.points as points, up.score as score
-           FROM user_profiles up
-           JOIN users u ON u.user_id = up.user_id
-           WHERE u.username = ?`
-        ).bind(username).first();
-      } catch {
-        profileResult = { points: 0, score: 0 };
-      }
-    } else {
-      try {
-        postCountResult = await env.D1_DB.prepare(
-          "SELECT COUNT(*) as count FROM posts WHERE user_id = ? AND deleted_at IS NULL"
-        ).bind(userId).first();
-      } catch (postCountErr) {
-        const message = String((postCountErr as any)?.message || postCountErr || '');
-        if (message.includes('no such column') && message.includes('deleted_at')) {
-          postCountResult = await env.D1_DB.prepare(
-            "SELECT COUNT(*) as count FROM posts WHERE user_id = ?"
-          ).bind(userId).first();
-        } else {
-          throw postCountErr;
-        }
-      }
-
-      // 댓글 수 기준: 내 글에 달린 댓글 총합
-      commentCountResult = await env.D1_DB.prepare(
-        `SELECT COUNT(*) as count
-         FROM comments c
-         JOIN posts p ON p.post_id = c.post_id
-         WHERE p.user_id = ?`
-      ).bind(userId).first();
-
-      try {
-        profileResult = await env.D1_DB.prepare(
-          "SELECT points, score FROM user_profiles WHERE user_id = ?"
-        ).bind(userId).first();
-      } catch {
-        profileResult = { points: 0, score: 0 };
-      }
+         FROM challenges c
+         JOIN challenge_members cm ON cm.challenge_id = c.challenge_id
+         WHERE cm.user_id = ?
+           AND c.deleted_at IS NOT NULL`
+      ).bind(targetUserId).first();
+    } catch {
+      completedChallengesResult = { count: 0 };
     }
 
     return Response.json({
@@ -125,7 +98,9 @@ export const onRequestGet = async (context: { request: Request; env: any; userId
         posts: postCountResult?.count || 0,
         comments: commentCountResult?.count || 0,
         points: profileResult?.points || 0,
-        score: profileResult?.score || 0
+        score: profileResult?.score || 0,
+        joinDate: joinDateResult?.created_at || null,
+        completedChallenges: completedChallengesResult?.count || 0
       }
     });
 
