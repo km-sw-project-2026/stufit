@@ -94,7 +94,7 @@ function CommunityModal({ onClose }) {
                       <div className="pd-avatar"></div>
                       <div className="pd-user-text">
                         <span className="pd-username">작성자</span>
-                        <span className="pd-date-view">2025.12.29 12:15 조회수 0</span>
+                        <span className="pd-date-view">2025.12.29 12:15</span>
                       </div>
                     </div>
                     <div className="pd-actions">
