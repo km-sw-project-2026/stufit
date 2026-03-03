@@ -44,6 +44,8 @@ export const onRequestGet = async (context: { request: Request; env: any; userId
     let postCountResult: any = null;
     let commentCountResult: any = null;
     let profileResult: any = { points: 0, score: 0 };
+    let joinDateResult: any = null;
+    let completedChallengesResult: any = null;
 
     if (username) {
       try {
@@ -86,6 +88,29 @@ export const onRequestGet = async (context: { request: Request; env: any; userId
       } catch {
         profileResult = { points: 0, score: 0 };
       }
+
+      try {
+        joinDateResult = await env.D1_DB.prepare(
+          `SELECT u.created_at as created_at
+           FROM users u
+           WHERE u.username = ?`
+        ).bind(username).first();
+      } catch {
+        joinDateResult = null;
+      }
+
+      try {
+        completedChallengesResult = await env.D1_DB.prepare(
+          `SELECT COUNT(*) as count
+           FROM challenges c
+           JOIN challenge_members cm ON cm.challenge_id = c.challenge_id
+           JOIN users u ON u.user_id = cm.user_id
+           WHERE u.username = ?
+             AND c.deleted_at IS NOT NULL`
+        ).bind(username).first();
+      } catch {
+        completedChallengesResult = { count: 0 };
+      }
     } else {
       try {
         postCountResult = await env.D1_DB.prepare(
@@ -117,6 +142,26 @@ export const onRequestGet = async (context: { request: Request; env: any; userId
       } catch {
         profileResult = { points: 0, score: 0 };
       }
+
+      try {
+        joinDateResult = await env.D1_DB.prepare(
+          "SELECT created_at FROM users WHERE user_id = ?"
+        ).bind(userId).first();
+      } catch {
+        joinDateResult = null;
+      }
+
+      try {
+        completedChallengesResult = await env.D1_DB.prepare(
+          `SELECT COUNT(*) as count
+           FROM challenges c
+           JOIN challenge_members cm ON cm.challenge_id = c.challenge_id
+           WHERE cm.user_id = ?
+             AND c.deleted_at IS NOT NULL`
+        ).bind(userId).first();
+      } catch {
+        completedChallengesResult = { count: 0 };
+      }
     }
 
     return Response.json({
@@ -125,7 +170,9 @@ export const onRequestGet = async (context: { request: Request; env: any; userId
         posts: postCountResult?.count || 0,
         comments: commentCountResult?.count || 0,
         points: profileResult?.points || 0,
-        score: profileResult?.score || 0
+        score: profileResult?.score || 0,
+        joinDate: joinDateResult?.created_at || null,
+        completedChallenges: completedChallengesResult?.count || 0
       }
     });
 
