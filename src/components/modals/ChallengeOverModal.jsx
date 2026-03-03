@@ -80,9 +80,7 @@ function ChallengeOverModal({
         {/* ──── 동점자 미니게임 안내 뷰 ──── */}
         {hasTie && (
           <div style={{ textAlign: 'center', padding: '8px 0 4px' }}>
-            <p style={{ fontFamily: 'Georgia, serif', fontSize: '1.5rem', fontWeight: 900, color: '#1d6b4f', margin: '0 0 10px' }}>
-              stu<span style={{ color: '#247b7b' }}>fit</span>
-            </p>
+          <img src="/img/logo.png" alt="stufit" style={{ height: '36px', marginBottom: '10px' }} />
             <h2 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#1d3d28', margin: '0 0 12px' }}>
               챌린지 최종 순위 안내
             </h2>

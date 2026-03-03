@@ -223,8 +223,30 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
         setTiedPlayers([]);
     }, [challenge?.challenge_id]);
 
+    // 컨플리티드 챬린지 진입 시 동점자 확인 (non-host에도 모달 표시)
     useEffect(() => {
-        document.body.classList.add('modal-open');
+        if (isChallengeOverOpen) return;
+        if (!challenge?.challenge_id) return;
+        if (challenge?.status !== 'completed') return;
+        const currentUser = localStorage.getItem('username');
+        if (!currentUser) return;
+        (async () => {
+            try {
+                const res = await fetch(`/api/challenges/${challenge.challenge_id}/minigame`, {
+                    headers: { 'X-Username': encodeURIComponent(currentUser) }
+                });
+                if (!res.ok) return;
+                const data = await res.json();
+                const tied = data.tiedPlayers || [];
+                if (tied.length >= 2 && tied.includes(currentUser)) {
+                    setHasTie(true);
+                    setTiedPlayers(tied);
+                    setIsChallengeOverOpen(true);
+                }
+            } catch {}
+        })();
+    }, [challenge?.challenge_id, challenge?.status, isChallengeOverOpen]);
+
         return () => document.body.classList.remove('modal-open');
     }, []);
 
@@ -1162,12 +1184,10 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
                     const res = await fetch(`/api/challenges/${challenge.challenge_id}/minigame`, {
                         method: 'POST',
                         headers,
-                        body: JSON.stringify({ players }),
+                        body: JSON.stringify({ action: 'init', players }),
                     });
                     if (!res.ok) {
                         const err = await res.json().catch(() => ({}));
-                        // 403(비방장) 또는 이미 세션 존재 등은 에러로 올리지 않음
-                        // → 모달에서 navigate 는 항상 실행됨
                         if (res.status !== 403) {
                             throw new Error(err?.message || '세션 생성 실패');
                         }
