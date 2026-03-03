@@ -91,25 +91,11 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
   const submitScore = body?.score !== undefined ? Number(body.score) : null;
   const action = body?.action === 'giveup' ? 'giveup' : 'complete';
 
-  // ── 스키마 체크 ──────────────────────────────────
-  let hasBetPointsColumn = false;
-  try {
-    const challengeInfo = await env.D1_DB.prepare("PRAGMA table_info('challenges')").all();
-    const columns = Array.isArray(challengeInfo?.results) ? challengeInfo.results : [];
-    hasBetPointsColumn = columns.some((col: any) => col.name === 'bet_points');
-  } catch (err) {
-    console.warn('[rewards] challenges schema check failed:', err);
-  }
-
-  // ── 챌린지 조회 ──────────────────────────────────
+  // ── 챌린지 조회 (SELECT * 로 컬럼 존재 여부에 무관하게 조회) ──────────
   let challenge: any = null;
   try {
     challenge = await env.D1_DB
-      .prepare(
-        hasBetPointsColumn
-          ? 'SELECT challenge_id, created_by_user_id, category, type, mode, created_at, start_date, end_date, duration, bet_points FROM challenges WHERE challenge_id = ?'
-          : 'SELECT challenge_id, created_by_user_id, category, type, mode, created_at, start_date, end_date, duration FROM challenges WHERE challenge_id = ?'
-      )
+      .prepare('SELECT * FROM challenges WHERE challenge_id = ?')
       .bind(challengeId)
       .first();
   } catch (err: any) {
@@ -441,29 +427,10 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
         }
       }
 
-      if (betPool <= 0 && hasBetPointsColumn) {
+      if (betPool <= 0) {
         const perUserBet = Number((challenge as any)?.bet_points || 0);
         if (perUserBet > 0) {
           betPool = perUserBet * memberList.length;
-        }
-      }
-
-      if (betPool <= 0 && !hasBetPointsColumn) {
-        try {
-          await env.D1_DB.prepare(`CREATE TABLE IF NOT EXISTS challenge_bets (
-            challenge_id INTEGER PRIMARY KEY,
-            bet_points INTEGER NOT NULL
-          )`).run();
-          const betRow = await env.D1_DB
-            .prepare('SELECT bet_points FROM challenge_bets WHERE challenge_id = ?')
-            .bind(challengeId)
-            .first();
-          const perUserBet = Number((betRow as any)?.bet_points || 0);
-          if (perUserBet > 0) {
-            betPool = perUserBet * memberList.length;
-          }
-        } catch (err) {
-          console.warn('[rewards] challenge_bets fallback failed:', err);
         }
       }
 
