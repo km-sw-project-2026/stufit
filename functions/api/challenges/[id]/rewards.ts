@@ -490,86 +490,78 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
       );
     }
 
-    const applied: Array<{ userId: number; points: number }> = [];
+    const applied: Array<{ userId: number; points: number; score?: number }> = [];
     const errors: string[] = [];
     const now = new Date().toISOString();
-    let transactionStarted = false;
+    const reason = `challenge_reward:${challengeId}:${action}:${mode}`;
 
-    try {
-      await env.D1_DB.prepare('BEGIN').run();
-      transactionStarted = true;
-    } catch (err) {
-      console.warn('[rewards] transaction begin failed:', err);
-    }
+    // D1은 prepare().run() 방식으로 BEGIN/COMMIT을 지원하지 않으므로
+    // 개별 쿼리로 처리합니다. already 체크로 중복 지급을 방지합니다.
+    for (const entry of ranking) {
+      if (!entry.userId) continue;
 
-    try {
-      for (const entry of ranking) {
-        if (!entry.userId) continue;
+      try {
+        // 중복 지급 방지
+        const already = pointLogColumn
+          ? await env.D1_DB
+            .prepare('SELECT 1 FROM point_logs WHERE user_id = ? AND reason = ?')
+            .bind(entry.userId, reason)
+            .first()
+          : null;
 
-        try {
-          const reason = `challenge_reward:${challengeId}:${action}:${mode}`;
-          const already = pointLogColumn
-            ? await env.D1_DB
-              .prepare('SELECT 1 FROM point_logs WHERE user_id = ? AND reason = ?')
-              .bind(entry.userId, reason)
-              .first()
-            : null;
+        if (already) {
+          console.log(`[rewards] skip duplicate: userId=${entry.userId} reason=${reason}`);
+          continue;
+        }
 
-          if (already) continue;
+        // 프로필 없으면 생성
+        await env.D1_DB
+          .prepare('INSERT OR IGNORE INTO user_profiles (user_id) VALUES (?)')
+          .bind(entry.userId)
+          .run();
 
-          // 먼저 프로필이 없으면 생성
-          await env.D1_DB
-            .prepare('INSERT OR IGNORE INTO user_profiles (user_id) VALUES (?)')
-            .bind(entry.userId)
-            .run();
+        const profile = await env.D1_DB
+          .prepare('SELECT points FROM user_profiles WHERE user_id = ?')
+          .bind(entry.userId)
+          .first();
 
-          const profile = await env.D1_DB
-            .prepare('SELECT points FROM user_profiles WHERE user_id = ?')
-            .bind(entry.userId)
-            .first();
+        const currentPoints = Number((profile as any)?.points) || 0;
+        const nextPoints = Math.max(0, currentPoints + entry.points);
 
-          const currentPoints = Number(profile?.points) || 0;
-          const nextPoints = Math.max(0, currentPoints + entry.points);
+        await env.D1_DB
+          .prepare('UPDATE user_profiles SET points = ? WHERE user_id = ?')
+          .bind(nextPoints, entry.userId)
+          .run();
 
-          await env.D1_DB
-            .prepare('UPDATE user_profiles SET points = ? WHERE user_id = ?')
-            .bind(nextPoints, entry.userId)
-            .run();
-
-          if (pointLogColumn) {
-            try {
-              await env.D1_DB
-                .prepare(`INSERT INTO point_logs (user_id, ${pointLogColumn}, reason, created_at) VALUES (?, ?, ?, ?)`) 
-                .bind(entry.userId, entry.points, reason, now)
-                .run();
-            } catch (pointLogErr: any) {
-              console.warn('POINT LOG INSERT SKIPPED:', pointLogErr?.message || String(pointLogErr));
-            }
+        if (pointLogColumn) {
+          try {
+            await env.D1_DB
+              .prepare(`INSERT INTO point_logs (user_id, ${pointLogColumn}, reason, created_at) VALUES (?, ?, ?, ?)`)
+              .bind(entry.userId, entry.points, reason, now)
+              .run();
+          } catch (pointLogErr: any) {
+            console.warn('[rewards] point_log insert skipped:', pointLogErr?.message || String(pointLogErr));
           }
-
-          applied.push({ userId: entry.userId, points: entry.points, score: entry.score });
-        } catch (entryErr: any) {
-          const message = entryErr?.message || String(entryErr);
-          console.warn('[rewards] entry update failed:', entry.userId, message);
-          errors.push(message);
         }
-      }
 
-      if (transactionStarted) {
-        await env.D1_DB.prepare('COMMIT').run();
-      }
-    } catch (err) {
-      if (transactionStarted) {
-        try {
-          await env.D1_DB.prepare('ROLLBACK').run();
-        } catch (rollbackErr) {
-          console.warn('[rewards] rollback failed:', rollbackErr);
+        // score 컬럼이 user_profiles에 있으면 업데이트
+        if (hasScoreColumn && entry.score > 0) {
+          try {
+            await env.D1_DB
+              .prepare('UPDATE user_profiles SET score = COALESCE(score, 0) + ? WHERE user_id = ?')
+              .bind(entry.score, entry.userId)
+              .run();
+          } catch (scoreErr: any) {
+            console.warn('[rewards] score update skipped:', scoreErr?.message || String(scoreErr));
+          }
         }
+
+        applied.push({ userId: entry.userId, points: entry.points, score: entry.score });
+      } catch (entryErr: any) {
+        const errMsg = entryErr?.message || String(entryErr);
+        console.warn('[rewards] entry update failed:', entry.userId, errMsg);
+        errors.push(errMsg);
       }
-      return new Response(JSON.stringify({ message: '보상 처리 중 오류가 발생했습니다.' }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      });
     }
 
     return new Response(
