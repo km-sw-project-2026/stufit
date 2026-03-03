@@ -269,7 +269,7 @@ export default function WordChainGame() {
     return (
       <div style={{ ...BG, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={cardStyle}>
-          <p style={logoText}>stu fit · 끝말잇기</p>
+          <img src="/img/logo.png" alt="stufit" style={{ height: '40px', marginBottom: '10px' }} />
           <p style={{ fontSize: '1.1rem', fontWeight: 700, color: '#1d3d28', margin: '12px 0 8px' }}>게임 준비 중...</p>
           <p style={{ fontSize: '0.9rem', color: '#555', marginBottom: '20px' }}>
             방장이 게임을 시작할 때까지 잠시 기다려 주세요.
@@ -296,7 +296,7 @@ export default function WordChainGame() {
     return (
       <div style={{ ...BG, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={cardStyle}>
-          <p style={logoText}>stu fit</p>
+          <img src="/img/logo.png" alt="stufit" style={{ height: '40px', marginBottom: '10px' }} />
           <p style={{ color: '#c0392b', fontWeight: 700 }}>미니게임 세션을 찾을 수 없습니다.</p>
           <button style={{ ...tealBtn, marginTop: '20px' }} onClick={() => navigate(`/challenge/${challengeId}`)}>돌아가기</button>
         </div>
@@ -359,7 +359,7 @@ export default function WordChainGame() {
     return (
       <div style={{ ...BG, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={cardStyle}>
-          <p style={logoText}>stu fit</p>
+          <img src="/img/logo.png" alt="stufit" style={{ height: '40px', marginBottom: '10px' }} />
           <p style={{ fontSize: '2.4rem', marginBottom: '6px' }}>{myWin ? '🏆' : '😢'}</p>
           <h2 style={{ ...titleStyle, marginBottom: '4px' }}>
             {myWin ? '최종 승리!' : '게임 종료'}
@@ -391,7 +391,7 @@ export default function WordChainGame() {
   return (
     <div style={{ ...BG, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ ...cardStyle, maxWidth: '600px' }}>
-        <p style={logoText}>stu fit · 끝말잇기</p>
+        <img src="/img/logo.png" alt="stufit" style={{ height: '40px', marginBottom: '10px' }} />
 
         {/* 생존자 배지 */}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', justifyContent: 'center', marginBottom: '14px' }}>
