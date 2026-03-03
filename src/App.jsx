@@ -12,6 +12,7 @@ import Community from './components/communityView/Community';
 import Shop from './components/shopView/Shop';
 import TierGuide from './components/main/TierGuide';
 import MyItems from './components/MyItems';
+import WordChainGame from './components/WordChainGame';
 
 
 
@@ -25,6 +26,7 @@ function App() {
         <Route path="/signup" element={<Signup />} />
         <Route path="/challenge" element={<Challenge />} />
         <Route path="/challenge/:id" element={<ChallengeDetailPage />} />
+        <Route path="/challenge/:id/minigame" element={<WordChainGame />} />
         <Route path="/ongoing-challenges" element={<OngoingChallenge />} />
         <Route path="/attendance" element={<Attendance />} />
         <Route path="/ranking" element={<Ranking />} />

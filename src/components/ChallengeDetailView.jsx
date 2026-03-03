@@ -201,6 +201,8 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
     const [isChallengeOverOpen, setIsChallengeOverOpen] = useState(false);
     const [showSuccessPopup, setShowSuccessPopup] = useState(false);
     const [rankingData, setRankingData] = useState([]);
+    const [hasTie, setHasTie] = useState(false);
+    const [tiedPlayers, setTiedPlayers] = useState([]);
     const [studyScore, setStudyScore] = useState(null);
     const [members, setMembers] = useState([]);
     const [finalAction, setFinalAction] = useState('leave');
@@ -215,6 +217,8 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
     useEffect(() => {
         setIsChallengeOverOpen(false);
         setRankingData([]);
+        setHasTie(false);
+        setTiedPlayers([]);
     }, [challenge?.challenge_id]);
 
     useEffect(() => {
@@ -726,6 +730,17 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
                     console.log('[finalizeChallenge] ranking data:', payload.ranking);
                     setRankingData(payload.ranking);
 
+                    // 공동 1등(동점) 감지
+                    const topRatio = payload.ranking[0]?.ratio;
+                    const tied = payload.ranking.filter((r) => r.ratio === topRatio);
+                    if (tied.length >= 2) {
+                        setHasTie(true);
+                        setTiedPlayers(tied.map((r) => r.name));
+                    } else {
+                        setHasTie(false);
+                        setTiedPlayers([]);
+                    }
+
                     try {
                         const completeHeaders = {};
                         if (username) completeHeaders['X-Username'] = username;
@@ -1114,6 +1129,23 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
                 showScoreInput={getChallengeType() === 'study'}
                 onSubmitScore={handleSubmitStudyScore}
                 rankingData={rankingData}
+                hasTie={hasTie}
+                tiedPlayers={tiedPlayers}
+                challengeId={challenge?.challenge_id}
+                onStartMiniGame={async (players) => {
+                    const username = localStorage.getItem('username');
+                    const headers = { 'Content-Type': 'application/json' };
+                    if (username) headers['X-Username'] = username;
+                    const res = await fetch(`/api/challenges/${challenge.challenge_id}/minigame`, {
+                        method: 'POST',
+                        headers,
+                        body: JSON.stringify({ players }),
+                    });
+                    if (!res.ok) {
+                        const err = await res.json().catch(() => ({}));
+                        throw new Error(err?.message || '세션 생성 실패');
+                    }
+                }}
             />
         </>
     );
