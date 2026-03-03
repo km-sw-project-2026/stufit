@@ -49,6 +49,8 @@ function ChallengeOverModal({
   };
 
   // 미니게임 세션 생성 후 이동
+  // - 방장: 세션 생성 후 이동
+  // - 비방장: 세션 생성 실패(403)를 무시하고 바로 이동 (세션은 방장이 만듦)
   const handleJoinMiniGame = async () => {
     if (!challengeId || tiedPlayers.length < 2) return;
     setMiniGameCreating(true);
@@ -56,12 +58,13 @@ function ChallengeOverModal({
       if (onStartMiniGame) {
         await onStartMiniGame(tiedPlayers);
       }
-      navigate(`/challenge/${challengeId}/minigame`);
-    } catch {
-      alert('미니게임 시작에 실패했습니다.');
+    } catch (err) {
+      // 방장이 아니거나 세션이 이미 존재하는 경우 등은 무시하고 페이지로 이동
+      console.warn('[handleJoinMiniGame] session create skipped:', err?.message || err);
     } finally {
       setMiniGameCreating(false);
     }
+    navigate(`/challenge/${challengeId}/minigame`);
   };
 
   const winnerTakeAllApplied =

@@ -1138,7 +1138,7 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
                 onStartMiniGame={async (players) => {
                     const username = localStorage.getItem('username');
                     const headers = { 'Content-Type': 'application/json' };
-                    if (username) headers['X-Username'] = username;
+                    if (username) headers['X-Username'] = encodeURIComponent(username);
                     const res = await fetch(`/api/challenges/${challenge.challenge_id}/minigame`, {
                         method: 'POST',
                         headers,
@@ -1146,7 +1146,12 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
                     });
                     if (!res.ok) {
                         const err = await res.json().catch(() => ({}));
-                        throw new Error(err?.message || '세션 생성 실패');
+                        // 403(비방장) 또는 이미 세션 존재 등은 에러로 올리지 않음
+                        // → 모달에서 navigate 는 항상 실행됨
+                        if (res.status !== 403) {
+                            throw new Error(err?.message || '세션 생성 실패');
+                        }
+                        console.warn('[onStartMiniGame] non-host or already exists:', err?.message);
                     }
                 }}
             />

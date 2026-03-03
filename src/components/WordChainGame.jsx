@@ -85,7 +85,7 @@ export default function WordChainGame() {
   const [errorMsg, setErrorMsg] = useState('');
   const [timeLeft, setTimeLeft] = useState(TURN_SECONDS);
   const [submitting, setSubmitting] = useState(false);
-  const [phase, setPhase] = useState('loading'); // 'loading' | 'start' | 'playing' | 'finished' | 'error'
+  const [phase, setPhase] = useState('loading'); // 'loading' | 'waiting_session' | 'start' | 'playing' | 'finished' | 'error'
 
   const timerRef = useRef(null);
   const pollRef = useRef(null);
@@ -112,7 +112,8 @@ export default function WordChainGame() {
       setWords(Array.isArray(data.words) ? data.words : []);
 
       if (!data.session) {
-        setPhase('error');
+        // 세션이 아직 없음 = 방장이 아직 세션을 생성 안 한 상태 → 계속 폴링
+        setPhase('waiting_session');
         setLoading(false);
         return;
       }
@@ -264,7 +265,34 @@ export default function WordChainGame() {
     );
   }
 
-  if (phase === 'error' || !session) {
+  if (phase === 'waiting_session') {
+    return (
+      <div style={{ ...BG, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={cardStyle}>
+          <p style={logoText}>stu fit · 끝말잇기</p>
+          <p style={{ fontSize: '1.1rem', fontWeight: 700, color: '#1d3d28', margin: '12px 0 8px' }}>게임 준비 중...</p>
+          <p style={{ fontSize: '0.9rem', color: '#555', marginBottom: '20px' }}>
+            방장이 게임을 시작할 때까지 잠시 기다려 주세요.
+          </p>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', marginBottom: '20px' }}>
+            {[0, 1, 2].map((i) => (
+              <div key={i} style={{
+                width: '10px', height: '10px', borderRadius: '50%',
+                background: '#1d8c66',
+                animation: `bounce 1.2s ease-in-out ${i * 0.2}s infinite`,
+              }} />
+            ))}
+          </div>
+          <style>{`@keyframes bounce { 0%,80%,100%{transform:scale(0)} 40%{transform:scale(1)} }`}</style>
+          <button style={{ ...tealBtn, width: '100%', fontSize: '0.9rem' }} onClick={() => navigate(`/challenge/${challengeId}`)}>
+            돌아가기
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (phase === 'error') {
     return (
       <div style={{ ...BG, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={cardStyle}>
