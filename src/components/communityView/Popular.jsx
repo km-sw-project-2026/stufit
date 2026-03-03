@@ -27,10 +27,10 @@ function Popular({ posts = [], onOpenPost, onNewPost, onToggleLike, onOpenUserPr
                                         tabIndex={0}
                                         onClick={(e) => {
                                             e.stopPropagation();
-                                            if (onOpenUserProfile) onOpenUserProfile(p.userId, p.author);
+                                            if (onOpenUserProfile) onOpenUserProfile(p.userId, p.author, e);
                                         }}
                                         onKeyDown={(e) => {
-                                            if (e.key === 'Enter' && onOpenUserProfile) onOpenUserProfile(p.userId, p.author);
+                                            if (e.key === 'Enter' && onOpenUserProfile) onOpenUserProfile(p.userId, p.author, e);
                                         }}
                                         style={{ cursor: 'pointer' }}
                                     >

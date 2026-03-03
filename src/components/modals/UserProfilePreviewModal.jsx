@@ -2,23 +2,54 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { shopItems } from '../shopView/shopItems';
 import { getTierProgress } from '../../constants/tiers';
 
-function UserProfilePreviewModal({ isOpen, onClose, userId, username }) {
+function UserProfilePreviewModal({ isOpen, onClose, userId, username, anchorPosition }) {
   const [activeItems, setActiveItems] = useState({ image: null, frame: null, bg: null });
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!isOpen || !userId) return;
+    if (!isOpen || (!userId && !username)) return;
 
     const fetchProfile = async () => {
       setLoading(true);
       try {
         const viewerUsername = localStorage.getItem('username') || '';
+        let resolvedUserId = Number(userId) || null;
+
+        if (!resolvedUserId && username) {
+          const usersRes = await fetch('/api/users');
+          const usersPayload = await usersRes.json().catch(() => ({}));
+          const matched = Array.isArray(usersPayload?.users)
+            ? usersPayload.users.find((user) => String(user?.username || '') === String(username))
+            : null;
+          const candidateId = Number(matched?.userId ?? matched?.user_id);
+          if (candidateId && !Number.isNaN(candidateId)) {
+            resolvedUserId = candidateId;
+          }
+        }
+
+        if (!resolvedUserId) {
+          setUserData({
+            username: username || '알 수 없는 사용자',
+            score: 0,
+            points: 0,
+            posts: 0,
+            comments: 0,
+            joinDate: '-',
+            items: 0,
+            challenges: '0개',
+            currentRank: '-',
+            rank: '-',
+          });
+          setActiveItems({ image: null, frame: null, bg: null });
+          return;
+        }
+
         const [itemsRes, statsRes, usersRes] = await Promise.all([
-          fetch(`/api/user/items?userId=${userId}`, {
+          fetch(`/api/user/items?userId=${resolvedUserId}`, {
             headers: { 'X-Username': encodeURIComponent(viewerUsername) }
           }),
-          fetch(`/api/user/stats?userId=${userId}&t=${Date.now()}`, {
+          fetch(`/api/user/stats?userId=${resolvedUserId}&t=${Date.now()}`, {
             headers: { 'X-Username': encodeURIComponent(viewerUsername) }
           }),
           fetch('/api/users')
@@ -56,7 +87,7 @@ function UserProfilePreviewModal({ isOpen, onClose, userId, username }) {
               .sort((a, b) => b.score - a.score)
           : [];
 
-        const rankIndex = rankedUsers.findIndex((user) => Number(user.userId) === Number(userId));
+        const rankIndex = rankedUsers.findIndex((user) => Number(user.userId) === Number(resolvedUserId));
         const currentRank = rankIndex >= 0 ? `${rankIndex + 1}위` : '-';
 
         setUserData({
@@ -109,11 +140,28 @@ function UserProfilePreviewModal({ isOpen, onClose, userId, username }) {
 
   const formatPoints = (value) => `${(Number(value) || 0).toLocaleString('ko-KR')} P`;
 
+  const modalPositionStyle = useMemo(() => {
+    if (!anchorPosition) return {};
+    const modalWidth = 550;
+    const margin = 12;
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const leftBase = Math.round(anchorPosition.right + margin);
+    const left = Math.max(16, Math.min(leftBase, viewportWidth - modalWidth - 16));
+    const topBase = Math.round(anchorPosition.top);
+    const top = Math.max(16, Math.min(topBase, viewportHeight - 120));
+    return {
+      left: `${left}px`,
+      top: `${top}px`,
+      transform: 'none',
+    };
+  }, [anchorPosition]);
+
   if (!isOpen) return null;
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="mypage-modal" onClick={(event) => event.stopPropagation()}>
+      <div className="mypage-modal" onClick={(event) => event.stopPropagation()} style={modalPositionStyle}>
         <button className="modal-close-btn" onClick={onClose}>×</button>
 
         <div className="mypage-header">

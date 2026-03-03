@@ -208,7 +208,7 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
     const [members, setMembers] = useState([]);
     const [finalAction, setFinalAction] = useState('leave');
     const [leaveAlertMessage, setLeaveAlertMessage] = useState('챌린지를 완전히 포기했습니다.');
-    const [profileModal, setProfileModal] = useState({ open: false, userId: null, username: '' });
+    const [profileModal, setProfileModal] = useState({ open: false, userId: null, username: '', anchorPosition: null });
     const timerInitializedForChallengeRef = useRef(null);
 
     // props로 받은 challenge가 변경되면 state 업데이트
@@ -994,16 +994,18 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
                                             className="member-avatar"
                                             role="button"
                                             tabIndex={0}
-                                            onClick={() => {
+                                            onClick={(e) => {
                                                 const userId = Number(m.user_id);
                                                 if (!userId || Number.isNaN(userId)) return;
-                                                setProfileModal({ open: true, userId, username: m.username || '' });
+                                                const rect = e.currentTarget.getBoundingClientRect();
+                                                setProfileModal({ open: true, userId, username: m.username || '', anchorPosition: rect });
                                             }}
                                             onKeyDown={(e) => {
                                                 if (e.key !== 'Enter') return;
                                                 const userId = Number(m.user_id);
                                                 if (!userId || Number.isNaN(userId)) return;
-                                                setProfileModal({ open: true, userId, username: m.username || '' });
+                                                const rect = e.currentTarget.getBoundingClientRect();
+                                                setProfileModal({ open: true, userId, username: m.username || '', anchorPosition: rect });
                                             }}
                                             style={{ cursor: 'pointer' }}
                                         >
@@ -1177,7 +1179,8 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
                 isOpen={profileModal.open}
                 userId={profileModal.userId}
                 username={profileModal.username}
-                onClose={() => setProfileModal({ open: false, userId: null, username: '' })}
+                anchorPosition={profileModal.anchorPosition}
+                onClose={() => setProfileModal({ open: false, userId: null, username: '', anchorPosition: null })}
             />
         </>
     );

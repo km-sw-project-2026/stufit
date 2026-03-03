@@ -314,9 +314,9 @@ function PostDetailView({ post, onClose, onDeletePost, onEditPost, onUpdatePostS
                             className="pd-user-info"
                             role="button"
                             tabIndex={0}
-                            onClick={() => onOpenUserProfile && onOpenUserProfile(postState?.userId, postState?.author)}
+                            onClick={(e) => onOpenUserProfile && onOpenUserProfile(postState?.userId, postState?.author, e)}
                             onKeyDown={(e) => {
-                                if (e.key === 'Enter' && onOpenUserProfile) onOpenUserProfile(postState?.userId, postState?.author);
+                                if (e.key === 'Enter' && onOpenUserProfile) onOpenUserProfile(postState?.userId, postState?.author, e);
                             }}
                             style={{ cursor: 'pointer' }}
                         >
@@ -390,9 +390,9 @@ function PostDetailView({ post, onClose, onDeletePost, onEditPost, onUpdatePostS
                                             className="comment-user-section"
                                             role="button"
                                             tabIndex={0}
-                                            onClick={() => onOpenUserProfile && onOpenUserProfile(c.userId, c.author)}
+                                            onClick={(e) => onOpenUserProfile && onOpenUserProfile(c.userId, c.author, e)}
                                             onKeyDown={(e) => {
-                                                if (e.key === 'Enter' && onOpenUserProfile) onOpenUserProfile(c.userId, c.author);
+                                                if (e.key === 'Enter' && onOpenUserProfile) onOpenUserProfile(c.userId, c.author, e);
                                             }}
                                             style={{ cursor: 'pointer' }}
                                         >

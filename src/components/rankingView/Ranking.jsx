@@ -11,12 +11,12 @@ function Ranking() {
     const [rankings, setRankings] = useState([]); 
     const [searchTerm, setSearchTerm] = useState(""); 
     const [searchResult, setSearchResult] = useState(null); 
-    const [profileModal, setProfileModal] = useState({ open: false, userId: null, username: '' });
+    const [profileModal, setProfileModal] = useState({ open: false, userId: null, username: '', anchorPosition: null });
 
-    const openUserProfile = (user) => {
+    const openUserProfile = (user, event) => {
         const resolvedUserId = Number(user?.userId);
-        if (!resolvedUserId || Number.isNaN(resolvedUserId)) return;
-        setProfileModal({ open: true, userId: resolvedUserId, username: user?.username || '' });
+        const rect = event?.currentTarget?.getBoundingClientRect ? event.currentTarget.getBoundingClientRect() : null;
+        setProfileModal({ open: true, userId: Number.isNaN(resolvedUserId) ? null : resolvedUserId, username: user?.username || '', anchorPosition: rect });
     };
 
     // Fetch users from API (fallback to dummyData)
@@ -86,7 +86,7 @@ function Ranking() {
                     <div className="rank-icon-wrapper">
                         <img src="/img/rank2.png" alt="2위" className="rank-img" />
                     </div>
-                    <div className="rank-user-name" style={{ cursor: top2?.userId ? 'pointer' : 'default' }} onClick={() => openUserProfile(top2)}>{top2?.username || "데이터 없음"}</div>
+                    <div className="rank-user-name" style={{ cursor: 'pointer' }} onClick={(e) => openUserProfile(top2, e)}>{top2?.username || "데이터 없음"}</div>
                     <div className="rank-user-label">점수</div>
                     <div className="rank-user-score">{top2?.score.toLocaleString() || 0}</div>
                     
@@ -97,7 +97,7 @@ function Ranking() {
                     <div className="rank-icon-wrapper">
                         <img src="/img/rank1.png" alt="1위" className="rank-img" />
                     </div>
-                    <div className="rank-user-name" style={{ cursor: top1?.userId ? 'pointer' : 'default' }} onClick={() => openUserProfile(top1)}>{top1?.username || "데이터 없음"}</div>
+                    <div className="rank-user-name" style={{ cursor: 'pointer' }} onClick={(e) => openUserProfile(top1, e)}>{top1?.username || "데이터 없음"}</div>
                     <div className="rank-user-label">점수</div>
                     <div className="rank-user-score">{top1?.score.toLocaleString() || 0}</div>
                     
@@ -108,7 +108,7 @@ function Ranking() {
                     <div className="rank-icon-wrapper">
                         <img src="/img/rank3.png" alt="3위" className="rank-img" />
                     </div>
-                    <div className="rank-user-name" style={{ cursor: top3?.userId ? 'pointer' : 'default' }} onClick={() => openUserProfile(top3)}>{top3?.username || "데이터 없음"}</div>
+                    <div className="rank-user-name" style={{ cursor: 'pointer' }} onClick={(e) => openUserProfile(top3, e)}>{top3?.username || "데이터 없음"}</div>
                     <div className="rank-user-label">점수</div>
                     <div className="rank-user-score">{top3?.score.toLocaleString() || 0}</div>
                     
@@ -139,7 +139,7 @@ function Ranking() {
                         <div className="ranking-list-item" style={{ border: '2px solid #005a44' }}>
                             <div className="r-left">
                                 <span className="r-rank">{rankings.indexOf(searchResult) + 1}</span>
-                                <span className="r-name" style={{ cursor: searchResult?.userId ? 'pointer' : 'default' }} onClick={() => openUserProfile(searchResult)}>{searchResult.username}</span>
+                                <span className="r-name" style={{ cursor: 'pointer' }} onClick={(e) => openUserProfile(searchResult, e)}>{searchResult.username}</span>
                             </div>
                             <div className="r-right">
                                 <span className="r-label">점수</span>
@@ -152,7 +152,7 @@ function Ranking() {
                             <div key={user.id} className="ranking-list-item">
                                 <div className="r-left">
                                     <span className="r-rank">{index + 4}</span>
-                                    <span className="r-name" style={{ cursor: user?.userId ? 'pointer' : 'default' }} onClick={() => openUserProfile(user)}>{user.username}</span>
+                                    <span className="r-name" style={{ cursor: 'pointer' }} onClick={(e) => openUserProfile(user, e)}>{user.username}</span>
                                 </div>
                                 <div className="r-right">
                                     <span className="r-label">점수</span>
@@ -170,7 +170,8 @@ function Ranking() {
                 isOpen={profileModal.open}
                 userId={profileModal.userId}
                 username={profileModal.username}
-                onClose={() => setProfileModal({ open: false, userId: null, username: '' })}
+                anchorPosition={profileModal.anchorPosition}
+                onClose={() => setProfileModal({ open: false, userId: null, username: '', anchorPosition: null })}
             />
         </div>
     );
