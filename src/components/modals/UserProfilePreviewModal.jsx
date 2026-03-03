@@ -140,7 +140,10 @@ function UserProfilePreviewModal({ isOpen, onClose, userId, username }) {
                 alt="frame"
                 className="profile-frame-overlay"
                 style={{
+                  position: 'absolute',
                   display: 'block',
+                  objectFit: 'contain',
+                  transformOrigin: 'center center',
                   width: frameWidth,
                   height: frameWidth,
                   left: `-${frameLeftOffset.toFixed(2)}%`,
