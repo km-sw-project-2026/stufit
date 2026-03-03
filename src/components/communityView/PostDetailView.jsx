@@ -323,7 +323,7 @@ function PostDetailView({ post, onClose, onDeletePost, onEditPost, onUpdatePostS
                             <div className="pd-avatar"></div>
                             <div className="pd-user-text">
                                 <span className="pd-username">{postState?.author || '작성자'}</span>
-                                <span className="pd-date-view">{postState?.date || ''} 조회수 0</span>
+                                <span className="pd-date-view">{postState?.date || ''}</span>
                             </div>
                         </div>
                         <div className="pd-actions">

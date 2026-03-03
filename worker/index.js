@@ -34,6 +34,7 @@ import * as progress from '../functions/api/challenges/[id]/progress';
 import * as complete from '../functions/api/challenges/[id]/complete';
 import * as scores from '../functions/api/challenges/[id]/scores';
 import * as rewards from '../functions/api/challenges/[id]/rewards';
+import * as miniGame from '../functions/api/challenges/[id]/minigame';
 
 import challengeEdit from '../functions/api/challenges/[id]/edit';
 import challengeResult from '../functions/api/challenges/[id]/result';
@@ -506,6 +507,18 @@ export default {
 
           case 'join':
             return challengeJoin(request, { env, params: { id }, userId });
+
+          case 'minigame':
+            if (request.method === 'GET') {
+              return miniGame.onRequestGet({ request, env, params: { id }, userId });
+            }
+            if (request.method === 'POST') {
+              return miniGame.onRequestPost({ request, env, params: { id }, userId });
+            }
+            if (request.method === 'PATCH') {
+              return miniGame.onRequestPatch({ request, env, params: { id }, userId });
+            }
+            return new Response(JSON.stringify({ message: 'Method Not Allowed' }), { status: 405, headers: { 'Content-Type': 'application/json' } });
 
           default:
             return new Response('Not Found', { status: 404 });

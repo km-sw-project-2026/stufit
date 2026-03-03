@@ -2140,7 +2140,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         pdTitle.textContent = post.title;
         pdUsername.textContent = post.user;
-        pdDateView.textContent = `${post.date || ''} | 조회수 ${post.views || 0}`;
+        pdDateView.textContent = `${post.date || ''}`;
         pdContent.textContent = post.content;
         
         // Update stats
