@@ -57,50 +57,41 @@ const resolveTotalDays = (challenge: any) => {
   return categoryDays[challenge?.category] || 30;
 };
 
+const jsonRes = (data: any, status = 200) =>
+  new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });
+
 export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, userId }) => {
+  // 모든 처리를 하나의 try/catch로 감싸 D1이 예상치 못한 예외를 던져도
+  // 항상 JSON 응답이 반환되도록 합니다.
+  try {
   if (request.method !== 'POST') {
-    return new Response(JSON.stringify({ message: 'Method Not Allowed' }), {
-      status: 405,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return jsonRes({ message: 'Method Not Allowed' }, 405);
   }
 
   if (!env?.D1_DB) {
-    return new Response(JSON.stringify({ message: '서버 설정 오류입니다.' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return jsonRes({ message: '서버 설정 오류입니다.' }, 500);
   }
 
   if (!userId) {
-    return new Response(JSON.stringify({ message: '로그인이 필요합니다.' }), {
-      status: 401,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return jsonRes({ message: '로그인이 필요합니다.' }, 401);
   }
 
   const challengeId = Number(params?.id);
   if (!challengeId || Number.isNaN(challengeId)) {
-    return new Response(JSON.stringify({ message: '유효하지 않은 챌린지입니다.' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return jsonRes({ message: '유효하지 않은 챌린지입니다.' }, 400);
   }
 
   let body: any = {};
   try {
     body = await request.json();
   } catch (err) {
-    return new Response(JSON.stringify({ message: '요청 본문이 유효하지 않습니다.' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return jsonRes({ message: '요청 본문이 유효하지 않습니다.' }, 400);
   }
 
   const submitScore = body?.score !== undefined ? Number(body.score) : null;
-
   const action = body?.action === 'giveup' ? 'giveup' : 'complete';
 
+  // ── 스키마 체크 ──────────────────────────────────
   let hasBetPointsColumn = false;
   try {
     const challengeInfo = await env.D1_DB.prepare("PRAGMA table_info('challenges')").all();
@@ -110,32 +101,40 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
     console.warn('[rewards] challenges schema check failed:', err);
   }
 
-  const challenge = await env.D1_DB
-    .prepare(
-      hasBetPointsColumn
-        ? 'SELECT challenge_id, created_by_user_id, category, type, mode, created_at, start_date, end_date, duration, bet_points FROM challenges WHERE challenge_id = ?'
-        : 'SELECT challenge_id, created_by_user_id, category, type, mode, created_at, start_date, end_date, duration FROM challenges WHERE challenge_id = ?'
-    )
-    .bind(challengeId)
-    .first();
-
-  if (!challenge) {
-    return new Response(JSON.stringify({ message: '챌린지를 찾을 수 없습니다.' }), {
-      status: 404,
-      headers: { 'Content-Type': 'application/json' }
-    });
+  // ── 챌린지 조회 ──────────────────────────────────
+  let challenge: any = null;
+  try {
+    challenge = await env.D1_DB
+      .prepare(
+        hasBetPointsColumn
+          ? 'SELECT challenge_id, created_by_user_id, category, type, mode, created_at, start_date, end_date, duration, bet_points FROM challenges WHERE challenge_id = ?'
+          : 'SELECT challenge_id, created_by_user_id, category, type, mode, created_at, start_date, end_date, duration FROM challenges WHERE challenge_id = ?'
+      )
+      .bind(challengeId)
+      .first();
+  } catch (err: any) {
+    console.error('[rewards] challenge query failed:', err?.message || err);
+    return jsonRes({ message: '챌린지 조회 중 오류가 발생했습니다.', error: String(err?.message || err) }, 500);
   }
 
-  const isMember = await env.D1_DB
-    .prepare('SELECT 1 FROM challenge_members WHERE challenge_id = ? AND user_id = ?')
-    .bind(challengeId, userId)
-    .first();
+  if (!challenge) {
+    return jsonRes({ message: '챌린지를 찾을 수 없습니다.' }, 404);
+  }
+
+  // ── 멤버 여부 확인 ────────────────────────────────
+  let isMember: any = null;
+  try {
+    isMember = await env.D1_DB
+      .prepare('SELECT 1 FROM challenge_members WHERE challenge_id = ? AND user_id = ?')
+      .bind(challengeId, userId)
+      .first();
+  } catch (err: any) {
+    console.error('[rewards] isMember query failed:', err?.message || err);
+    return jsonRes({ message: '멤버 확인 중 오류가 발생했습니다.', error: String(err?.message || err) }, 500);
+  }
 
   if (!isMember) {
-    return new Response(JSON.stringify({ message: '참여자만 보상을 받을 수 있습니다.' }), {
-      status: 403,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return jsonRes({ message: '참여자만 보상을 받을 수 있습니다.' }, 403);
   }
 
   const mode = resolveMode(challenge);
@@ -236,26 +235,19 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
   }
 
   if (Number(challenge.created_by_user_id) !== userId) {
-    return new Response(JSON.stringify({ message: '방장만 완료 처리가 가능합니다.' }), {
-      status: 403,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return jsonRes({ message: '방장만 완료 처리가 가능합니다.' }, 403);
   }
 
+  let members;
   try {
-    let members;
-    try {
-      members = await env.D1_DB
-        .prepare('SELECT u.user_id, u.username FROM challenge_members cm JOIN users u ON cm.user_id = u.user_id WHERE cm.challenge_id = ?')
-        .bind(challengeId)
-        .all();
-    } catch (err) {
-      console.warn('[rewards] members query failed:', err);
-      return new Response(JSON.stringify({ message: '챌린지 멤버 조회에 실패했습니다.' }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      });
-    }
+    members = await env.D1_DB
+      .prepare('SELECT u.user_id, u.username FROM challenge_members cm JOIN users u ON cm.user_id = u.user_id WHERE cm.challenge_id = ?')
+      .bind(challengeId)
+      .all();
+  } catch (err: any) {
+    console.warn('[rewards] members query failed:', err?.message || err);
+    return jsonRes({ message: '챌린지 멤버 조회에 실패했습니다.', error: String(err?.message || err) }, 500);
+  }
 
     const memberList = Array.isArray(members?.results) ? members.results : [];
     if (memberList.length === 0) {
