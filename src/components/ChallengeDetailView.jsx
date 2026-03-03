@@ -4,6 +4,7 @@ import HostGiveUpModal from "./modal/HostGiveUpModal";
 import FinalGiveUpModal from "./modal/FinalGiveUpModal";
 import CustomAlertModal from "./modal/CustomAlertModal";
 import ChallengeOverModal from "./modals/ChallengeOverModal";
+import UserProfilePreviewModal from "./modals/UserProfilePreviewModal";
 
 // 주간 제출 현황 컴포넌트
 function WeeklySubmissionStatus({ challengeId, refreshKey }) {
@@ -207,6 +208,7 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
     const [members, setMembers] = useState([]);
     const [finalAction, setFinalAction] = useState('leave');
     const [leaveAlertMessage, setLeaveAlertMessage] = useState('챌린지를 완전히 포기했습니다.');
+    const [profileModal, setProfileModal] = useState({ open: false, userId: null, username: '' });
     const timerInitializedForChallengeRef = useRef(null);
 
     // props로 받은 challenge가 변경되면 state 업데이트
@@ -988,7 +990,23 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
                                     })
                                     .map((m) => (
                                     <div key={m.user_id} className="member-item">
-                                        <div className="member-avatar">
+                                        <div
+                                            className="member-avatar"
+                                            role="button"
+                                            tabIndex={0}
+                                            onClick={() => {
+                                                const userId = Number(m.user_id);
+                                                if (!userId || Number.isNaN(userId)) return;
+                                                setProfileModal({ open: true, userId, username: m.username || '' });
+                                            }}
+                                            onKeyDown={(e) => {
+                                                if (e.key !== 'Enter') return;
+                                                const userId = Number(m.user_id);
+                                                if (!userId || Number.isNaN(userId)) return;
+                                                setProfileModal({ open: true, userId, username: m.username || '' });
+                                            }}
+                                            style={{ cursor: 'pointer' }}
+                                        >
                                             <img src="/img/Profile.png" alt="Profile" />
                                         </div>
                                         <div className="member-info">
@@ -1149,6 +1167,12 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
                         throw new Error(err?.message || '세션 생성 실패');
                     }
                 }}
+            />
+            <UserProfilePreviewModal
+                isOpen={profileModal.open}
+                userId={profileModal.userId}
+                username={profileModal.username}
+                onClose={() => setProfileModal({ open: false, userId: null, username: '' })}
             />
         </>
     );

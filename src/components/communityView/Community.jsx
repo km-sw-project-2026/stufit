@@ -972,6 +972,7 @@ import Popular from './Popular';
 import Tips from './Tips';
 import DataSharing from './DataSharing';
 import MyPost from './MyPost';
+import UserProfilePreviewModal from '../modals/UserProfilePreviewModal';
 
 function Community() {
     const [isModalOpen, setModalOpen] = useState(false);
@@ -979,6 +980,7 @@ function Community() {
     const [currentCategory, setCurrentCategory] = useState('popular');
     const [isAlertOpen, setIsAlertOpen] = useState(false);
     const [alertMessage, setAlertMessage] = useState('');
+    const [profileModal, setProfileModal] = useState({ open: false, userId: null, username: '' });
 
     const showAlert = (msg) => {
         setAlertMessage(msg);
@@ -1014,6 +1016,7 @@ function Community() {
 
     const mapPost = (row) => ({
         id: row.post_id,
+        userId: Number(row.user_id) || null,
         title: row.title,
         content: row.content,
         author: row.username || '익명',
@@ -1141,6 +1144,10 @@ function Community() {
     const [selectedPost, setSelectedPost] = useState(null);
     const detailPostView = (post) => { setSelectedPost(post); setShowPostDetail(true); };
     const closeDetailView = () => { setShowPostDetail(false); setSelectedPost(null); };
+    const openUserProfile = (userId, username) => {
+        if (!userId) return;
+        setProfileModal({ open: true, userId: Number(userId), username: username || '' });
+    };
 
     const handleDeletePost = async (postId) => {
         const username = localStorage.getItem('username');
@@ -1178,10 +1185,10 @@ function Community() {
                 <div className="community-main">
                     {!showPostDetail ? (
                         <>
-                            {activeTab === 'popular' && <Popular posts={posts.popular} onOpenPost={detailPostView} onNewPost={() => newPost('popular')} onToggleLike={handleToggleLike} />}
-                            {activeTab === 'tips' && <Tips posts={posts.tips} onOpenPost={detailPostView} onNewPost={() => newPost('tips')} onToggleLike={handleToggleLike} />}
-                            {activeTab === 'data' && <DataSharing posts={posts.data} onOpenPost={detailPostView} onNewPost={() => newPost('data')} onToggleLike={handleToggleLike} />}
-                            {activeTab === 'mypost' && <MyPost posts={posts.mypost} onOpenPost={detailPostView} onNewPost={() => newPost('mypost')} onToggleLike={handleToggleLike} />}
+                            {activeTab === 'popular' && <Popular posts={posts.popular} onOpenPost={detailPostView} onNewPost={() => newPost('popular')} onToggleLike={handleToggleLike} onOpenUserProfile={openUserProfile} />}
+                            {activeTab === 'tips' && <Tips posts={posts.tips} onOpenPost={detailPostView} onNewPost={() => newPost('tips')} onToggleLike={handleToggleLike} onOpenUserProfile={openUserProfile} />}
+                            {activeTab === 'data' && <DataSharing posts={posts.data} onOpenPost={detailPostView} onNewPost={() => newPost('data')} onToggleLike={handleToggleLike} onOpenUserProfile={openUserProfile} />}
+                            {activeTab === 'mypost' && <MyPost posts={posts.mypost} onOpenPost={detailPostView} onNewPost={() => newPost('mypost')} onToggleLike={handleToggleLike} onOpenUserProfile={openUserProfile} />}
                         </>
                     ) : (
                         <PostDetailView 
@@ -1191,6 +1198,7 @@ function Community() {
                             onEditPost={handleEditPost}
                             onToggleLike={handleToggleLike}
                             onUpdatePostState={handleUpdatePostState}
+                            onOpenUserProfile={openUserProfile}
                         />
                     )}
                 </div>
@@ -1198,6 +1206,12 @@ function Community() {
             {isModalOpen && <CommunityRewardModal onClose={() => setModalOpen(false)} />}
             {isNewPostModalOpen && <NewPostModal category={currentCategory} onClose={() => setNewPostModalOpen(false)} onSubmit={handleAddPost} />}
             {isAlertOpen && <CustomAlertModal message={alertMessage} onClose={() => setIsAlertOpen(false)} />}
+            <UserProfilePreviewModal
+                isOpen={profileModal.open}
+                userId={profileModal.userId}
+                username={profileModal.username}
+                onClose={() => setProfileModal({ open: false, userId: null, username: '' })}
+            />
         </div>
     );
 }

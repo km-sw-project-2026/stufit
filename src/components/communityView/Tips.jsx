@@ -1,6 +1,6 @@
 import React from 'react';
 
-function Tips({ posts = [], onOpenPost, onNewPost, onToggleLike }) {
+function Tips({ posts = [], onOpenPost, onNewPost, onToggleLike, onOpenUserProfile }) {
     const handleLikeToggle = (e, postId) => {
         e.stopPropagation();
         if (onToggleLike) onToggleLike(postId);
@@ -19,7 +19,19 @@ function Tips({ posts = [], onOpenPost, onNewPost, onToggleLike }) {
                         return (
                             <div key={p.id} className="feed-card" role="button" tabIndex={0} onClick={() => onOpenPost && onOpenPost(p)} onKeyDown={(e) => { if (e.key === 'Enter') onOpenPost && onOpenPost(p); }}>
                                 <div className="feed-header">
-                                    <div className="feed-user-info">
+                                    <div
+                                        className="feed-user-info"
+                                        role="button"
+                                        tabIndex={0}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            if (onOpenUserProfile) onOpenUserProfile(p.userId, p.author);
+                                        }}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter' && onOpenUserProfile) onOpenUserProfile(p.userId, p.author);
+                                        }}
+                                        style={{ cursor: 'pointer' }}
+                                    >
                                         <div className="feed-user-avatar"></div>
                                         <span className="feed-user-name">{p.author}</span>
                                     </div>

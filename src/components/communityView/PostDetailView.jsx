@@ -11,7 +11,7 @@ function formatDate(d) {
     return dt.toLocaleString();
 }
 
-function PostDetailView({ post, onClose, onDeletePost, onEditPost, onUpdatePostState }) {
+function PostDetailView({ post, onClose, onDeletePost, onEditPost, onUpdatePostState, onOpenUserProfile }) {
     // ESC 키로 닫기
     useEffect(() => {
         const handler = (e) => {
@@ -51,6 +51,7 @@ function PostDetailView({ post, onClose, onDeletePost, onEditPost, onUpdatePostS
 
     const mapComment = (row) => ({
         id: row.comment_id,
+        userId: Number(row.user_id) || null,
         author: row.username || '익명',
         text: row.content,
         date: row.created_at,
@@ -309,7 +310,16 @@ function PostDetailView({ post, onClose, onDeletePost, onEditPost, onUpdatePostS
                     </div>
 
                     <div className="pd-meta-row" style={{border: 'none', padding: 0}}>
-                        <div className="pd-user-info">
+                        <div
+                            className="pd-user-info"
+                            role="button"
+                            tabIndex={0}
+                            onClick={() => onOpenUserProfile && onOpenUserProfile(postState?.userId, postState?.author)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' && onOpenUserProfile) onOpenUserProfile(postState?.userId, postState?.author);
+                            }}
+                            style={{ cursor: 'pointer' }}
+                        >
                             <div className="pd-avatar"></div>
                             <div className="pd-user-text">
                                 <span className="pd-username">{postState?.author || '작성자'}</span>
@@ -376,7 +386,16 @@ function PostDetailView({ post, onClose, onDeletePost, onEditPost, onUpdatePostS
                                 <div className="comment-avatar" aria-hidden />
                                 <div className="comment-content-wrapper">
                                     <div className="comment-top-row">
-                                        <div className="comment-user-section">
+                                        <div
+                                            className="comment-user-section"
+                                            role="button"
+                                            tabIndex={0}
+                                            onClick={() => onOpenUserProfile && onOpenUserProfile(c.userId, c.author)}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter' && onOpenUserProfile) onOpenUserProfile(c.userId, c.author);
+                                            }}
+                                            style={{ cursor: 'pointer' }}
+                                        >
                                             <span className="comment-author">{c.author}</span>
                                             <span className="comment-date">{formatDate(c.date)}</span>
                                         </div>

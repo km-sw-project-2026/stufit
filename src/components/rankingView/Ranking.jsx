@@ -3,6 +3,7 @@
 
 // 사람들의 데이터를 받은 후 (예시)
 import React, { useState, useEffect, useCallback } from 'react';
+import UserProfilePreviewModal from '../modals/UserProfilePreviewModal';
 
 function Ranking() {
     // 서버에서 사용자 목록을 불러옵니다 (Cloudflare D1의 `users` 테이블)
@@ -10,6 +11,13 @@ function Ranking() {
     const [rankings, setRankings] = useState([]); 
     const [searchTerm, setSearchTerm] = useState(""); 
     const [searchResult, setSearchResult] = useState(null); 
+    const [profileModal, setProfileModal] = useState({ open: false, userId: null, username: '' });
+
+    const openUserProfile = (user) => {
+        const resolvedUserId = Number(user?.userId);
+        if (!resolvedUserId || Number.isNaN(resolvedUserId)) return;
+        setProfileModal({ open: true, userId: resolvedUserId, username: user?.username || '' });
+    };
 
     // Fetch users from API (fallback to dummyData)
     const fetchUsers = useCallback(async (opts = {}) => {
@@ -22,7 +30,7 @@ function Ranking() {
                 if (!cancelled) setRankings([]);
                 return;
             }
-            const users = payload.users.map((u) => ({ id: u.userId || u.username, username: u.username, score: Number(u.score) || 0 }));
+            const users = payload.users.map((u) => ({ id: u.userId || u.username, userId: Number(u.userId) || null, username: u.username, score: Number(u.score) || 0 }));
             if (!cancelled) setRankings(users);
         } catch (e) {
             console.error('Error fetching /api/users', e);
@@ -78,7 +86,7 @@ function Ranking() {
                     <div className="rank-icon-wrapper">
                         <img src="/img/rank2.png" alt="2위" className="rank-img" />
                     </div>
-                    <div className="rank-user-name">{top2?.username || "데이터 없음"}</div>
+                    <div className="rank-user-name" style={{ cursor: top2?.userId ? 'pointer' : 'default' }} onClick={() => openUserProfile(top2)}>{top2?.username || "데이터 없음"}</div>
                     <div className="rank-user-label">점수</div>
                     <div className="rank-user-score">{top2?.score.toLocaleString() || 0}</div>
                     
@@ -89,7 +97,7 @@ function Ranking() {
                     <div className="rank-icon-wrapper">
                         <img src="/img/rank1.png" alt="1위" className="rank-img" />
                     </div>
-                    <div className="rank-user-name">{top1?.username || "데이터 없음"}</div>
+                    <div className="rank-user-name" style={{ cursor: top1?.userId ? 'pointer' : 'default' }} onClick={() => openUserProfile(top1)}>{top1?.username || "데이터 없음"}</div>
                     <div className="rank-user-label">점수</div>
                     <div className="rank-user-score">{top1?.score.toLocaleString() || 0}</div>
                     
@@ -100,7 +108,7 @@ function Ranking() {
                     <div className="rank-icon-wrapper">
                         <img src="/img/rank3.png" alt="3위" className="rank-img" />
                     </div>
-                    <div className="rank-user-name">{top3?.username || "데이터 없음"}</div>
+                    <div className="rank-user-name" style={{ cursor: top3?.userId ? 'pointer' : 'default' }} onClick={() => openUserProfile(top3)}>{top3?.username || "데이터 없음"}</div>
                     <div className="rank-user-label">점수</div>
                     <div className="rank-user-score">{top3?.score.toLocaleString() || 0}</div>
                     
@@ -131,7 +139,7 @@ function Ranking() {
                         <div className="ranking-list-item" style={{ border: '2px solid #005a44' }}>
                             <div className="r-left">
                                 <span className="r-rank">{rankings.indexOf(searchResult) + 1}</span>
-                                <span className="r-name">{searchResult.username}</span>
+                                <span className="r-name" style={{ cursor: searchResult?.userId ? 'pointer' : 'default' }} onClick={() => openUserProfile(searchResult)}>{searchResult.username}</span>
                             </div>
                             <div className="r-right">
                                 <span className="r-label">점수</span>
@@ -144,7 +152,7 @@ function Ranking() {
                             <div key={user.id} className="ranking-list-item">
                                 <div className="r-left">
                                     <span className="r-rank">{index + 4}</span>
-                                    <span className="r-name">{user.username}</span>
+                                    <span className="r-name" style={{ cursor: user?.userId ? 'pointer' : 'default' }} onClick={() => openUserProfile(user)}>{user.username}</span>
                                 </div>
                                 <div className="r-right">
                                     <span className="r-label">점수</span>
@@ -157,6 +165,13 @@ function Ranking() {
                 </div>
                 <div className="custom-scroll-track"></div>
             </div>
+
+            <UserProfilePreviewModal
+                isOpen={profileModal.open}
+                userId={profileModal.userId}
+                username={profileModal.username}
+                onClose={() => setProfileModal({ open: false, userId: null, username: '' })}
+            />
         </div>
     );
 }

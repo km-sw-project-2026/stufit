@@ -112,7 +112,7 @@
 
 import React from 'react';
 
-function MyPost({ posts = [], onOpenPost, onNewPost, onToggleLike }) {
+function MyPost({ posts = [], onOpenPost, onNewPost, onToggleLike, onOpenUserProfile }) {
     // 1. localStorage 안전하게 가져오기
     const username = typeof window !== 'undefined' ? localStorage.getItem('username') : null;
 
@@ -167,7 +167,19 @@ function MyPost({ posts = [], onOpenPost, onNewPost, onToggleLike }) {
                         posts.map((p) => (
                             <div key={p.id} className="feed-card" onClick={() => onOpenPost && onOpenPost(p)} style={{ cursor: 'pointer', marginBottom: '15px' }}>
                                 <div className="feed-header">
-                                    <div className="feed-user-info">
+                                    <div
+                                        className="feed-user-info"
+                                        role="button"
+                                        tabIndex={0}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            if (onOpenUserProfile) onOpenUserProfile(p.userId, p.author);
+                                        }}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter' && onOpenUserProfile) onOpenUserProfile(p.userId, p.author);
+                                        }}
+                                        style={{ cursor: 'pointer' }}
+                                    >
                                         <div className="feed-user-avatar"></div>
                                         <span className="feed-user-name">{p.author}</span>
                                     </div>
