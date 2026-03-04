@@ -35,8 +35,20 @@ function CreateChallengeModal({ onClose }) {
   const handleSubmit = () => {
     // Basic validation
     const durationNum = Number(formData.duration) || 0;
-    if (!formData.name || !formData.category || !durationNum || !formData.goal) {
-      showAlert('필수 항목을 모두 입력해주세요.');
+    let errorMessage = '';
+
+    if (!formData.name) {
+      errorMessage = '챌린지 이름을 입력해주세요.';
+    } else if (!formData.category) {
+      errorMessage = '카테고리를 선택해주세요.';
+    } else if (!durationNum) {
+      errorMessage = '기간을 올바르게 입력해주세요.';
+    } else if (!formData.goal) {
+      errorMessage = '목표를 입력해주세요.';
+    }
+
+    if (errorMessage) {
+      showAlert(errorMessage);
       return;
     }
 
@@ -60,11 +72,11 @@ function CreateChallengeModal({ onClose }) {
         const res = await fetch('/api/challenges', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'X-Username': encodeURIComponent(username) },
-            body: JSON.stringify({
+          body: JSON.stringify({
             challengeName: formData.name,
             category: formData.category.toUpperCase(),
             maxParticipants: 10,
-              endDate: endDateStr,
+            endDate: endDateStr,
             duration: durationNum,
             goalDescription: formData.goal,
             inviteCode: formData.code || null
