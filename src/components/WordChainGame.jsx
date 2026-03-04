@@ -2,7 +2,13 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 
 /** AI 1:1 끝말잇기 미니게임 */
-const TURN_SECONDS = 15;
+const START_TURN_SECONDS = 15;
+const MIN_TURN_SECONDS = 2;
+
+const getTurnSecondsByWordCount = (count = 0) => {
+  const safeCount = Number(count) || 0;
+  return Math.max(MIN_TURN_SECONDS, START_TURN_SECONDS - safeCount);
+};
 
 // ──────────────────────────────────────────────────────
 // 스타일 상수
@@ -52,7 +58,8 @@ export default function WordChainGame() {
 
   const [inputWord, setInputWord] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
-  const [timeLeft, setTimeLeft] = useState(TURN_SECONDS);
+  const [timeLeft, setTimeLeft] = useState(START_TURN_SECONDS);
+  const [turnSeconds, setTurnSeconds] = useState(START_TURN_SECONDS);
   const [submitting, setSubmitting] = useState(false);
   const [aiThinking, setAiThinking] = useState(false);
 
@@ -90,7 +97,7 @@ export default function WordChainGame() {
           setPhase('finished');
         } else {
           setPhase('playing');
-          startTimer();
+          startTimer(s.words_count || 0);
         }
       } else {
         setPhase('lobby');
@@ -105,12 +112,15 @@ export default function WordChainGame() {
   // ── 타이머 ─────────────────────────────────────────
   const stopTimer = () => clearInterval(timerRef.current);
 
-  const startTimer = () => {
+  const startTimer = (wordsCountForTurn = wordsCount) => {
     stopTimer();
+    const limit = getTurnSecondsByWordCount(wordsCountForTurn);
+    setTurnSeconds(limit);
+    setTimeLeft(limit);
     turnStartRef.current = Date.now();
     const tick = () => {
       const elapsed = Math.floor((Date.now() - turnStartRef.current) / 1000);
-      const left = Math.max(0, TURN_SECONDS - elapsed);
+      const left = Math.max(0, limit - elapsed);
       setTimeLeft(left);
       if (left <= 0) { stopTimer(); handleTimeout(); }
     };
@@ -178,7 +188,7 @@ export default function WordChainGame() {
       setInputWord('');
       setErrorMsg('');
       setPhase('playing');
-      startTimer();
+      startTimer(0);
       setTimeout(() => inputRef.current?.focus(), 100);
     } catch { alert('네트워크 오류'); setPhase('lobby'); }
   };
@@ -205,7 +215,7 @@ export default function WordChainGame() {
       if (!res.ok) {
         setErrorMsg(data?.message || '잘못된 단어입니다.');
         setSubmitting(false);
-        startTimer();
+        startTimer(wordsCount);
         return;
       }
 
@@ -221,13 +231,13 @@ export default function WordChainGame() {
         stopTimer();
         await refreshResults(data.result);
       } else {
-        startTimer();
+        startTimer(data.wordsCount || 0);
         setTimeout(() => inputRef.current?.focus(), 50);
       }
     } catch {
       setAiThinking(false);
       setErrorMsg('네트워크 오류');
-      startTimer();
+      startTimer(wordsCount);
     } finally {
       setSubmitting(false);
     }
@@ -295,7 +305,7 @@ export default function WordChainGame() {
             <p style={{ margin: '0 0 4px', fontWeight: 700, color: '#7a6b00' }}>📋 게임 규칙</p>
             <ul style={{ margin: 0, paddingLeft: '18px' }}>
               <li>이전 단어의 마지막 글자로 시작하는 단어를 입력하세요.</li>
-              <li>제한 시간: <strong>{TURN_SECONDS}초</strong> — 초과 시 자동 패배</li>
+              <li>제한 시간: <strong>{START_TURN_SECONDS}초 → 최소 {MIN_TURN_SECONDS}초</strong> (턴마다 점점 감소) — 초과 시 자동 패배</li>
               <li><strong>한국어 위키백과 표제어</strong>가 아닌 단어 / 이미 사용한 단어는 인정되지 않습니다.</li>
               <li>AI가 응답하지 못하면 <strong>한방단어</strong> — 즉시 승리!</li>
             </ul>
@@ -349,7 +359,7 @@ export default function WordChainGame() {
   // ─── 게임 진행 ───────────────────────────────────────
   if (phase === 'playing') {
     const requiredChar = lastWord ? lastWord[lastWord.length - 1] : null;
-    const timerPct = (timeLeft / TURN_SECONDS) * 100;
+    const timerPct = turnSeconds > 0 ? (timeLeft / turnSeconds) * 100 : 0;
     const timerColor = timeLeft <= 5 ? '#e74c3c' : timeLeft <= 10 ? '#e67e22' : '#1d8c66';
 
     return (
@@ -375,7 +385,7 @@ export default function WordChainGame() {
               }} />
             </div>
             <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: timerColor, fontWeight: timerPct <= 33 ? 700 : 400, textAlign: 'right' }}>
-              {timeLeft}초
+              {timeLeft}초 / {turnSeconds}초
             </p>
           </div>
 
@@ -462,7 +472,6 @@ export default function WordChainGame() {
   }
 
   // ─── 완료 ────────────────────────────────────────────
-  const resultEmoji = result === 'win' ? '🏆' : result === 'timeout' ? '⏱️' : '😢';
   const resultTitle = result === 'win' ? 'AI 격파! 승리!' : result === 'timeout' ? '시간 초과' : '게임 종료';
   const resultMsg = result === 'win'
     ? 'AI가 답하지 못했습니다. 한방단어 완성! +50점 획득!'
@@ -475,8 +484,7 @@ export default function WordChainGame() {
       <div style={{ ...cardStyle, textAlign: 'left' }}>
         {/* 결과 헤더 */}
         <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-          <img src="/img/logo.png" alt="stufit" style={{ height: '36px', marginBottom: '10px' }} />
-          <div style={{ fontSize: '2.8rem', marginBottom: '4px' }}>{resultEmoji}</div>
+          <img src="/img/logo.png" alt="stufit" style={{ height: '64px', marginBottom: '10px' }} />
           <h2 style={{ margin: '0 0 6px', fontSize: '1.5rem', fontWeight: 800, color: '#1d3d28' }}>{resultTitle}</h2>
           <p style={{ margin: 0, fontSize: '0.88rem', color: '#555' }}>{resultMsg}</p>
         </div>
@@ -542,7 +550,7 @@ export default function WordChainGame() {
                       <td style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 700, color: '#1d6b4f' }}>{r.score}</td>
                       <td style={{ padding: '8px 12px', textAlign: 'right', color: '#555' }}>{r.words_count}</td>
                       <td style={{ padding: '8px 12px', textAlign: 'center' }}>
-                        {r.result === 'win' ? '🏆' : r.result === 'timeout' ? '⏱️' : '😢'}
+                        {r.result === 'win' ? '승리' : r.result === 'timeout' ? '시간초과' : '패배'}
                       </td>
                     </tr>
                   ))}
@@ -558,7 +566,7 @@ export default function WordChainGame() {
         )}
 
         <button style={{ ...tealBtn, width: '100%', fontSize: '1rem', padding: '13px 0', borderRadius: '12px' }}
-          onClick={() => navigate(`/challenge/${challengeId}`)}>
+          onClick={() => navigate('/ongoing-challenges')}>
           챌린지로 돌아가기
         </button>
       </div>

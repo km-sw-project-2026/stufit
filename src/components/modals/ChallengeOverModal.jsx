@@ -151,7 +151,7 @@ function ChallengeOverModal({
             <div className="ranking-list">
               {rankingData.length === 0 ? (
                 <div className="ranking-item">
-                  <span className="name">혼자하는 챌린지는 점수와 포인트 제공이 제한됩니다! (악용 방지)</span>
+                  <span className="name">챌린지에 참여한 사용자가 없습니다.</span>
                 </div>
               ) : (
                 rankingData.map((item) => {
