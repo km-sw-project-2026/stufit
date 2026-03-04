@@ -218,13 +218,6 @@ async function tryFinalizeChallengeIfAllDone(db: any, challengeId: number) {
   const remainingPlayers = players.filter((name: string) => !finished.has(name));
   const allDone = remainingPlayers.length === 0;
 
-  if (allDone) {
-    await db
-      .prepare('UPDATE challenges SET deleted_at = CURRENT_TIMESTAMP WHERE challenge_id = ? AND deleted_at IS NULL')
-      .bind(challengeId)
-      .run();
-  }
-
   return { hasTie: true, allDone, remainingPlayers };
 }
 
