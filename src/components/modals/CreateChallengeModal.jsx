@@ -35,27 +35,14 @@ function CreateChallengeModal({ onClose }) {
   const handleSubmit = () => {
     // Basic validation
     const durationNum = Number(formData.duration) || 0;
-    let errorMessage = '';
 
-    if (!formData.name) {
-      errorMessage = '챌린지 이름을 입력해주세요.';
-    } else if (!formData.category) {
-      errorMessage = '카테고리를 선택해주세요.';
-    } else if (!durationNum) {
-      errorMessage = '기간을 올바르게 입력해주세요.';
-    } else if (!formData.goal) {
-      errorMessage = '목표를 입력해주세요.';
-    }
-
-    if (errorMessage) {
-      showAlert(errorMessage);
-      return;
+    if (!formData.name || !formData.category || !durationNum || !formData.goal) {
+      return; // 경고 메시지 제거
     }
 
     const username = localStorage.getItem('username');
     if (!username) {
-      showAlert('로그인이 필요합니다.');
-      return;
+      return; // 경고 메시지 제거
     }
 
     // Compute endDate using duration-1 semantics so N일 입력 시 정확히 N일이 보이도록 함
@@ -85,14 +72,12 @@ function CreateChallengeModal({ onClose }) {
 
         const json = await res.json();
         if (!res.ok) {
-          showAlert(json.message || '챌린지 생성에 실패했습니다.');
-          return;
+          return; // 경고 메시지 제거
         }
 
-        showAlert('챌린지가 성공적으로 생성되었습니다!', onClose);
+        onClose(); // 성공 시 모달 닫기
       } catch (e) {
         console.error('챌린지 생성 오류', e);
-        showAlert('서버 오류가 발생했습니다.');
       }
     })();
   };
