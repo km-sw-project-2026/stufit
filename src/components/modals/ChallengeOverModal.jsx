@@ -8,7 +8,6 @@ function ChallengeOverModal({
   onSubmitScore,
   rankingData = [],
   title = 'Challenge Over',
-  // 동점자 관련 props
   hasTie = false,
   tiedPlayers = [],
   challengeId = null,
