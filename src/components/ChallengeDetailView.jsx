@@ -247,6 +247,8 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
         })();
     }, [challenge?.challenge_id, challenge?.status, isChallengeOverOpen]);
 
+    useEffect(() => {
+        document.body.classList.add('modal-open');
         return () => document.body.classList.remove('modal-open');
     }, []);
 

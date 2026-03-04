@@ -1,11 +1,22 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { shopItems } from '../shopView/shopItems';
 import { getTierProgress } from '../../constants/tiers';
 
 function UserProfilePreviewModal({ isOpen, onClose, userId, username, anchorPosition }) {
+  const modalRef = useRef(null);
   const [activeItems, setActiveItems] = useState({ image: null, frame: null, bg: null });
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [measuredModalHeight, setMeasuredModalHeight] = useState(0);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const frame = requestAnimationFrame(() => {
+      const nextHeight = Number(modalRef.current?.offsetHeight) || 0;
+      if (nextHeight > 0) setMeasuredModalHeight(nextHeight);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [isOpen, loading, userData, activeItems]);
 
   useEffect(() => {
     if (!isOpen || (!userId && !username)) return;
@@ -146,22 +157,23 @@ function UserProfilePreviewModal({ isOpen, onClose, userId, username, anchorPosi
     const margin = 12;
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
+    const modalHeight = measuredModalHeight || 620;
     const leftBase = Math.round(anchorPosition.right + margin);
     const left = Math.max(16, Math.min(leftBase, viewportWidth - modalWidth - 16));
-    const topBase = Math.round(anchorPosition.top);
-    const top = Math.max(16, Math.min(topBase, viewportHeight - 120));
+    const clickCenterY = Math.round(anchorPosition.top + (anchorPosition.height || 0) / 2);
+    const top = Math.max(16, Math.min(clickCenterY - Math.round(modalHeight / 2), viewportHeight - modalHeight - 16));
     return {
       left: `${left}px`,
       top: `${top}px`,
       transform: 'none',
     };
-  }, [anchorPosition]);
+  }, [anchorPosition, measuredModalHeight]);
 
   if (!isOpen) return null;
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="mypage-modal" onClick={(event) => event.stopPropagation()} style={modalPositionStyle}>
+      <div ref={modalRef} className="mypage-modal" onClick={(event) => event.stopPropagation()} style={modalPositionStyle}>
         <button className="modal-close-btn" onClick={onClose}>×</button>
 
         <div className="mypage-header">
