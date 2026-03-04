@@ -296,7 +296,7 @@ export default function WordChainGame() {
             <ul style={{ margin: 0, paddingLeft: '18px' }}>
               <li>이전 단어의 마지막 글자로 시작하는 단어를 입력하세요.</li>
               <li>제한 시간: <strong>{TURN_SECONDS}초</strong> — 초과 시 자동 패배</li>
-              <li>사전에 없는 단어 / 이미 사용한 단어는 인정되지 않습니다.</li>
+              <li><strong>한국어 위키백과 표제어</strong>가 아닌 단어 / 이미 사용한 단어는 인정되지 않습니다.</li>
               <li>AI가 응답하지 못하면 <strong>한방단어</strong> — 즉시 승리!</li>
             </ul>
           </div>
