@@ -112,15 +112,18 @@ export default function WordChainGame() {
   // ── 타이머 ─────────────────────────────────────────
   const stopTimer = () => clearInterval(timerRef.current);
 
-  const startTimer = (wordsCountForTurn = wordsCount) => {
+  const startTimer = (wordsCountForTurn = wordsCount, remainingOverride = null) => {
     stopTimer();
     const limit = getTurnSecondsByWordCount(wordsCountForTurn);
+    const startingLeft = typeof remainingOverride === 'number'
+      ? Math.max(0, Math.min(limit, Math.floor(remainingOverride)))
+      : limit;
     setTurnSeconds(limit);
-    setTimeLeft(limit);
+    setTimeLeft(startingLeft);
     turnStartRef.current = Date.now();
     const tick = () => {
       const elapsed = Math.floor((Date.now() - turnStartRef.current) / 1000);
-      const left = Math.max(0, limit - elapsed);
+      const left = Math.max(0, startingLeft - elapsed);
       setTimeLeft(left);
       if (left <= 0) { stopTimer(); handleTimeout(); }
     };
@@ -198,6 +201,7 @@ export default function WordChainGame() {
     e?.preventDefault();
     const word = inputWord.trim();
     if (submitting || !word) return;
+    const remainingAtSubmit = timeLeft;
     setSubmitting(true);
     setErrorMsg('');
     stopTimer();
@@ -215,7 +219,7 @@ export default function WordChainGame() {
       if (!res.ok) {
         setErrorMsg(data?.message || '잘못된 단어입니다.');
         setSubmitting(false);
-        startTimer(wordsCount);
+        startTimer(wordsCount, remainingAtSubmit);
         return;
       }
 
@@ -237,7 +241,7 @@ export default function WordChainGame() {
     } catch {
       setAiThinking(false);
       setErrorMsg('네트워크 오류');
-      startTimer(wordsCount);
+      startTimer(wordsCount, remainingAtSubmit);
     } finally {
       setSubmitting(false);
     }
