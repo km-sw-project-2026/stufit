@@ -666,16 +666,9 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
     const handleComplete = () => {
         console.log('[handleComplete] click', { remainingDays, challengeId: challenge?.challenge_id });
 
-        const myUserId = Number(localStorage.getItem('userId'));
-        const isHost = !Number.isNaN(myUserId) && Number(challenge?.created_by_user_id) === myUserId;
-        if (!isHost) {
-            alert('방장만 완료 처리가 가능합니다.');
-            return;
-        }
-
         // 챌린지가 아직 진행 중인지 확인
         if (remainingDays > 0) {
-            setOngoingAlertOpen(true);
+            alert('챌린지가 아직 진행 중입니다.');
             return;
         }
         // 성공 메시지 먼저 표시
