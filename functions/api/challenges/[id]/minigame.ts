@@ -41,7 +41,7 @@ const SEED_WORD_LIST: string[] = [
   '핀','핑크','하늘','학교','행복','형제','호수','화분','하마','한국','한글','할머니',
   '해바라기','향기','호랑이','호박','홍차','화살','황소','후추','흰색','학생','한복',
   '해답','해물','햄버거','허리','현관','호기심','화가','화면','환경','활동','회사',
-  '회의','흥미',
+  '회의','흥미','인간',
 ];
 
 /** 첫 글자 인덱스 */
@@ -96,7 +96,10 @@ async function inDict(word: string): Promise<boolean> {
   const page = jsonData.query.pages[0];
   const exists = !Object.prototype.hasOwnProperty.call(page || {}, 'missing');
   const finalTitle = normalizeWord(page?.title || normalized);
-  const valid = Boolean(exists && finalTitle === normalized);
+  const valid = Boolean(
+    exists &&
+    (finalTitle === normalized || finalTitle.startsWith(`${normalized}(`))
+  );
   const result = valid || SEED_WORD_LIST.includes(normalized);
   dictCache.set(normalized, result);
   return result;
@@ -185,6 +188,44 @@ async function ensureTables(db: any) {
       UNIQUE(challenge_id, player_username)
     )
   `).run();
+}
+
+async function tryFinalizeChallengeIfAllDone(db: any, challengeId: number) {
+  const meta = await db
+    .prepare('SELECT tied_players FROM minigame_meta WHERE challenge_id = ?')
+    .bind(challengeId)
+    .first();
+
+  const tiedPlayers: string[] = meta ? JSON.parse((meta as any).tied_players || '[]') : [];
+  const players = Array.isArray(tiedPlayers) ? tiedPlayers.filter((p: any) => typeof p === 'string' && p.trim()) : [];
+
+  if (players.length < 2) {
+    return { hasTie: false, allDone: true, remainingPlayers: [] as string[] };
+  }
+
+  const placeholders = players.map(() => '?').join(',');
+  const rows = await db
+    .prepare(`SELECT player_username, status FROM minigame_ai_sessions WHERE challenge_id = ? AND player_username IN (${placeholders})`)
+    .bind(challengeId, ...players)
+    .all();
+
+  const finished = new Set(
+    (Array.isArray(rows?.results) ? rows.results : [])
+      .filter((r: any) => String(r?.status) === 'finished')
+      .map((r: any) => String(r?.player_username))
+  );
+
+  const remainingPlayers = players.filter((name: string) => !finished.has(name));
+  const allDone = remainingPlayers.length === 0;
+
+  if (allDone) {
+    await db
+      .prepare('UPDATE challenges SET deleted_at = CURRENT_TIMESTAMP WHERE challenge_id = ? AND deleted_at IS NULL')
+      .bind(challengeId)
+      .run();
+  }
+
+  return { hasTie: true, allDone, remainingPlayers };
 }
 
 // ─── GET: 동점 메타 + 내 게임 세션 조회 ──────────────────────
@@ -319,7 +360,15 @@ export const onRequestPatch: PagesFunction = async ({ request, params, env }) =>
     await env.D1_DB
       .prepare(`UPDATE minigame_ai_sessions SET status='finished', result='timeout', finished_at=? WHERE challenge_id=? AND player_username=?`)
       .bind(now, challengeId, username).run();
-    return json({ success: true, gameOver: true, result: 'timeout', score: (session as any).score });
+    const finalizeState = await tryFinalizeChallengeIfAllDone(env.D1_DB, challengeId);
+    return json({
+      success: true,
+      gameOver: true,
+      result: 'timeout',
+      score: (session as any).score,
+      allTiedFinished: finalizeState.allDone,
+      pendingPlayers: finalizeState.remainingPlayers,
+    });
   }
 
   // ── action: word ────────────────────────────────────────────
@@ -367,8 +416,12 @@ export const onRequestPatch: PagesFunction = async ({ request, params, env }) =>
                 SET score=?, words_count=?, history=?, last_word=?, status='finished', result='win', finished_at=?
                 WHERE challenge_id=? AND player_username=?`)
       .bind(winScore, newCount, JSON.stringify(history), word, now, challengeId, username).run();
+    const finalizeState = await tryFinalizeChallengeIfAllDone(env.D1_DB, challengeId);
     return json({ success: true, valid: true, playerWord: word, earned,
-      aiWord: null, gameOver: true, result: 'win', reason: 'hanBang', score: winScore, wordsCount: newCount });
+      aiWord: null, gameOver: true, result: 'win', reason: 'hanBang', score: winScore, wordsCount: newCount,
+      allTiedFinished: finalizeState.allDone,
+      pendingPlayers: finalizeState.remainingPlayers,
+    });
   }
 
   // AI 히스토리 추가
