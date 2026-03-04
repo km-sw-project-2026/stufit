@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import CustomAlertModal from './CustomAlertModal';
 
 function CreateChallengeModal({ onClose }) {
   const [formData, setFormData] = useState({
@@ -9,6 +10,21 @@ function CreateChallengeModal({ onClose }) {
     goal: '',
     code: ''
   });
+  const [alertMessage, setAlertMessage] = useState('');
+  const [onAlertClose, setOnAlertClose] = useState(null);
+
+  const showAlert = (message, closeHandler = null) => {
+    setAlertMessage(message);
+    setOnAlertClose(() => closeHandler);
+  };
+
+  const handleAlertClose = () => {
+    if (typeof onAlertClose === 'function') {
+      onAlertClose();
+    }
+    setAlertMessage('');
+    setOnAlertClose(null);
+  };
 
   const handleInputChange = (e) => {
     const { id, value } = e.target;
@@ -20,13 +36,13 @@ function CreateChallengeModal({ onClose }) {
     // Basic validation
     const durationNum = Number(formData.duration) || 0;
     if (!formData.name || !formData.category || !durationNum || !formData.goal) {
-      alert('필수 항목을 모두 입력해주세요.');
+      showAlert('필수 항목을 모두 입력해주세요.');
       return;
     }
 
     const username = localStorage.getItem('username');
     if (!username) {
-      alert('로그인이 필요합니다.');
+      showAlert('로그인이 필요합니다.');
       return;
     }
 
@@ -57,15 +73,14 @@ function CreateChallengeModal({ onClose }) {
 
         const json = await res.json();
         if (!res.ok) {
-          alert(json.message || '챌린지 생성에 실패했습니다.');
+          showAlert(json.message || '챌린지 생성에 실패했습니다.');
           return;
         }
 
-        alert('챌린지가 성공적으로 생성되었습니다!');
-        onClose();
+        showAlert('챌린지가 성공적으로 생성되었습니다!', onClose);
       } catch (e) {
         console.error('챌린지 생성 오류', e);
-        alert('서버 오류가 발생했습니다.');
+        showAlert('서버 오류가 발생했습니다.');
       }
     })();
   };
@@ -137,6 +152,12 @@ function CreateChallengeModal({ onClose }) {
         </div>
         <button className="start-challenge-btn" onClick={handleSubmit}>챌린지 시작하기</button>
       </div>
+      {alertMessage && (
+        <CustomAlertModal
+          message={alertMessage}
+          onClose={handleAlertClose}
+        />
+      )}
     </div>
   );
 }
