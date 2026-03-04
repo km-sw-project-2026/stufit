@@ -3,8 +3,8 @@
  * 더 오래 버티고 높은 점수를 낸 사람이 챌린지 최종 승자
  * ============================================================ */
 
-// ─── 한국어 단어 목록 ─────────────────────────────────────────
-const WORD_LIST: string[] = [
+// ─── 기본 시드 단어 목록(위키 호출 실패 시 fallback) ─────────────
+const SEED_WORD_LIST: string[] = [
   '가구','가방','가수','가요','가을','가족','가지','가위','가게','각도','감기','감사','감자',
   '강물','강아지','강의','개미','개나리','거울','거리','건물','건강','게임','겨울','결과',
   '결혼','경기','경찰','고양이','고구마','고래','고추','공부','공원','공기','공주','과일',
@@ -46,28 +46,94 @@ const WORD_LIST: string[] = [
 
 /** 첫 글자 인덱스 */
 const WORD_INDEX = new Map<string, string[]>();
-for (const w of WORD_LIST) {
+for (const w of SEED_WORD_LIST) {
   const ch = w[0];
   if (!WORD_INDEX.has(ch)) WORD_INDEX.set(ch, []);
   WORD_INDEX.get(ch)!.push(w);
 }
 
-/** AI 응답 단어 선택 */
-function pickAIWord(startChar: string, usedWords: Set<string>): string | null {
-  const pool = (WORD_INDEX.get(startChar) || []).filter(w => !usedWords.has(w));
-  if (pool.length === 0) return null;
-  return pool[Math.floor(Math.random() * pool.length)];
+const WIKI_API = 'https://ko.wikipedia.org/w/api.php';
+const HANGUL_ONLY = /^[가-힣]{2,}$/;
+const dictCache = new Map<string, boolean>();
+const prefixCache = new Map<string, string[]>();
+
+function normalizeWord(input: string): string {
+  return String(input || '').trim().replace(/\s+/g, '');
+}
+
+function isHangulWord(word: string): boolean {
+  return HANGUL_ONLY.test(word);
+}
+
+async function fetchWikiJson(url: string): Promise<any | null> {
+  try {
+    const res = await fetch(url, {
+      headers: {
+        'User-Agent': 'stufit-wordchain/1.0',
+      },
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+async function inDict(word: string): Promise<boolean> {
+  const normalized = normalizeWord(word);
+  if (!isHangulWord(normalized)) return false;
+  if (dictCache.has(normalized)) return Boolean(dictCache.get(normalized));
+
+  const url = `${WIKI_API}?action=query&titles=${encodeURIComponent(normalized)}&redirects=1&format=json&formatversion=2&origin=*`;
+  const jsonData = await fetchWikiJson(url);
+
+  if (!jsonData?.query?.pages?.length) {
+    const fallback = SEED_WORD_LIST.includes(normalized);
+    dictCache.set(normalized, fallback);
+    return fallback;
+  }
+
+  const page = jsonData.query.pages[0];
+  const exists = !Object.prototype.hasOwnProperty.call(page || {}, 'missing');
+  const finalTitle = normalizeWord(page?.title || normalized);
+  const valid = Boolean(exists && finalTitle === normalized);
+  const result = valid || SEED_WORD_LIST.includes(normalized);
+  dictCache.set(normalized, result);
+  return result;
+}
+
+async function getWikiCandidates(startChar: string): Promise<string[]> {
+  if (!startChar) return [];
+  if (prefixCache.has(startChar)) return prefixCache.get(startChar)!;
+
+  const url = `${WIKI_API}?action=query&list=prefixsearch&pssearch=${encodeURIComponent(startChar)}&pslimit=30&format=json&origin=*`;
+  const jsonData = await fetchWikiJson(url);
+  const list = Array.isArray(jsonData?.query?.prefixsearch) ? jsonData.query.prefixsearch : [];
+
+  const candidates = list
+    .map((entry: any) => normalizeWord(entry?.title || ''))
+    .filter((word: string) => word.startsWith(startChar) && isHangulWord(word));
+
+  prefixCache.set(startChar, candidates);
+  return candidates;
+}
+
+/** AI 응답 단어 선택 (한국어 위키백과 기준 + fallback) */
+async function pickAIWord(startChar: string, usedWords: Set<string>): Promise<string | null> {
+  const wikiPool = (await getWikiCandidates(startChar)).filter((word) => !usedWords.has(word));
+  if (wikiPool.length > 0) {
+    return wikiPool[Math.floor(Math.random() * wikiPool.length)];
+  }
+
+  const fallbackPool = (WORD_INDEX.get(startChar) || []).filter((word) => !usedWords.has(word));
+  if (fallbackPool.length === 0) return null;
+  return fallbackPool[Math.floor(Math.random() * fallbackPool.length)];
 }
 
 /** 끝말잇기 연결 검사 */
 function chainOk(prev: string, next: string): boolean {
   if (!prev) return true;
   return next[0] === prev[prev.length - 1];
-}
-
-/** 사전 검사 */
-function inDict(word: string): boolean {
-  return WORD_LIST.includes(word);
 }
 
 /** 점수 계산 */
@@ -259,7 +325,7 @@ export const onRequestPatch: PagesFunction = async ({ request, params, env }) =>
   // ── action: word ────────────────────────────────────────────
   if (body?.action !== 'word') return json({ message: '알 수 없는 action' }, 400);
 
-  const word: string = String(body?.word || '').trim();
+  const word: string = normalizeWord(body?.word || '');
   if (!word) return json({ message: '단어를 입력해 주세요.' }, 400);
   if (word.length < 2) return json({ message: '2글자 이상 입력해 주세요.' }, 400);
 
@@ -272,7 +338,7 @@ export const onRequestPatch: PagesFunction = async ({ request, params, env }) =>
   }
 
   // 2. 사전 검사
-  if (!inDict(word)) {
+  if (!(await inDict(word))) {
     return json({ message: `"${word}"은(는) 등록되지 않은 단어입니다.`, valid: false }, 400);
   }
 
@@ -291,7 +357,7 @@ export const onRequestPatch: PagesFunction = async ({ request, params, env }) =>
 
   // 5. AI 응답 (응답 불가 = 한방단어 → 플레이어 WIN +50)
   const startChar = word[word.length - 1];
-  const aiWord = pickAIWord(startChar, usedWords);
+  const aiWord = await pickAIWord(startChar, usedWords);
   const now = new Date().toISOString();
 
   if (!aiWord) {
@@ -311,7 +377,9 @@ export const onRequestPatch: PagesFunction = async ({ request, params, env }) =>
 
   // 6. 다음 턴 가능 여부 확인
   const nextStartChar = aiWord[aiWord.length - 1];
-  const canContinue = (WORD_INDEX.get(nextStartChar) || []).some(w => !usedWords.has(w));
+  const canContinueByWiki = (await getWikiCandidates(nextStartChar)).some((w) => !usedWords.has(w));
+  const canContinueByFallback = (WORD_INDEX.get(nextStartChar) || []).some((w) => !usedWords.has(w));
+  const canContinue = canContinueByWiki || canContinueByFallback;
 
   await env.D1_DB
     .prepare(`UPDATE minigame_ai_sessions
