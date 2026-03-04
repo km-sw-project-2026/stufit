@@ -1,5 +1,3 @@
-import { useState } from 'react';
-
 function CustomAlertModal({ onClose, message = '알림입니다' }) {
   return (
     <div id="custom-alert-modal" className="popup-modal" style={{ zIndex: 100000 }}>
