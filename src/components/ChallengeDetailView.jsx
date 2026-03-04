@@ -668,6 +668,12 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
     const handleComplete = () => {
         console.log('[handleComplete] click', { remainingDays, challengeId: challenge?.challenge_id });
 
+        // 챌린지가 시작되지 않은 경우 (인원 미충족)
+        if (!isChallengeStarted) {
+            alert('아직 챌린지가 시작되지 않았습니다.');
+            return;
+        }
+
         // 챌린지가 아직 진행 중인지 확인
         if (remainingDays > 0) {
             alert('챌린지가 아직 진행 중입니다.');

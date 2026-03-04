@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import Home from './components/Home';
 import Header from './components/main/Header';
@@ -13,10 +14,39 @@ import Shop from './components/shopView/Shop';
 import TierGuide from './components/main/TierGuide';
 import MyItems from './components/MyItems';
 import WordChainGame from './components/WordChainGame';
+import CustomAlertModal from './components/modals/CustomAlertModal';
 
 
 
 function App() {
+  const originalAlertRef = useRef(window.alert);
+  const [alertQueue, setAlertQueue] = useState([]);
+  const [currentAlert, setCurrentAlert] = useState('');
+
+  useEffect(() => {
+    const originalAlert = originalAlertRef.current;
+
+    window.alert = (message = '') => {
+      const text = typeof message === 'string' ? message : String(message);
+      setAlertQueue(prev => [...prev, text]);
+    };
+
+    return () => {
+      window.alert = originalAlert;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!currentAlert && alertQueue.length > 0) {
+      setCurrentAlert(alertQueue[0]);
+      setAlertQueue(prev => prev.slice(1));
+    }
+  }, [alertQueue, currentAlert]);
+
+  const handleCloseAlert = () => {
+    setCurrentAlert('');
+  };
+
   return (
     <>
       <Header />
@@ -36,6 +66,12 @@ function App() {
         <Route path="/my-items" element={<MyItems />} />
 
       </Routes>
+      {currentAlert && (
+        <CustomAlertModal
+          message={currentAlert}
+          onClose={handleCloseAlert}
+        />
+      )}
     </>
   );
 }
