@@ -80,11 +80,11 @@ function ChallengeOverModal({
         {/* ──── 동점자 미니게임 안내 뷰 ──── */}
         {hasTie && (
           <div style={{ textAlign: 'center', padding: '8px 0 4px' }}>
-          <img src="/img/logo.png" alt="stufit" style={{ height: '36px', marginBottom: '10px' }} />
-            <h2 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#1d3d28', margin: '0 0 12px' }}>
+          <img src="/img/logo.png" alt="stufit" style={{ height: '56px', marginBottom: '14px' }} />
+            <h2 style={{ fontSize: '1.6rem', fontWeight: 800, color: '#1d3d28', margin: '0 0 14px' }}>
               챌린지 최종 순위 안내
             </h2>
-            <p style={{ fontSize: '0.9rem', color: '#333', lineHeight: 1.7, margin: '0 0 6px' }}>
+            <p style={{ fontSize: '1.05rem', color: '#333', lineHeight: 1.8, margin: '0 0 8px' }}>
               현재 동점자가 발생했습니다.<br />
               최종 순위는 미니게임을 통해 다시 결정됩니다.<br />
               대상자는&nbsp;<span
@@ -92,7 +92,7 @@ function ChallengeOverModal({
                 onClick={handleJoinMiniGame}
               >미니게임</span>에 참여해 주세요.
             </p>
-            <p style={{ fontSize: '0.78rem', color: '#aaa', margin: '0 0 16px' }}>
+            <p style={{ fontSize: '0.92rem', color: '#aaa', margin: '0 0 20px' }}>
               미니게임은 끝말잇기 게임입니다
             </p>
             <button
