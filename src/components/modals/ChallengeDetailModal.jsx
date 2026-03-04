@@ -295,7 +295,10 @@ function ChallengeDetailModal({ onClose, challenge }) {
 
           <div className="detail-actions">
             <button className="btn-giveup">give up</button>
-            <button className="btn-complete">complete</button>
+            <button className="btn-complete" onClick={() => {
+              console.log('Challenge completed');
+              // ChallengeOverModal을 호출하지 않도록 수정
+            }}>complete</button>
           </div>
         </div>
       </div>
