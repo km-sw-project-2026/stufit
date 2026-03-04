@@ -220,10 +220,6 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
     );
   }
 
-  if (Number(challenge.created_by_user_id) !== userId) {
-    return jsonRes({ message: '방장만 완료 처리가 가능합니다.' }, 403);
-  }
-
   let members;
   try {
     members = await env.D1_DB
