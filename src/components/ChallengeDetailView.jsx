@@ -759,9 +759,8 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
                     setRankingData(payload.ranking);
 
                     // 공동 1등(동점) 감지
-                    // - study 챌린지: 입력 점수(score) 기준
-                    // - 일반 챌린지: 제출 비율(ratio) 기준
-                    // 서버가 hasTie를 내려주면 그것을 우선 사용
+                    // - study 챌린지: 서버 hasTie + score 기준
+                    // - 일반 챌린지: ratio 기준 (topRatio > 0 인 경우만)
                     let detectedTie = false;
                     let tiedList = [];
                     if (payload.hasTie !== undefined) {
@@ -790,14 +789,18 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
                         setTiedPlayers([]);
                     }
 
-                    try {
-                        const completeHeaders = buildAuthHeaders();
-                        await fetch(`/api/challenges/${challenge.challenge_id}/complete`, {
-                            method: 'PATCH',
-                            headers: completeHeaders
-                        });
-                    } catch (completeErr) {
-                        console.warn('[finalizeChallenge] complete failed:', completeErr);
+                    if (!detectedTie) {
+                        try {
+                            const completeHeaders = buildAuthHeaders();
+                            await fetch(`/api/challenges/${challenge.challenge_id}/complete`, {
+                                method: 'PATCH',
+                                headers: completeHeaders
+                            });
+                        } catch (completeErr) {
+                            console.warn('[finalizeChallenge] complete failed:', completeErr);
+                        }
+                    } else {
+                        console.log('[finalizeChallenge] tie detected - skip challenge complete until minigame finished');
                     }
 
                     await syncPointsFromServer();
@@ -837,7 +840,27 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
         // 점수를 state에 저장
         setStudyScore(score);
 
-        // study 챌린지는 점수 입력 후 정산을 실행해야 ranking/몰빵 포인트가 정확히 반영됨
+        // 1. 먼저 challenge_results 테이블에 점수 저장
+        try {
+            const response = await fetch(`/api/challenges/${challenge.challenge_id}/scores`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ userId, score })
+            });
+            
+            if (!response.ok) {
+                alert('점수 저장에 실패했습니다.');
+                return false;
+            }
+        } catch (error) {
+            console.error('[handleSubmitStudyScore] scores API failed:', error);
+            alert('점수 저장 중 오류가 발생했습니다.');
+            return false;
+        }
+
+        // 2. study 챌린지는 점수 입력 후 정산을 실행해야 ranking/몰빵 포인트가 정확히 반영됨
         await finalizeChallenge(score);
         return true;
     };

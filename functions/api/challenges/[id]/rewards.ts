@@ -352,7 +352,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
             const topPercent = Math.ceil(restCount * 0.3) || 1;
             const bottomPercent = Math.ceil(restCount * 0.3) || 1;
             const middlePercent = restCount - topPercent - bottomPercent;
-            const otherIndex = idx - 1; // idx 기반(정렬 순서 그대로)
+            const otherIndex = idx - 1;
 
             if (otherIndex < topPercent) {
               points = 100;
