@@ -36,7 +36,7 @@ export async function onRequestGet(context: { request: Request; env: any }) {
             { status: 200, headers: { 'Content-Type': 'application/json' } }
         );
     } catch (err) {
-        console.error('❌ RESOLVE USER ERROR:', err?.message);
+        console.error('❌ RESOLVE USER ERROR:', (err as any)?.message);
         return new Response(
             JSON.stringify({ message: '사용자 정보를 불러올 수 없습니다.' }),
             { status: 500, headers: { 'Content-Type': 'application/json' } }

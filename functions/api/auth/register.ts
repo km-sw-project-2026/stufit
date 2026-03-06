@@ -69,7 +69,7 @@ export async function onRequestPost(context: { request: Request; env: any }) {
         .bind(newUser.user_id, "bronze", 0, 0)
         .run();
     } catch (profileErr) {
-      console.warn("⚠️ user_profiles 생성 실패:", profileErr?.message);
+      console.warn("⚠️ user_profiles 생성 실패:", (profileErr as any)?.message);
     }
 
     return new Response(
@@ -77,7 +77,7 @@ export async function onRequestPost(context: { request: Request; env: any }) {
       { status: 201, headers: { "Content-Type": "application/json" } }
     );
   } catch (err) {
-    console.error("❌ REGISTER ERROR:", err?.message);
+    console.error("❌ REGISTER ERROR:", (err as any)?.message);
     return new Response(
       JSON.stringify({ message: "회원가입 중 오류가 발생했습니다." }),
       { status: 500, headers: { "Content-Type": "application/json" } }
