@@ -290,23 +290,25 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
     // 1명 참여 시 보상 없음 (점수, 포인트 모두 지급 안 함)
     let ranking: any[] = [];
     
-    // Study 모드: scores 수집 및 정렬
+    // Study 모드: challenge_results 테이블에서 모든 멤버의 점수를 조회
     if (type === 'study') {
-      // scores는 body에서 받은 score 값들 (현재는 제출자 1명만)
-      if (submitScore !== null) {
-        // Study 모드에서는 모든 멤버의 점수를 받아야 함
-        // 일단 현재 구조에서는 제출자의 점수만 있으므로, 다른 멤버는 기본값
-        ranking = base.map((item, idx) => {
-          // 최종 점수는 submitScore (1등), 나머지는 0
-          const isSelf = item.userId === userId;
-          const memberScore = isSelf ? submitScore : 0;
-          
-          // 재정렬이 필요하므로 점수로 정렬된 순서로 재배치
-          return {
-            ...item,
-            score: memberScore
-          };
+      try {
+        // challenge_results에서 이 챌린지의 모든 점수 조회
+        const scoresResult = await env.D1_DB
+          .prepare('SELECT user_id, score FROM challenge_results WHERE challenge_id = ?')
+          .bind(challengeId)
+          .all();
+        
+        const scoresMap = new Map<number, number>();
+        (scoresResult?.results || []).forEach((row: any) => {
+          scoresMap.set(Number(row.user_id), Number(row.score) || 0);
         });
+        
+        // 모든 멤버의 점수를 base에 추가
+        ranking = base.map((item) => ({
+          ...item,
+          score: scoresMap.get(item.userId) || 0
+        }));
         
         // 점수로 내림차순 정렬 (높을수록 1등)
         ranking.sort((a, b) => b.score - a.score);
@@ -349,6 +351,27 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
             totalDays
           };
         });
+        
+        // Study 모드: 동점자 감지 (1등 점수와 같은 점수가 2명 이상)
+        const topScore = ranking[0]?.score || 0;
+        const tiedPlayers = ranking.filter(r => r.score === topScore);
+        const hasTie = tiedPlayers.length >= 2;
+        
+        return new Response(
+          JSON.stringify({ 
+            success: true, 
+            applied: [], 
+            ranking, 
+            type, 
+            mode,
+            hasTie,
+            tiedPlayers: hasTie ? tiedPlayers.map(p => p.name) : []
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        );
+      } catch (scoresErr: any) {
+        console.warn('[rewards] challenge_results query failed:', scoresErr?.message || scoresErr);
+        // 점수 조회 실패 시 기본 로직으로 fallback
       }
     } else if (base.length > 1) {
       const otherCount = Math.max(base.length - 1, 0);

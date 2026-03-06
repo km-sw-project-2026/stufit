@@ -759,10 +759,30 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
                     setRankingData(payload.ranking);
 
                     // 공동 1등(동점) 감지
-                    const topRatio = payload.ranking[0]?.ratio;
-                    const tied = payload.ranking.filter((r) => r.ratio === topRatio);
-                    const hasTieNow = tied.length >= 2;
-                    if (tied.length >= 2) {
+                    let hasTieNow = false;
+                    let tied = [];
+                    
+                    if (getChallengeType() === 'study') {
+                        // Study 챌린지: 점수(score)로 동점 확인
+                        const topScore = payload.ranking[0]?.score || 0;
+                        tied = payload.ranking.filter((r) => r.score === topScore);
+                        hasTieNow = tied.length >= 2;
+                    } else {
+                        // 일반 챌린지: 달성률(ratio)로 동점 확인
+                        const topRatio = payload.ranking[0]?.ratio;
+                        tied = payload.ranking.filter((r) => r.ratio === topRatio);
+                        hasTieNow = tied.length >= 2;
+                    }
+                    
+                    // 또는 서버에서 받은 hasTie 플래그 사용
+                    if (typeof payload.hasTie === 'boolean') {
+                        hasTieNow = payload.hasTie;
+                        if (Array.isArray(payload.tiedPlayers)) {
+                            tied = payload.tiedPlayers.map(name => ({ name }));
+                        }
+                    }
+                    
+                    if (hasTieNow && tied.length >= 2) {
                         setHasTie(true);
                         setTiedPlayers(tied.map((r) => r.name));
                     } else {
@@ -821,7 +841,27 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
         // 점수를 state에 저장
         setStudyScore(score);
 
-        // study 챌린지는 점수 입력 후 정산을 실행해야 ranking/몰빵 포인트가 정확히 반영됨
+        // 1. 먼저 challenge_results 테이블에 점수 저장
+        try {
+            const response = await fetch(`/api/challenges/${challenge.challenge_id}/scores`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ userId, score })
+            });
+            
+            if (!response.ok) {
+                alert('점수 저장에 실패했습니다.');
+                return false;
+            }
+        } catch (error) {
+            console.error('[handleSubmitStudyScore] scores API failed:', error);
+            alert('점수 저장 중 오류가 발생했습니다.');
+            return false;
+        }
+
+        // 2. study 챌린지는 점수 입력 후 정산을 실행해야 ranking/몰빵 포인트가 정확히 반영됨
         await finalizeChallenge(score);
         return true;
     };
