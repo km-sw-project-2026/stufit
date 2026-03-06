@@ -1502,7 +1502,7 @@ body.modal-open {
 }
 
 .challenge-over-content {
-    width: 1300px !important;
+    width: 1000px !important;
     max-width: 95vw;
     padding: 50px 40px !important;
     align-items: center;
