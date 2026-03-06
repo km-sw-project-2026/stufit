@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import ChallengeDetailModal from './ChallengeDetailModal';
 
 function ChallengeOverModal({
   isOpen,
@@ -10,11 +10,12 @@ function ChallengeOverModal({
   hasTie = false,
   tiedPlayers = [],
   challengeId,
-  onStartMiniGame
+  onStartMiniGame,
+  challenge = null,
 }) {
   const [scoreInput, setScoreInput] = useState('');
   const [showRanking, setShowRanking] = useState(false);
-  const navigate = useNavigate();
+  const [showChallengeDetail, setShowChallengeDetail] = useState(false);
 
   useEffect(() => {
     if (isOpen && !showScoreInput) {
@@ -45,14 +46,7 @@ function ChallengeOverModal({
   };
 
   const handleStartMiniGame = async () => {
-    if (!onStartMiniGame) return;
-    try {
-      await onStartMiniGame(tiedPlayers);
-      navigate(`/wordchain/${challengeId}`);
-    } catch (err) {
-      console.error('[handleStartMiniGame] error:', err);
-      alert(err.message || '미니게임 시작 실패');
-    }
+    setShowChallengeDetail(true);
   };
 
   return (
@@ -101,22 +95,28 @@ function ChallengeOverModal({
               ))}
             </div>
 
-            {/* 동점자가 있는 경우 끝말잇기 버튼 */}
+            {/* 동점자가 있는 경우 챌린지 상세 버튼 */}
             {hasTie && tiedPlayers.length > 0 && (
               <div style={{ marginTop: '20px', textAlign: 'center' }}>
                 <p style={{ marginBottom: '10px', color: '#666' }}>
-                  동점자가 있습니다! 끝말잇기로 최종 승자를 결정하세요.
+                  동점자가 있습니다! 챌린지에 참여해 주세요.
                 </p>
                 <button
                   className="confirm-score-btn"
                   onClick={handleStartMiniGame}
-                  style={{ background: 'linear-gradient(135deg, #ff6b6b, #ee5a6f)' }}
                 >
-                  끝말잇기 시작
+                  참여하기
                 </button>
               </div>
             )}
           </div>
+        )}
+
+        {showChallengeDetail && challenge && (
+          <ChallengeDetailModal
+            challenge={challenge}
+            onClose={() => setShowChallengeDetail(false)}
+          />
         )}
 
         <div className="close-btn-wrapper position-top-right">

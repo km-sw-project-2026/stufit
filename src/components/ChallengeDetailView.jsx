@@ -1222,6 +1222,7 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
                 hasTie={hasTie}
                 tiedPlayers={tiedPlayers}
                 challengeId={challenge?.challenge_id}
+                challenge={challenge}
                 onStartMiniGame={async (players) => {
                     const username = localStorage.getItem('username');
                     const headers = { 'Content-Type': 'application/json' };
