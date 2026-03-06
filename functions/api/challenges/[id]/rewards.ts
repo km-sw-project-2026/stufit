@@ -277,7 +277,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
 
     // 일반 모드: ratio로 정렬 (높을수록 1등) - study 모드는 아래 블록에서 별도 처리
     if (type !== 'study') {
-      base.sort((a, b) => {
+      base.sort((a: any, b: any) => {
         if (b.ratio !== a.ratio) return b.ratio - a.ratio;
         return String(a.name).localeCompare(String(b.name));
       });
@@ -318,13 +318,13 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
       });
 
       // 3. base에 memberScore 추가 (미제출자는 0점 처리)
-      const studyBase = base.map((item) => ({
+      const studyBase = base.map((item: any) => ({
         ...item,
         memberScore: scoreMap.has(item.userId) ? scoreMap.get(item.userId)! : 0
       }));
 
       // 4. score 내림차순 정렬 (동점 시 이름 오름차순)
-      studyBase.sort((a, b) => {
+      studyBase.sort((a: any, b: any) => {
         if (b.memberScore !== a.memberScore) return b.memberScore - a.memberScore;
         return String(a.name).localeCompare(String(b.name));
       });
@@ -333,7 +333,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
       if (studyBase.length > 1) {
         let prevScore: number | null = null;
         let trueRank = 1;
-        ranking = studyBase.map((item, idx) => {
+        ranking = studyBase.map((item: any, idx: number) => {
           if (idx > 0 && item.memberScore !== prevScore) {
             trueRank = idx + 1;
           }
@@ -382,7 +382,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
       }
     } else if (base.length > 1) {
       const otherCount = Math.max(base.length - 1, 0);
-      ranking = base.map((item, idx) => {
+      ranking = base.map((item: any, idx: number) => {
         let points = 0;
         let score = 0;
 
