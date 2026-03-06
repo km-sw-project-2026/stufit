@@ -202,9 +202,15 @@ export default function WordChainGame() {
     const word = inputWord.trim();
     if (submitting || !word) return;
     const remainingAtSubmit = timeLeft;
+    const submittedAt = Date.now();
     setSubmitting(true);
     setErrorMsg('');
     stopTimer();
+
+    const getResumeLeft = () => {
+      const networkElapsed = Math.floor((Date.now() - submittedAt) / 1000);
+      return Math.max(0, remainingAtSubmit - networkElapsed);
+    };
 
     try {
       setAiThinking(true);
@@ -218,8 +224,13 @@ export default function WordChainGame() {
 
       if (!res.ok) {
         setErrorMsg(data?.message || '잘못된 단어입니다.');
+        const resumeLeft = getResumeLeft();
+        if (resumeLeft <= 0) {
+          await handleTimeout();
+          return;
+        }
         setSubmitting(false);
-        startTimer(wordsCount, remainingAtSubmit);
+        startTimer(wordsCount, resumeLeft);
         return;
       }
 
@@ -241,7 +252,12 @@ export default function WordChainGame() {
     } catch {
       setAiThinking(false);
       setErrorMsg('네트워크 오류');
-      startTimer(wordsCount, remainingAtSubmit);
+      const resumeLeft = getResumeLeft();
+      if (resumeLeft <= 0) {
+        await handleTimeout();
+        return;
+      }
+      startTimer(wordsCount, resumeLeft);
     } finally {
       setSubmitting(false);
     }

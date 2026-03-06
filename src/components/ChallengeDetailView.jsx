@@ -761,6 +761,7 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
                     // 공동 1등(동점) 감지
                     const topRatio = payload.ranking[0]?.ratio;
                     const tied = payload.ranking.filter((r) => r.ratio === topRatio);
+                    const hasTieNow = tied.length >= 2;
                     if (tied.length >= 2) {
                         setHasTie(true);
                         setTiedPlayers(tied.map((r) => r.name));
@@ -769,14 +770,18 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
                         setTiedPlayers([]);
                     }
 
-                    try {
-                        const completeHeaders = buildAuthHeaders();
-                        await fetch(`/api/challenges/${challenge.challenge_id}/complete`, {
-                            method: 'PATCH',
-                            headers: completeHeaders
-                        });
-                    } catch (completeErr) {
-                        console.warn('[finalizeChallenge] complete failed:', completeErr);
+                    if (!hasTieNow) {
+                        try {
+                            const completeHeaders = buildAuthHeaders();
+                            await fetch(`/api/challenges/${challenge.challenge_id}/complete`, {
+                                method: 'PATCH',
+                                headers: completeHeaders
+                            });
+                        } catch (completeErr) {
+                            console.warn('[finalizeChallenge] complete failed:', completeErr);
+                        }
+                    } else {
+                        console.log('[finalizeChallenge] tie detected - skip challenge complete until minigame finished');
                     }
 
                     await syncPointsFromServer();
