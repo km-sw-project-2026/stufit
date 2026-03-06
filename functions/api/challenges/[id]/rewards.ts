@@ -275,12 +275,8 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
       };
     });
 
-    // Study 모드: 입력한 점수로 정렬 (높을수록 1등)
-    if (type === 'study' && submitScore !== null) {
-      // 점수 기반 정렬 (placeholder, 실제 점수는 base에 추가해야 함)
-      // 현재는 ratio로 정렬하지만, 점수 입력이 있다면 그 점수에 따라 순위 결정
-    } else {
-      // 일반 모드: ratio로 정렬 (높을수록 1등)
+    // 일반 모드: ratio로 정렬 (높을수록 1등) - study 모드는 아래 블록에서 별도 처리
+    if (type !== 'study') {
       base.sort((a, b) => {
         if (b.ratio !== a.ratio) return b.ratio - a.ratio;
         return String(a.name).localeCompare(String(b.name));
@@ -289,46 +285,75 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
 
     // 1명 참여 시 보상 없음 (점수, 포인트 모두 지급 안 함)
     let ranking: any[] = [];
-    
-    // Study 모드: scores 수집 및 정렬
+    let hasTie = false;
+
+    // Study 모드: challenge_results 테이블에 점수 저장 후 모든 멤버 점수 기준 순위 계산
     if (type === 'study') {
-      // scores는 body에서 받은 score 값들 (현재는 제출자 1명만)
+      // 1. 현재 유저 점수를 challenge_results에 저장 (upsert)
       if (submitScore !== null) {
-        // Study 모드에서는 모든 멤버의 점수를 받아야 함
-        // 일단 현재 구조에서는 제출자의 점수만 있으므로, 다른 멤버는 기본값
-        ranking = base.map((item, idx) => {
-          // 최종 점수는 submitScore (1등), 나머지는 0
-          const isSelf = item.userId === userId;
-          const memberScore = isSelf ? submitScore : 0;
-          
-          // 재정렬이 필요하므로 점수로 정렬된 순서로 재배치
-          return {
-            ...item,
-            score: memberScore
-          };
-        });
-        
-        // 점수로 내림차순 정렬 (높을수록 1등)
-        ranking.sort((a, b) => b.score - a.score);
-        
-        // 정렬 후 rank와 points 계산
-        ranking = ranking.map((item, idx) => {
+        try {
+          await env.D1_DB
+            .prepare('INSERT INTO challenge_results (user_id, challenge_id, score) VALUES (?, ?, ?) ON CONFLICT(user_id, challenge_id) DO UPDATE SET score = excluded.score')
+            .bind(userId, challengeId, submitScore)
+            .run();
+        } catch (err) {
+          console.warn('[rewards] challenge_results upsert failed:', err);
+        }
+      }
+
+      // 2. 모든 멤버의 제출 점수 조회
+      let scoreResults: any = { results: [] };
+      try {
+        scoreResults = await env.D1_DB
+          .prepare('SELECT user_id, score FROM challenge_results WHERE challenge_id = ?')
+          .bind(challengeId)
+          .all();
+      } catch (err) {
+        console.warn('[rewards] challenge_results query failed:', err);
+      }
+
+      const scoreMap = new Map<number, number>();
+      (scoreResults?.results || []).forEach((row: any) => {
+        scoreMap.set(Number(row.user_id), Number(row.score) || 0);
+      });
+
+      // 3. base에 memberScore 추가 (미제출자는 0점 처리)
+      const studyBase = base.map((item) => ({
+        ...item,
+        memberScore: scoreMap.has(item.userId) ? scoreMap.get(item.userId)! : 0
+      }));
+
+      // 4. score 내림차순 정렬 (동점 시 이름 오름차순)
+      studyBase.sort((a, b) => {
+        if (b.memberScore !== a.memberScore) return b.memberScore - a.memberScore;
+        return String(a.name).localeCompare(String(b.name));
+      });
+
+      // 5. 동점 rank 부여 + points 계산
+      if (studyBase.length > 1) {
+        let prevScore: number | null = null;
+        let trueRank = 1;
+        ranking = studyBase.map((item, idx) => {
+          if (idx > 0 && item.memberScore !== prevScore) {
+            trueRank = idx + 1;
+          }
+          prevScore = item.memberScore;
+          const rank = trueRank;
+
           let points = 0;
-          let score = item.score;
-          
-          if (idx === 0) {
+          if (rank === 1) {
             points = 150;
-          } else if (ranking.length === 2) {
+          } else if (studyBase.length === 2) {
             points = -30;
-          } else if (ranking.length === 3) {
-            points = idx === 1 ? 100 : -30;
+          } else if (studyBase.length === 3) {
+            points = rank === 2 ? 100 : -30;
           } else {
-            const restCount = ranking.length - 1;
+            const restCount = studyBase.length - 1;
             const topPercent = Math.ceil(restCount * 0.3) || 1;
             const bottomPercent = Math.ceil(restCount * 0.3) || 1;
             const middlePercent = restCount - topPercent - bottomPercent;
-            const otherIndex = idx - 1;
-            
+            const otherIndex = idx - 1; // idx 기반(정렬 순서 그대로)
+
             if (otherIndex < topPercent) {
               points = 100;
             } else if (otherIndex < topPercent + middlePercent) {
@@ -337,18 +362,23 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
               points = -30;
             }
           }
-          
+
           return {
-            rank: idx + 1,
+            rank,
             name: item.name,
             userId: item.userId,
             points,
-            score,
+            score: item.memberScore,
             ratio: item.ratio,
             count: item.count,
             totalDays
           };
         });
+
+        // 공동 1등(score 동점) 감지
+        const topScore = ranking[0]?.score ?? 0;
+        const tiedCount = ranking.filter((r) => r.score === topScore && topScore > 0).length;
+        if (tiedCount >= 2) hasTie = true;
       }
     } else if (base.length > 1) {
       const otherCount = Math.max(base.length - 1, 0);
@@ -520,7 +550,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
     }
 
     return new Response(
-      JSON.stringify({ success: true, applied, ranking, type, mode, errors }),
+      JSON.stringify({ success: true, applied, ranking, type, mode, hasTie, errors }),
       { status: 200, headers: { 'Content-Type': 'application/json' } }
     );
   } catch (err: any) {

@@ -759,11 +759,32 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
                     setRankingData(payload.ranking);
 
                     // 공동 1등(동점) 감지
-                    const topRatio = payload.ranking[0]?.ratio;
-                    const tied = payload.ranking.filter((r) => r.ratio === topRatio);
-                    if (tied.length >= 2) {
+                    // - study 챌린지: 입력 점수(score) 기준
+                    // - 일반 챌린지: 제출 비율(ratio) 기준
+                    // 서버가 hasTie를 내려주면 그것을 우선 사용
+                    let detectedTie = false;
+                    let tiedList = [];
+                    if (payload.hasTie !== undefined) {
+                        // 서버에서 직접 판단한 결과 사용 (study 모드)
+                        detectedTie = !!payload.hasTie;
+                        if (detectedTie) {
+                            const topScore = payload.ranking[0]?.score ?? 0;
+                            tiedList = payload.ranking
+                                .filter((r) => r.score === topScore && topScore > 0)
+                                .map((r) => r.name);
+                        }
+                    } else {
+                        // 일반 챌린지: ratio 기준 (topRatio > 0 인 경우만)
+                        const topRatio = payload.ranking[0]?.ratio ?? 0;
+                        const tied = payload.ranking.filter((r) => r.ratio === topRatio);
+                        if (tied.length >= 2 && topRatio > 0) {
+                            detectedTie = true;
+                            tiedList = tied.map((r) => r.name);
+                        }
+                    }
+                    if (detectedTie && tiedList.length >= 2) {
                         setHasTie(true);
-                        setTiedPlayers(tied.map((r) => r.name));
+                        setTiedPlayers(tiedList);
                     } else {
                         setHasTie(false);
                         setTiedPlayers([]);
