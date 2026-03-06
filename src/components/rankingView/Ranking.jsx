@@ -67,7 +67,7 @@ function Ranking() {
         if (found) {
             setSearchResult(found);
         } else {
-            alert("검색 결과가 없습니다. (테스트 데이터: 김예선, 박현서, 유태민, 신유빈 등)");
+            alert("검색 결과가 없습니다");
             setSearchResult(null);
         }
     };
