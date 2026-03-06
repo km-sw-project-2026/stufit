@@ -1502,7 +1502,7 @@ body.modal-open {
 }
 
 .challenge-over-content {
-    width: 800px !important;
+    width: 1000px !important;
     max-width: 90vw;
     padding: 50px 40px !important;
     align-items: center;
@@ -1536,26 +1536,35 @@ body.modal-open {
     align-items: center;
     border: 2px solid #176B5F;
     border-radius: 15px;
-    padding: 15px 30px;
+    padding: 20px 35px;
     width: 100%;
+    white-space: nowrap;
+    box-sizing: border-box;
 }
 
 .ranking-item .rank {
     font-size: 24px;
     font-weight: 700;
-    margin-right: 20px;
+    margin-right: 25px;
+    flex-shrink: 0;
 }
 
 .ranking-item .name {
     font-size: 16px;
     font-weight: 600;
     flex-grow: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-right: 20px;
 }
 
 .score-info {
     display: flex;
     align-items: center;
-    gap: 15px;
+    gap: 25px;
+    flex-shrink: 0;
+    white-space: nowrap;
 }
 
 .score-group {
