@@ -75,33 +75,6 @@ const resolveRankReward = (index: number, total: number) => {
   return { points: 30, score: 30 };
 };
 
-const getDateOnly = (raw: any): string | null => {
-  if (!raw) return null;
-  const text = String(raw).trim();
-  if (!text) return null;
-  const direct = text.slice(0, 10);
-  if (/^\d{4}-\d{2}-\d{2}$/.test(direct)) return direct;
-  const bySpace = text.split(' ')[0];
-  if (/^\d{4}-\d{2}-\d{2}$/.test(bySpace)) return bySpace;
-  return null;
-};
-
-const addDaysUtc = (dateOnly: string, days: number): string => {
-  const [y, m, d] = dateOnly.split('-').map(Number);
-  const dt = new Date(Date.UTC(y, m - 1, d + days));
-  return dt.toISOString().slice(0, 10);
-};
-
-const getTodayInSeoul = (): string => {
-  const formatter = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Asia/Seoul',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit'
-  });
-  return formatter.format(new Date());
-};
-
 const jsonRes = (data: any, status = 200) =>
   new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });
 
@@ -372,44 +345,6 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
 
     // Study 모드: 전원 점수 제출 완료 후 정렬
     if (type === 'study') {
-      if (submitScore !== null && !Number.isNaN(Number(submitScore))) {
-        const endDate = getDateOnly((challenge as any)?.end_date);
-        if (endDate) {
-          const lastSubmitDate = addDaysUtc(endDate, 1);
-          const todayKst = getTodayInSeoul();
-          if (todayKst > lastSubmitDate) {
-            return jsonRes(
-              { success: false, expired: true, message: '점수 제출 기간이 종료되었습니다. (종료일 다음날까지만 제출 가능)' },
-              400
-            );
-          }
-        }
-
-        const existingScore = await env.D1_DB
-          .prepare('SELECT score FROM challenge_results WHERE user_id = ? AND challenge_id = ?')
-          .bind(userId, challengeId)
-          .first();
-
-        if (existingScore) {
-          return jsonRes(
-            { success: false, alreadySubmitted: true, message: '공부 챌린지 점수는 1회만 제출할 수 있습니다.' },
-            409
-          );
-        }
-
-        try {
-          await env.D1_DB
-            .prepare(`
-              INSERT INTO challenge_results (user_id, challenge_id, score)
-              VALUES (?, ?, ?)
-            `)
-            .bind(userId, challengeId, Number(submitScore))
-            .run();
-        } catch (scoreUpsertErr) {
-          console.warn('[rewards] study score upsert failed:', scoreUpsertErr);
-        }
-      }
-
       const placeholders = memberList.map(() => '?').join(',');
       const scoreRowsRaw = placeholders
         ? await env.D1_DB
@@ -495,26 +430,33 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
       hasTie = topRatio > 0 && ranking.filter((r) => Number(r.ratio || 0) === topRatio).length >= 2;
     }
 
-    let hasBet = false;
+    let betPool = 0;
     if (ranking.length > 0) {
       if (pointLogColumn) {
         try {
-          const betLogs = await env.D1_DB
-            .prepare(`SELECT COUNT(*) AS cnt FROM point_logs WHERE reason LIKE ? AND ${pointLogColumn} < 0`)
+          const pool = await env.D1_DB
+            .prepare(`SELECT SUM(CASE WHEN ${pointLogColumn} < 0 THEN -${pointLogColumn} ELSE 0 END) AS total FROM point_logs WHERE reason LIKE ?`)
             .bind(`challenge_bet:${challengeId}:%`)
             .first();
-          hasBet = Number((betLogs as any)?.cnt || 0) > 0;
+          betPool = Number((pool as any)?.total || 0);
         } catch (err) {
-          console.warn('[rewards] bet detect from logs failed:', err);
+          console.warn('[rewards] bet pool from logs failed:', err);
         }
       }
 
-      if (!hasBet) {
+      if (betPool <= 0) {
         const perUserBet = Number((challenge as any)?.bet_points || 0);
         if (perUserBet > 0) {
-          hasBet = true;
+          betPool = perUserBet * memberList.length;
         }
       }
+
+      const hasBet = betPool > 0;
+      ranking = ranking.map((entry, idx) => ({
+        ...entry,
+        // 포인트는 순위 규칙 유지, 점수는 베팅이 있을 때만 1등 몰빵
+        score: hasBet ? (idx === 0 ? betPool : 0) : 0
+      }));
 
       if (!hasBet) {
         ranking = ranking.map((entry) => ({
@@ -531,6 +473,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
       );
     }
 
+    const hasBet = betPool > 0;
     const applied: Array<{ userId: number; points: number; score?: number }> = [];
     const errors: string[] = [];
     const now = new Date().toISOString();
