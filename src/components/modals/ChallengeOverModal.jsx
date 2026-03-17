@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import ChallengeDetailModal from './ChallengeDetailModal';
+import { useNavigate } from 'react-router-dom';
 
 function ChallengeOverModal({
   isOpen,
@@ -12,11 +12,10 @@ function ChallengeOverModal({
   tiedPlayers = [],
   challengeId,
   onStartMiniGame,
-  challenge = null,
 }) {
+  const navigate = useNavigate();
   const [scoreInput, setScoreInput] = useState('');
   const [showRanking, setShowRanking] = useState(false);
-  const [showChallengeDetail, setShowChallengeDetail] = useState(false);
 
   useEffect(() => {
     if (isOpen && !showScoreInput) {
@@ -47,7 +46,20 @@ function ChallengeOverModal({
   };
 
   const handleStartMiniGame = async () => {
-    setShowChallengeDetail(true);
+    try {
+      if (typeof onStartMiniGame === 'function' && tiedPlayers.length >= 2) {
+        await onStartMiniGame(tiedPlayers);
+      }
+    } catch (err) {
+      console.warn('[ChallengeOverModal] minigame init failed:', err);
+    }
+
+    if (!challengeId) {
+      alert('챌린지 정보를 찾을 수 없습니다.');
+      return;
+    }
+
+    navigate(`/challenge/${challengeId}/minigame`);
   };
 
   return (
@@ -122,13 +134,6 @@ function ChallengeOverModal({
               </div>
             )}
           </div>
-        )}
-
-        {showChallengeDetail && challenge && (
-          <ChallengeDetailModal
-            challenge={challenge}
-            onClose={() => setShowChallengeDetail(false)}
-          />
         )}
 
         <div className="close-btn-wrapper position-top-right">
