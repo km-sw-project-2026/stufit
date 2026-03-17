@@ -86,12 +86,17 @@ function ChallengeOverModal({
             <p className="subtitle">최종순위</p>
             <div className="ranking-list">
               {rankingData.map((item, idx) => (
+                (() => {
+                  const displayScore = item?.submittedScore ?? item?.score;
+                  return (
                 <div key={idx} className="ranking-item">
                   <span className="rank">{item.rank}위</span>
                   <span className="name">{item.name}</span>
                   <span className="points">{item.points > 0 ? '+' : ''}{item.points}P</span>
-                  <span className="score">점수: {item.score}</span>
+                  <span className="score">점수: {displayScore}</span>
                 </div>
+                  );
+                })()
               ))}
             </div>
 

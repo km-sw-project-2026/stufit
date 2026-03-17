@@ -75,6 +75,33 @@ const resolveRankReward = (index: number, total: number) => {
   return { points: 30, score: 30 };
 };
 
+const getDateOnly = (raw: any): string | null => {
+  if (!raw) return null;
+  const text = String(raw).trim();
+  if (!text) return null;
+  const direct = text.slice(0, 10);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(direct)) return direct;
+  const bySpace = text.split(' ')[0];
+  if (/^\d{4}-\d{2}-\d{2}$/.test(bySpace)) return bySpace;
+  return null;
+};
+
+const addDaysUtc = (dateOnly: string, days: number): string => {
+  const [y, m, d] = dateOnly.split('-').map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d + days));
+  return dt.toISOString().slice(0, 10);
+};
+
+const getTodayInSeoul = (): string => {
+  const formatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Seoul',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  });
+  return formatter.format(new Date());
+};
+
 const jsonRes = (data: any, status = 200) =>
   new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });
 
@@ -343,12 +370,35 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
     // Study 모드: 전원 점수 제출 완료 후 정렬
     if (type === 'study') {
       if (submitScore !== null && !Number.isNaN(Number(submitScore))) {
+        const endDate = getDateOnly((challenge as any)?.end_date);
+        if (endDate) {
+          const lastSubmitDate = addDaysUtc(endDate, 1);
+          const todayKst = getTodayInSeoul();
+          if (todayKst > lastSubmitDate) {
+            return jsonRes(
+              { success: false, expired: true, message: '점수 제출 기간이 종료되었습니다. (종료일 다음날까지만 제출 가능)' },
+              400
+            );
+          }
+        }
+
+        const existingScore = await env.D1_DB
+          .prepare('SELECT score FROM challenge_results WHERE user_id = ? AND challenge_id = ?')
+          .bind(userId, challengeId)
+          .first();
+
+        if (existingScore) {
+          return jsonRes(
+            { success: false, alreadySubmitted: true, message: '공부 챌린지 점수는 1회만 제출할 수 있습니다.' },
+            409
+          );
+        }
+
         try {
           await env.D1_DB
             .prepare(`
               INSERT INTO challenge_results (user_id, challenge_id, score)
               VALUES (?, ?, ?)
-              ON CONFLICT(user_id, challenge_id) DO UPDATE SET score = excluded.score
             `)
             .bind(userId, challengeId, Number(submitScore))
             .run();
@@ -376,6 +426,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
 
       const pendingMembers = memberList.filter((m: any) => !scoreMap.has(Number(m.user_id)));
       if (pendingMembers.length > 0) {
+        const isSelfPending = pendingMembers.some((m: any) => Number(m.user_id) === Number(userId));
         return new Response(
           JSON.stringify({
             success: true,
@@ -386,7 +437,9 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
             ranking: [],
             type,
             mode,
-            message: '전원이 점수를 제출해야 최종 결과가 공개됩니다.'
+            message: isSelfPending
+              ? '점수를 먼저 제출해 주세요.'
+              : '점수 제출 완료! 다른 참여자의 제출을 기다려 주세요.'
           }),
           { status: 200, headers: { 'Content-Type': 'application/json' } }
         );

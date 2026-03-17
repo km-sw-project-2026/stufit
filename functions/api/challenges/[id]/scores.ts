@@ -8,20 +8,109 @@ interface Env {
 
 type PagesFunction<T = any> = (context: { request: Request, params: { id: string }, env: T }) => Promise<Response>;
 
+const getDateOnly = (raw: any): string | null => {
+  if (!raw) return null;
+  const text = String(raw).trim();
+  if (!text) return null;
+  const direct = text.slice(0, 10);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(direct)) return direct;
+  const bySpace = text.split(' ')[0];
+  if (/^\d{4}-\d{2}-\d{2}$/.test(bySpace)) return bySpace;
+  return null;
+};
+
+const addDaysUtc = (dateOnly: string, days: number): string => {
+  const [y, m, d] = dateOnly.split('-').map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d + days));
+  return dt.toISOString().slice(0, 10);
+};
+
+const getTodayInSeoul = (): string => {
+  const formatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Seoul',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  });
+  return formatter.format(new Date());
+};
+
 export const onRequest: PagesFunction<Env> = async ({ request, params, env }) => {
+  if (request.method !== 'POST') {
+    return new Response('Method Not Allowed', { status: 405 });
+  }
+
   const challengeId = params.id;
-  const { userId, score } = await request.json() as { userId: string, score: number };
+  let body: { userId?: string | number; score?: number } = {};
 
   try {
-    await env.D1_DB.prepare(`
-      INSERT INTO challenge_results (user_id, challenge_id, score) 
-      VALUES (?, ?, ?)
-      ON CONFLICT(user_id, challenge_id) DO UPDATE SET score = excluded.score
-    `).bind(userId, challengeId, score).run();
+    body = await request.json() as { userId?: string | number; score?: number };
+  } catch {
+    return Response.json({ success: false, message: '요청 본문이 올바르지 않습니다.' }, { status: 400 });
+  }
+
+  const userId = Number(body?.userId);
+  const score = Number(body?.score);
+
+  if (!challengeId || Number.isNaN(Number(challengeId))) {
+    return Response.json({ success: false, message: '유효하지 않은 챌린지입니다.' }, { status: 400 });
+  }
+
+  if (!userId || Number.isNaN(userId)) {
+    return Response.json({ success: false, message: '유효한 사용자 정보가 필요합니다.' }, { status: 400 });
+  }
+
+  if (Number.isNaN(score) || score < 0) {
+    return Response.json({ success: false, message: '점수는 0 이상의 숫자여야 합니다.' }, { status: 400 });
+  }
+
+  try {
+    const challenge = await env.D1_DB
+      .prepare('SELECT end_date FROM challenges WHERE challenge_id = ?')
+      .bind(challengeId)
+      .first();
+
+    if (!challenge) {
+      return Response.json({ success: false, message: '챌린지를 찾을 수 없습니다.' }, { status: 404 });
+    }
+
+    const endDate = getDateOnly((challenge as any).end_date);
+    if (endDate) {
+      const lastSubmitDate = addDaysUtc(endDate, 1);
+      const todayKst = getTodayInSeoul();
+
+      // end_date + 1일이 지난 뒤에는 제출 불가
+      if (todayKst > lastSubmitDate) {
+        return Response.json(
+          { success: false, expired: true, message: '점수 제출 기간이 종료되었습니다. (종료일 다음날까지만 제출 가능)' },
+          { status: 400 }
+        );
+      }
+    }
+
+    const already = await env.D1_DB
+      .prepare('SELECT 1 FROM challenge_results WHERE user_id = ? AND challenge_id = ?')
+      .bind(userId, challengeId)
+      .first();
+
+    if (already) {
+      return Response.json(
+        { success: false, alreadySubmitted: true, message: '공부 챌린지 점수는 1회만 제출할 수 있습니다.' },
+        { status: 409 }
+      );
+    }
+
+    await env.D1_DB
+      .prepare(`
+        INSERT INTO challenge_results (user_id, challenge_id, score)
+        VALUES (?, ?, ?)
+      `)
+      .bind(userId, challengeId, score)
+      .run();
 
     return Response.json({ success: true, message: "점수가 성공적으로 입력되었습니다." });
   } catch (e) {
-    return new Response("점수 입력 실패", { status: 500 });
+    return Response.json({ success: false, message: '점수 입력 실패' }, { status: 500 });
   }
 };
 

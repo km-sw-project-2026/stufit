@@ -688,6 +688,9 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
         setIsChallengeOverOpen(true);
         if (getChallengeType() !== 'study') {
             finalizeChallenge();
+        } else {
+            // Study는 점수 제출 여부/타인 대기 상태를 즉시 확인해 안내합니다.
+            finalizeChallenge();
         }
     };
 
@@ -773,9 +776,9 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
                         // 서버에서 직접 판단한 결과 사용 (study 모드)
                         detectedTie = !!payload.hasTie;
                         if (detectedTie) {
-                            const topScore = payload.ranking[0]?.score ?? 0;
+                            const topScore = Number(payload.ranking[0]?.submittedScore ?? payload.ranking[0]?.score ?? 0);
                             tiedList = payload.ranking
-                                .filter((r) => r.score === topScore && topScore > 0)
+                                .filter((r) => Number(r?.submittedScore ?? r?.score ?? 0) === topScore && topScore > 0)
                                 .map((r) => r.name);
                         }
                     } else {
@@ -857,7 +860,20 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
             });
             
             if (!response.ok) {
-                alert('점수 저장에 실패했습니다.');
+                const payload = await response.json().catch(() => null);
+
+                if (payload?.alreadySubmitted) {
+                    alert(payload?.message || '이미 점수를 제출했습니다. 다른 참여자의 제출을 기다려 주세요.');
+                    await finalizeChallenge();
+                    return false;
+                }
+
+                if (payload?.expired) {
+                    alert(payload?.message || '점수 제출 기간이 종료되었습니다.');
+                    return false;
+                }
+
+                alert(payload?.message || '점수 저장에 실패했습니다.');
                 return false;
             }
         } catch (error) {
