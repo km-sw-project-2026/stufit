@@ -291,7 +291,8 @@ export default function WordChainGame() {
 
   // ─── 로비 ────────────────────────────────────────────
   if (phase === 'lobby') {
-    const isTied = tiedPlayers.includes(username);
+    const normalizedMe = String(username || '').trim().toLowerCase();
+    const isTied = tiedPlayers.some((p) => String(p || '').trim().toLowerCase() === normalizedMe);
     return (
       <div style={{ ...BG, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px 0' }}>
         <div style={{ ...cardStyle, textAlign: 'left' }}>

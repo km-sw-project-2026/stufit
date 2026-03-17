@@ -299,6 +299,20 @@ export const onRequestPost: PagesFunction = async ({ request, params, env, userI
   // ── action: start_game → 개인 AI 게임 세션 시작 ──────────
   if (body?.action === 'start_game') {
     if (!username) return json({ message: '로그인이 필요합니다.' }, 401);
+
+    const meta = await env.D1_DB
+      .prepare('SELECT tied_players FROM minigame_meta WHERE challenge_id = ?')
+      .bind(challengeId)
+      .first();
+    const tiedPlayers: string[] = meta ? JSON.parse((meta as any).tied_players || '[]') : [];
+    const normalizedMe = String(username || '').trim().toLowerCase();
+    const isEligible = Array.isArray(tiedPlayers)
+      && tiedPlayers.some((p: any) => String(p || '').trim().toLowerCase() === normalizedMe);
+
+    if (!isEligible) {
+      return json({ message: '공동 1등만 미니게임에 참여할 수 있습니다.' }, 403);
+    }
+
     const existing = await env.D1_DB
       .prepare('SELECT * FROM minigame_ai_sessions WHERE challenge_id = ? AND player_username = ?')
       .bind(challengeId, username).first();

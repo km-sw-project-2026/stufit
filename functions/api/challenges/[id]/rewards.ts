@@ -460,6 +460,24 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
       if (tiedPlayers.length >= 2) {
         try {
           await env.D1_DB.prepare(`
+            CREATE TABLE IF NOT EXISTS minigame_meta (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              challenge_id INTEGER NOT NULL UNIQUE,
+              tied_players TEXT NOT NULL,
+              created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
+          `).run();
+
+          await env.D1_DB
+            .prepare(`
+              INSERT INTO minigame_meta (challenge_id, tied_players)
+              VALUES (?, ?)
+              ON CONFLICT(challenge_id) DO UPDATE SET tied_players = excluded.tied_players
+            `)
+            .bind(challengeId, JSON.stringify(tiedPlayers))
+            .run();
+
+          await env.D1_DB.prepare(`
             CREATE TABLE IF NOT EXISTS minigame_ai_sessions (
               id INTEGER PRIMARY KEY AUTOINCREMENT,
               challenge_id INTEGER NOT NULL,
@@ -512,7 +530,11 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
                 pendingMinigame: true,
                 message: '공동 1등 미니게임이 진행 중입니다. 종료 후 승자에게 몰빵 지급됩니다.',
                 applied: [],
-                ranking,
+                ranking: ranking.map((entry) => ({
+                  ...entry,
+                  points: 0,
+                  score: 0
+                })),
                 tiedPlayers,
                 hasTie: true,
                 type,
@@ -548,7 +570,11 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
               pendingMinigame: true,
               message: '공동 1등 미니게임 결과를 기다리는 중입니다.',
               applied: [],
-              ranking,
+              ranking: ranking.map((entry) => ({
+                ...entry,
+                points: 0,
+                score: 0
+              })),
               tiedPlayers,
               hasTie: true,
               type,
