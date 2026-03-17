@@ -292,39 +292,42 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
       );
     }
 
-    // 전원 제출 전에는 결과/정산을 공개하지 않습니다.
-    try {
-      const memberStatusRows = await env.D1_DB
-        .prepare(`
-          SELECT u.username
-          FROM challenge_members cm
-          JOIN users u ON u.user_id = cm.user_id
-          WHERE cm.challenge_id = ?
-            AND COALESCE(cm.status, 'not_submitted') <> 'submitted'
-        `)
-        .bind(challengeId)
-        .all();
+    // 일반 모드에서는 challenge_members.status 기준으로 전원 제출 게이트를 적용합니다.
+    // study 모드는 아래 score 제출 게이트만 사용합니다.
+    if (type !== 'study') {
+      try {
+        const memberStatusRows = await env.D1_DB
+          .prepare(`
+            SELECT u.username
+            FROM challenge_members cm
+            JOIN users u ON u.user_id = cm.user_id
+            WHERE cm.challenge_id = ?
+              AND COALESCE(cm.status, 'not_submitted') <> 'submitted'
+          `)
+          .bind(challengeId)
+          .all();
 
-      const pendingMembers = Array.isArray(memberStatusRows?.results) ? memberStatusRows.results : [];
-      if (pendingMembers.length > 0) {
-        return new Response(
-          JSON.stringify({
-            success: true,
-            pendingSubmission: true,
-            pendingCount: pendingMembers.length,
-            pendingMembers: pendingMembers.map((m: any) => String(m.username || '')),
-            applied: [],
-            ranking: [],
-            type,
-            mode,
-            message: '모든 참여자가 제출을 완료해야 결과를 확인할 수 있습니다.'
-          }),
-          { status: 200, headers: { 'Content-Type': 'application/json' } }
-        );
+        const pendingMembers = Array.isArray(memberStatusRows?.results) ? memberStatusRows.results : [];
+        if (pendingMembers.length > 0) {
+          return new Response(
+            JSON.stringify({
+              success: true,
+              pendingSubmission: true,
+              pendingCount: pendingMembers.length,
+              pendingMembers: pendingMembers.map((m: any) => String(m.username || '')),
+              applied: [],
+              ranking: [],
+              type,
+              mode,
+              message: '모든 참여자가 제출을 완료해야 결과를 확인할 수 있습니다.'
+            }),
+            { status: 200, headers: { 'Content-Type': 'application/json' } }
+          );
+        }
+      } catch (submissionCheckErr) {
+        // 구버전 스키마(상태 컬럼 없음)에서는 제출 게이트를 건너뜁니다.
+        console.warn('[rewards] submission gate skipped:', submissionCheckErr);
       }
-    } catch (submissionCheckErr) {
-      // 구버전 스키마(상태 컬럼 없음)에서는 제출 게이트를 건너뜁니다.
-      console.warn('[rewards] submission gate skipped:', submissionCheckErr);
     }
 
     let progress;

@@ -7,6 +7,7 @@ function ChallengeOverModal({
   showScoreInput = false,
   onSubmitScore,
   rankingData = [],
+  noticeMessage = '',
   hasTie = false,
   tiedPlayers = [],
   challengeId,
@@ -83,22 +84,28 @@ function ChallengeOverModal({
         {/* 랭킹 화면 */}
         {showRanking && (
           <div id="challenge-over-ranking-view">
-            <p className="subtitle">최종순위</p>
-            <div className="ranking-list">
-              {rankingData.map((item, idx) => (
-                (() => {
-                  const displayScore = item?.submittedScore ?? item?.score;
-                  return (
-                <div key={idx} className="ranking-item">
-                  <span className="rank">{item.rank}위</span>
-                  <span className="name">{item.name}</span>
-                  <span className="points">{item.points > 0 ? '+' : ''}{item.points}P</span>
-                  <span className="score">점수: {displayScore}</span>
-                </div>
-                  );
-                })()
-              ))}
-            </div>
+            <p className="subtitle">{rankingData.length > 0 ? '최종순위' : '결과 집계 상태'}</p>
+            {rankingData.length > 0 ? (
+              <div className="ranking-list">
+                {rankingData.map((item, idx) => (
+                  (() => {
+                    const displayScore = item?.submittedScore ?? item?.score;
+                    return (
+                  <div key={idx} className="ranking-item">
+                    <span className="rank">{item.rank}위</span>
+                    <span className="name">{item.name}</span>
+                    <span className="points">{item.points > 0 ? '+' : ''}{item.points}P</span>
+                    <span className="score">점수: {displayScore}</span>
+                  </div>
+                    );
+                  })()
+                ))}
+              </div>
+            ) : (
+              <div style={{ marginTop: '14px', padding: '14px 16px', borderRadius: '12px', background: '#f5f7f6', color: '#4a4a4a' }}>
+                {noticeMessage || '아직 모든 참여자의 점수 제출이 완료되지 않았습니다.'}
+              </div>
+            )}
 
             {/* 동점자가 있는 경우 챌린지 상세 버튼 */}
             {hasTie && tiedPlayers.length > 0 && (

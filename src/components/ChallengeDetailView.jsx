@@ -205,6 +205,8 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
     const [hasTie, setHasTie] = useState(false);
     const [tiedPlayers, setTiedPlayers] = useState([]);
     const [studyScore, setStudyScore] = useState(null);
+    const [isStudyScoreSubmitted, setIsStudyScoreSubmitted] = useState(false);
+    const [challengeOverNotice, setChallengeOverNotice] = useState('');
     const [members, setMembers] = useState([]);
     const [finalAction, setFinalAction] = useState('leave');
     const [leaveAlertMessage, setLeaveAlertMessage] = useState('챌린지를 완전히 포기했습니다.');
@@ -221,6 +223,41 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
         setRankingData([]);
         setHasTie(false);
         setTiedPlayers([]);
+        setIsStudyScoreSubmitted(false);
+        setChallengeOverNotice('');
+    }, [challenge?.challenge_id]);
+
+    useEffect(() => {
+        const loadStudySubmissionStatus = async () => {
+            if (!challenge?.challenge_id) return;
+            if (getChallengeType() !== 'study') return;
+
+            const userId = Number(localStorage.getItem('userId'));
+            if (!userId || Number.isNaN(userId)) return;
+
+            try {
+                const response = await fetch(`/api/challenges/${challenge.challenge_id}/scores?userId=${userId}`);
+                if (!response.ok) return;
+
+                const payload = await response.json();
+                const submitted = !!payload?.submitted;
+                setIsStudyScoreSubmitted(submitted);
+
+                if (submitted) {
+                    setChallengeOverNotice('점수 제출 완료! 다른 참여자의 제출을 기다려 주세요.');
+                    if (payload?.score !== null && payload?.score !== undefined) {
+                        const serverScore = Number(payload.score);
+                        if (!Number.isNaN(serverScore)) {
+                            setStudyScore(serverScore);
+                        }
+                    }
+                }
+            } catch (err) {
+                console.warn('[loadStudySubmissionStatus] failed:', err);
+            }
+        };
+
+        loadStudySubmissionStatus();
     }, [challenge?.challenge_id]);
 
     // 컨플리티드 챬린지 진입 시 동점자 확인 (non-host에도 모달 표시)
@@ -686,6 +723,7 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
     const handleSuccessConfirm = () => {
         setShowSuccessPopup(false);
         setIsChallengeOverOpen(true);
+        setChallengeOverNotice('');
         if (getChallengeType() !== 'study') {
             finalizeChallenge();
         } else {
@@ -759,13 +797,26 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
                 console.log('[finalizeChallenge] rewards success:', payload);
                 if (payload?.pendingSubmission) {
                     const pendingCount = Number(payload?.pendingCount || 0);
-                    alert(payload?.message || `아직 ${pendingCount}명이 제출하지 않았습니다.`);
+                    const notice = payload?.message || `아직 ${pendingCount}명이 제출하지 않았습니다.`;
+                    setChallengeOverNotice(notice);
+
+                    if (getChallengeType() === 'study') {
+                        const pendingMembers = Array.isArray(payload?.pendingMembers) ? payload.pendingMembers : [];
+                        const myUsername = localStorage.getItem('username') || '';
+                        const selfPending = pendingMembers.includes(myUsername);
+                        setIsStudyScoreSubmitted(!selfPending);
+                    }
                     return;
                 }
+
+                setChallengeOverNotice('');
 
                 if (Array.isArray(payload?.ranking)) {
                     console.log('[finalizeChallenge] ranking data:', payload.ranking);
                     setRankingData(payload.ranking);
+                    if (getChallengeType() === 'study') {
+                        setIsStudyScoreSubmitted(true);
+                    }
 
                     // 공동 1등(동점) 감지
                     // - study 챌린지: 서버 hasTie + score 기준
@@ -863,7 +914,8 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
                 const payload = await response.json().catch(() => null);
 
                 if (payload?.alreadySubmitted) {
-                    alert(payload?.message || '이미 점수를 제출했습니다. 다른 참여자의 제출을 기다려 주세요.');
+                    setIsStudyScoreSubmitted(true);
+                    setChallengeOverNotice(payload?.message || '이미 점수를 제출했습니다. 다른 참여자의 제출을 기다려 주세요.');
                     await finalizeChallenge();
                     return false;
                 }
@@ -876,6 +928,9 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
                 alert(payload?.message || '점수 저장에 실패했습니다.');
                 return false;
             }
+
+            setIsStudyScoreSubmitted(true);
+            setChallengeOverNotice('점수 제출 완료! 다른 참여자의 제출을 기다려 주세요.');
         } catch (error) {
             console.error('[handleSubmitStudyScore] scores API failed:', error);
             alert('점수 저장 중 오류가 발생했습니다.');
@@ -1238,9 +1293,10 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
                         }, 300);
                     }
                 }}
-                showScoreInput={getChallengeType() === 'study'}
+                showScoreInput={getChallengeType() === 'study' && !isStudyScoreSubmitted && rankingData.length === 0}
                 onSubmitScore={handleSubmitStudyScore}
                 rankingData={rankingData}
+                noticeMessage={challengeOverNotice}
                 hasTie={hasTie}
                 tiedPlayers={tiedPlayers}
                 challengeId={challenge?.challenge_id}

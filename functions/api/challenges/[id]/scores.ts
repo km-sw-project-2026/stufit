@@ -36,11 +36,58 @@ const getTodayInSeoul = (): string => {
 };
 
 export const onRequest: PagesFunction<Env> = async ({ request, params, env }) => {
+  const challengeId = params.id;
+
+  if (!challengeId || Number.isNaN(Number(challengeId))) {
+    return Response.json({ success: false, message: '유효하지 않은 챌린지입니다.' }, { status: 400 });
+  }
+
+  if (request.method === 'GET') {
+    const url = new URL(request.url);
+    const userId = Number(url.searchParams.get('userId'));
+
+    if (!userId || Number.isNaN(userId)) {
+      return Response.json({ success: false, message: '유효한 사용자 정보가 필요합니다.' }, { status: 400 });
+    }
+
+    try {
+      const challenge = await env.D1_DB
+        .prepare('SELECT end_date FROM challenges WHERE challenge_id = ?')
+        .bind(challengeId)
+        .first();
+
+      if (!challenge) {
+        return Response.json({ success: false, message: '챌린지를 찾을 수 없습니다.' }, { status: 404 });
+      }
+
+      let expired = false;
+      const endDate = getDateOnly((challenge as any).end_date);
+      if (endDate) {
+        const lastSubmitDate = addDaysUtc(endDate, 1);
+        const todayKst = getTodayInSeoul();
+        expired = todayKst > lastSubmitDate;
+      }
+
+      const row = await env.D1_DB
+        .prepare('SELECT score FROM challenge_results WHERE user_id = ? AND challenge_id = ?')
+        .bind(userId, challengeId)
+        .first();
+
+      return Response.json({
+        success: true,
+        submitted: !!row,
+        score: row ? Number((row as any).score || 0) : null,
+        expired
+      });
+    } catch {
+      return Response.json({ success: false, message: '제출 상태 조회 실패' }, { status: 500 });
+    }
+  }
+
   if (request.method !== 'POST') {
     return new Response('Method Not Allowed', { status: 405 });
   }
 
-  const challengeId = params.id;
   let body: { userId?: string | number; score?: number } = {};
 
   try {
@@ -51,10 +98,6 @@ export const onRequest: PagesFunction<Env> = async ({ request, params, env }) =>
 
   const userId = Number(body?.userId);
   const score = Number(body?.score);
-
-  if (!challengeId || Number.isNaN(Number(challengeId))) {
-    return Response.json({ success: false, message: '유효하지 않은 챌린지입니다.' }, { status: 400 });
-  }
 
   if (!userId || Number.isNaN(userId)) {
     return Response.json({ success: false, message: '유효한 사용자 정보가 필요합니다.' }, { status: 400 });
