@@ -57,6 +57,24 @@ const resolveTotalDays = (challenge: any) => {
   return categoryDays[challenge?.category] || 30;
 };
 
+const resolveRankReward = (index: number, total: number) => {
+  if (total <= 1) return { points: 0, score: 0 };
+  if (index === 0) return { points: 150, score: 150 };
+
+  if (total === 2) return { points: 100, score: 100 };
+  if (total === 3) return index === 1 ? { points: 100, score: 100 } : { points: 50, score: 50 };
+
+  const restCount = total - 1;
+  const topPercent = Math.ceil(restCount * 0.3) || 1;
+  const bottomPercent = Math.ceil(restCount * 0.3) || 1;
+  const middlePercent = Math.max(0, restCount - topPercent - bottomPercent);
+  const otherIndex = index - 1;
+
+  if (otherIndex < topPercent) return { points: 100, score: 100 };
+  if (otherIndex < topPercent + middlePercent) return { points: 50, score: 50 };
+  return { points: 30, score: 30 };
+};
+
 const jsonRes = (data: any, status = 200) =>
   new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });
 
@@ -247,6 +265,41 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
       );
     }
 
+    // 전원 제출 전에는 결과/정산을 공개하지 않습니다.
+    try {
+      const memberStatusRows = await env.D1_DB
+        .prepare(`
+          SELECT u.username
+          FROM challenge_members cm
+          JOIN users u ON u.user_id = cm.user_id
+          WHERE cm.challenge_id = ?
+            AND COALESCE(cm.status, 'not_submitted') <> 'submitted'
+        `)
+        .bind(challengeId)
+        .all();
+
+      const pendingMembers = Array.isArray(memberStatusRows?.results) ? memberStatusRows.results : [];
+      if (pendingMembers.length > 0) {
+        return new Response(
+          JSON.stringify({
+            success: true,
+            pendingSubmission: true,
+            pendingCount: pendingMembers.length,
+            pendingMembers: pendingMembers.map((m: any) => String(m.username || '')),
+            applied: [],
+            ranking: [],
+            type,
+            mode,
+            message: '모든 참여자가 제출을 완료해야 결과를 확인할 수 있습니다.'
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
+    } catch (submissionCheckErr) {
+      // 구버전 스키마(상태 컬럼 없음)에서는 제출 게이트를 건너뜁니다.
+      console.warn('[rewards] submission gate skipped:', submissionCheckErr);
+    }
+
     let progress;
     try {
       progress = await env.D1_DB
@@ -275,11 +328,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
       };
     });
 
-    // Study 모드: 입력한 점수로 정렬 (높을수록 1등)
-    if (type === 'study' && submitScore !== null) {
-      // 점수 기반 정렬 (placeholder, 실제 점수는 base에 추가해야 함)
-      // 현재는 ratio로 정렬하지만, 점수 입력이 있다면 그 점수에 따라 순위 결정
-    } else {
+    if (type !== 'study') {
       // 일반 모드: ratio로 정렬 (높을수록 1등)
       base.sort((a, b) => {
         if (b.ratio !== a.ratio) return b.ratio - a.ratio;
@@ -290,118 +339,92 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
     // 1명 참여 시 보상 없음 (점수, 포인트 모두 지급 안 함)
     let ranking: any[] = [];
     
-    // Study 모드: scores 수집 및 정렬
+    // Study 모드: 전원 점수 제출 완료 후 정렬
     if (type === 'study') {
-      // scores는 body에서 받은 score 값들 (현재는 제출자 1명만)
-      if (submitScore !== null) {
-        // Study 모드에서는 모든 멤버의 점수를 받아야 함
-        // 일단 현재 구조에서는 제출자의 점수만 있으므로, 다른 멤버는 기본값
-        ranking = base.map((item, idx) => {
-          // 최종 점수는 submitScore (1등), 나머지는 0
-          const isSelf = item.userId === userId;
-          const memberScore = isSelf ? submitScore : 0;
-          
-          // 재정렬이 필요하므로 점수로 정렬된 순서로 재배치
-          return {
-            ...item,
-            score: memberScore
-          };
-        });
-        
-        // 점수로 내림차순 정렬 (높을수록 1등)
-        ranking.sort((a, b) => b.score - a.score);
-        
-        // 정렬 후 rank와 points 계산
-        ranking = ranking.map((item, idx) => {
-          let points = 0;
-          let score = item.score;
-          
-          if (idx === 0) {
-            points = 150;
-          } else if (ranking.length === 2) {
-            points = -30;
-          } else if (ranking.length === 3) {
-            points = idx === 1 ? 100 : -30;
-          } else {
-            const restCount = ranking.length - 1;
-            const topPercent = Math.ceil(restCount * 0.3) || 1;
-            const bottomPercent = Math.ceil(restCount * 0.3) || 1;
-            const middlePercent = restCount - topPercent - bottomPercent;
-            const otherIndex = idx - 1;
-            
-            if (otherIndex < topPercent) {
-              points = 100;
-            } else if (otherIndex < topPercent + middlePercent) {
-              points = 50;
-            } else {
-              points = -30;
-            }
-          }
-          
-          return {
-            rank: idx + 1,
-            name: item.name,
-            userId: item.userId,
-            points,
-            score,
-            ratio: item.ratio,
-            count: item.count,
-            totalDays
-          };
-        });
-      }
-    } else if (base.length > 1) {
-      const otherCount = Math.max(base.length - 1, 0);
-      ranking = base.map((item, idx) => {
-        let points = 0;
-        let score = 0;
-
-        if (mode === 'practice') {
-          // 연습 모드는 보상 없음
-          points = 0;
-          score = 0;
-        } else if (idx === 0) {
-          // 1등: 항상 +150점, +150포인트
-          points = 150;
-          score = 150;
-        } else if (base.length === 2) {
-          // 2명 참여: 2등 -30 포인트, 100점수 (고정)
-          points = -30;
-          score = 100;
-        } else if (base.length === 3) {
-          // 3명 참여: 2등 +100, 3등 -30 포인트 / 2등 100점, 3등 50점 (고정)
-          points = idx === 1 ? 100 : -30;
-          score = idx === 1 ? 100 : 50;
-        } else {
-          // 4명 이상: 1등 제외 인원을 상/중/하로 분배
-          const restCount = otherCount; // 1등 제외
-          const topPercent = Math.ceil(restCount * 0.3) || 1; // 최소 1명
-          const bottomPercent = Math.ceil(restCount * 0.3) || 1; // 최소 1명
-          const middlePercent = restCount - topPercent - bottomPercent;
-
-          const otherIndex = idx - 1; // 1등을 제외한 순서 (0부터 시작)
-
-          if (otherIndex < topPercent) {
-            // 상위 30%: +100 포인트, 100점수
-            points = 100;
-            score = 100;
-          } else if (otherIndex < topPercent + middlePercent) {
-            // 중위 40%: +50 포인트, 50점수
-            points = 50;
-            score = 50;
-          } else {
-            // 하위 30%: -30 포인트, 0점수
-            points = -30;
-            score = 0;
-          }
+      if (submitScore !== null && !Number.isNaN(Number(submitScore))) {
+        try {
+          await env.D1_DB
+            .prepare(`
+              INSERT INTO challenge_results (user_id, challenge_id, score)
+              VALUES (?, ?, ?)
+              ON CONFLICT(user_id, challenge_id) DO UPDATE SET score = excluded.score
+            `)
+            .bind(userId, challengeId, Number(submitScore))
+            .run();
+        } catch (scoreUpsertErr) {
+          console.warn('[rewards] study score upsert failed:', scoreUpsertErr);
         }
+      }
+
+      const placeholders = memberList.map(() => '?').join(',');
+      const scoreRowsRaw = placeholders
+        ? await env.D1_DB
+          .prepare(`
+            SELECT user_id, score
+            FROM challenge_results
+            WHERE challenge_id = ?
+              AND user_id IN (${placeholders})
+          `)
+          .bind(challengeId, ...memberList.map((m: any) => Number(m.user_id)))
+          .all()
+        : { results: [] };
+
+      const scoreRows = Array.isArray(scoreRowsRaw?.results) ? scoreRowsRaw.results : [];
+      const scoreMap = new Map<number, number>();
+      scoreRows.forEach((row: any) => scoreMap.set(Number(row.user_id), Number(row.score) || 0));
+
+      const pendingMembers = memberList.filter((m: any) => !scoreMap.has(Number(m.user_id)));
+      if (pendingMembers.length > 0) {
+        return new Response(
+          JSON.stringify({
+            success: true,
+            pendingSubmission: true,
+            pendingCount: pendingMembers.length,
+            pendingMembers: pendingMembers.map((m: any) => String(m.username || '')),
+            applied: [],
+            ranking: [],
+            type,
+            mode,
+            message: '전원이 점수를 제출해야 최종 결과가 공개됩니다.'
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
+
+      ranking = base.map((item) => ({
+        ...item,
+        score: Number(scoreMap.get(item.userId) || 0)
+      }));
+
+      ranking.sort((a, b) => {
+        if (b.score !== a.score) return b.score - a.score;
+        return String(a.name).localeCompare(String(b.name));
+      });
+
+      ranking = ranking.map((item, idx) => {
+        const reward = resolveRankReward(idx, ranking.length);
+        return {
+          rank: idx + 1,
+          name: item.name,
+          userId: item.userId,
+          points: reward.points,
+          score: reward.score,
+          ratio: item.ratio,
+          count: item.count,
+          totalDays,
+          submittedScore: item.score
+        };
+      });
+    } else if (base.length > 1) {
+      ranking = base.map((item, idx) => {
+        const reward = mode === 'practice' ? { points: 0, score: 0 } : resolveRankReward(idx, base.length);
 
         return {
           rank: idx + 1,
           name: item.name,
           userId: item.userId,
-          points,
-          score,
+          points: reward.points,
+          score: reward.score,
           ratio: item.ratio,
           count: item.count,
           totalDays
@@ -409,31 +432,31 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
       });
     }
 
-    let betPool = 0;
+    let hasBet = false;
     if (ranking.length > 0) {
       if (pointLogColumn) {
         try {
-          const pool = await env.D1_DB
-            .prepare(`SELECT SUM(CASE WHEN ${pointLogColumn} < 0 THEN -${pointLogColumn} ELSE 0 END) AS total FROM point_logs WHERE reason LIKE ?`)
+          const betLogs = await env.D1_DB
+            .prepare(`SELECT COUNT(*) AS cnt FROM point_logs WHERE reason LIKE ? AND ${pointLogColumn} < 0`)
             .bind(`challenge_bet:${challengeId}:%`)
             .first();
-          betPool = Number((pool as any)?.total || 0);
+          hasBet = Number((betLogs as any)?.cnt || 0) > 0;
         } catch (err) {
-          console.warn('[rewards] bet pool from logs failed:', err);
+          console.warn('[rewards] bet detect from logs failed:', err);
         }
       }
 
-      if (betPool <= 0) {
+      if (!hasBet) {
         const perUserBet = Number((challenge as any)?.bet_points || 0);
         if (perUserBet > 0) {
-          betPool = perUserBet * memberList.length;
+          hasBet = true;
         }
       }
 
-      if (betPool > 0) {
-        ranking = ranking.map((entry, idx) => ({
+      if (!hasBet) {
+        ranking = ranking.map((entry) => ({
           ...entry,
-          points: idx === 0 ? betPool : 0
+          score: 0
         }));
       }
     }
@@ -500,7 +523,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
         }
 
         // score 컬럼이 user_profiles에 있으면 업데이트
-        if (hasScoreColumn && entry.score > 0) {
+        if (hasBet && hasScoreColumn && entry.score > 0) {
           try {
             await env.D1_DB
               .prepare('UPDATE user_profiles SET score = COALESCE(score, 0) + ? WHERE user_id = ?')

@@ -754,13 +754,27 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
             if (rewardsResponse.ok) {
                 const payload = await rewardsResponse.json();
                 console.log('[finalizeChallenge] rewards success:', payload);
+                if (payload?.pendingSubmission) {
+                    const pendingCount = Number(payload?.pendingCount || 0);
+                    alert(payload?.message || `아직 ${pendingCount}명이 제출하지 않았습니다.`);
+                    return;
+                }
+
                 if (Array.isArray(payload?.ranking)) {
                     console.log('[finalizeChallenge] ranking data:', payload.ranking);
                     setRankingData(payload.ranking);
 
                     // 공동 1등(동점) 감지
-                    const topRatio = payload.ranking[0]?.ratio;
-                    const tied = payload.ranking.filter((r) => r.ratio === topRatio);
+                    const isStudyType = getChallengeType() === 'study';
+                    const topMetric = isStudyType
+                        ? Number(payload.ranking[0]?.submittedScore ?? payload.ranking[0]?.score ?? 0)
+                        : Number(payload.ranking[0]?.ratio ?? 0);
+                    const tied = payload.ranking.filter((r) => {
+                        const metric = isStudyType
+                            ? Number(r?.submittedScore ?? r?.score ?? 0)
+                            : Number(r?.ratio ?? 0);
+                        return metric === topMetric;
+                    });
                     const hasTieNow = tied.length >= 2;
                     if (tied.length >= 2) {
                         setHasTie(true);
