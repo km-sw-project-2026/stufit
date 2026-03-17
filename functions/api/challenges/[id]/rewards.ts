@@ -610,7 +610,8 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
       const hasBet = betPool > 0;
       ranking = ranking.map((entry, idx) => ({
         ...entry,
-        // 포인트는 순위 규칙 유지, 점수는 베팅이 있을 때만 1등 몰빵
+        // 포인트는 순위 규칙 유지, 점수는 베팅 규칙 적용
+        // 참여 시 베팅이 이미 차감되므로 결과 단계에서는 1등 몰빵만 반영
         score: hasBet ? (idx === 0 ? betPool : 0) : 0
       }));
 
@@ -685,11 +686,19 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
         }
 
         // score 컬럼이 user_profiles에 있으면 업데이트
-        if (hasBet && hasScoreColumn && entry.score > 0) {
+        if (hasBet && hasScoreColumn && entry.score !== 0) {
           try {
+            const scoreProfile = await env.D1_DB
+              .prepare('SELECT score FROM user_profiles WHERE user_id = ?')
+              .bind(entry.userId)
+              .first();
+
+            const currentScore = Number((scoreProfile as any)?.score) || 0;
+            const nextScore = Math.max(0, currentScore + Number(entry.score || 0));
+
             await env.D1_DB
-              .prepare('UPDATE user_profiles SET score = COALESCE(score, 0) + ? WHERE user_id = ?')
-              .bind(entry.score, entry.userId)
+              .prepare('UPDATE user_profiles SET score = ? WHERE user_id = ?')
+              .bind(nextScore, entry.userId)
               .run();
           } catch (scoreErr: any) {
             console.warn('[rewards] score update skipped:', scoreErr?.message || String(scoreErr));
