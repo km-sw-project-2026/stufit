@@ -1419,13 +1419,24 @@ document.addEventListener('DOMContentLoaded', () => {
              // Sort by score descending
              rankingData.sort((a, b) => b.score - a.score);
 
+             // Assign rank with tie handling (동점자 공동 1등 처리)
+             let currentRank = 0;
+             let lastScore = null;
+             rankingData = rankingData.map((item, index) => {
+                 if (index === 0 || item.score !== lastScore) {
+                     currentRank = index + 1;
+                 }
+                 lastScore = item.score;
+                 return { ...item, rank: currentRank };
+             });
+
              // Render Ranking View
              const rankingListEl = rankingView.querySelector('.ranking-list');
              if(rankingListEl) {
                  rankingListEl.innerHTML = ''; // Clear previous
 
-                 rankingData.forEach((item, index) => {
-                     const rank = index + 1;
+                 rankingData.forEach((item) => {
+                     const rank = item.rank;
                      const points = item.score * 10; // Dummy point calculation
                      const isUserClass = item.isUser ? 'user-rank-item' : '';
 
