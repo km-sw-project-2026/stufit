@@ -587,6 +587,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
     }
 
     let betPool = 0;
+    let perUserBetForDisplay = 0;
     if (ranking.length > 0) {
       if (pointLogColumn) {
         try {
@@ -603,8 +604,13 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
       if (betPool <= 0) {
         const perUserBet = Number((challenge as any)?.bet_points || 0);
         if (perUserBet > 0) {
+          perUserBetForDisplay = perUserBet;
           betPool = perUserBet * memberList.length;
         }
+      }
+
+      if (perUserBetForDisplay <= 0 && memberList.length > 0 && betPool > 0) {
+        perUserBetForDisplay = Math.floor(betPool / memberList.length);
       }
 
       const hasBet = betPool > 0;
@@ -612,7 +618,9 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
         ...entry,
         // 포인트는 순위 규칙 유지, 점수는 베팅 규칙 적용
         // 참여 시 베팅이 이미 차감되므로 결과 단계에서는 1등 몰빵만 반영
-        score: hasBet ? (idx === 0 ? betPool : 0) : 0
+        score: hasBet ? (idx === 0 ? betPool : 0) : 0,
+        // 화면 표시용: 1등 +몰빵, 나머지 -개인 베팅
+        scoreDisplay: hasBet ? (idx === 0 ? betPool : -perUserBetForDisplay) : 0
       }));
 
       if (!hasBet) {

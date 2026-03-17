@@ -101,13 +101,18 @@ function ChallengeOverModal({
               <div className="ranking-list">
                 {rankingData.map((item, idx) => (
                   (() => {
-                    const displayScore = item?.submittedScore ?? item?.score;
+                    const submitScore = item?.submittedScore;
+                    const settlementScore = item?.scoreDisplay ?? item?.score ?? 0;
                     return (
                   <div key={idx} className="ranking-item">
                     <span className="rank">{item.rank}위</span>
                     <span className="name">{item.name}</span>
                     <span className="points">{item.points > 0 ? '+' : ''}{item.points}P</span>
-                    <span className="score">점수: {displayScore}</span>
+                    <span className="score">
+                      {submitScore !== undefined && submitScore !== null
+                        ? `제출: ${submitScore} / 정산: ${settlementScore > 0 ? '+' : ''}${settlementScore}`
+                        : `정산: ${settlementScore > 0 ? '+' : ''}${settlementScore}`}
+                    </span>
                   </div>
                     );
                   })()
