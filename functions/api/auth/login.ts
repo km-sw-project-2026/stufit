@@ -51,7 +51,7 @@ export async function onRequestPost(context: { request: Request; env: any }) {
       { status: 200, headers: { "Content-Type": "application/json" } }
     );
   } catch (err) {
-    console.error("❌ LOGIN ERROR:", err?.message);
+    console.error("❌ LOGIN ERROR:", (err as any)?.message);
     return new Response(
       JSON.stringify({ message: "서버 오류가 발생했습니다." }),
       { status: 500, headers: { "Content-Type": "application/json" } }

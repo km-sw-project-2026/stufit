@@ -141,7 +141,7 @@ export default async function handler(
         .run();
     }
 
-    // 시작 전 나가기: bet_points 환급 / 시작 후 나가기: 100포인트 패널티
+    // 시작 전 나가기: bet_points 환급 / 시작 후 나가기: 배팅한 점수만큼 score 차감
     await env.D1_DB
       .prepare("INSERT OR IGNORE INTO user_profiles (user_id, score, points) VALUES (?, 0, 0)")
       .bind(userId)
@@ -159,24 +159,24 @@ export default async function handler(
           .bind(userId, betPoints, `challenge_bet:${challengeId}:refund`, new Date().toISOString())
           .run();
       }
-    } else {
-      // 시작 후 나가기: 기존 100포인트 패널티 유지
+    } else if (isStarted && betPoints > 0) {
+      // 시작 후 나가기: 배팅 점수만큼 score 차감
       const currentProfile = await env.D1_DB
-        .prepare('SELECT points FROM user_profiles WHERE user_id = ?')
+        .prepare('SELECT score FROM user_profiles WHERE user_id = ?')
         .bind(userId)
         .first();
-      const currentPoints = Number((currentProfile as any)?.points || 0);
-      const nextPoints = Math.max(0, currentPoints - 100);
+      const currentScore = Number((currentProfile as any)?.score || 0);
+      const nextScore = Math.max(0, currentScore - betPoints);
 
       await env.D1_DB
-        .prepare('UPDATE user_profiles SET points = ? WHERE user_id = ?')
-        .bind(nextPoints, userId)
+        .prepare('UPDATE user_profiles SET score = ? WHERE user_id = ?')
+        .bind(nextScore, userId)
         .run();
 
       if (pointLogColumn) {
         await env.D1_DB
           .prepare(`INSERT INTO point_logs (user_id, ${pointLogColumn}, reason, created_at) VALUES (?, ?, ?, ?)`)
-          .bind(userId, -100, isOwner ? '챌린지 중도 포기 (방장)' : '챌린지 포기', new Date().toISOString())
+          .bind(userId, -betPoints, isOwner ? '챌린지 중도 포기 (방장)' : '챌린지 포기', new Date().toISOString())
           .run();
       }
     }

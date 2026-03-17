@@ -109,16 +109,16 @@ export default async function handler(request: Request, { env, userId }: Handler
 
       if (!isStartedNow) {
         const hasBetCol = await hasColumn('challenges', 'bet_points');
-        let refundAmount = hasBetCol ? Number((challenge as any).bet_points || 0) : 0;
+        let betPoints = hasBetCol ? Number((challenge as any).bet_points || 0) : 0;
         if (!hasBetCol) {
           try {
             await env.D1_DB.prepare(`CREATE TABLE IF NOT EXISTS challenge_bets (challenge_id INTEGER PRIMARY KEY, bet_points INTEGER NOT NULL)`).run();
             const betRow = await env.D1_DB.prepare('SELECT bet_points FROM challenge_bets WHERE challenge_id = ?').bind(id).first();
-            refundAmount = Number((betRow as any)?.bet_points || 0);
+            betPoints = Number((betRow as any)?.bet_points || 0);
           } catch (e) { /* ignore */ }
         }
 
-        if (refundAmount > 0) {
+        if (betPoints > 0) {
           const allMembers = await env.D1_DB
             .prepare('SELECT user_id FROM challenge_members WHERE challenge_id = ?')
             .bind(id)
@@ -140,13 +140,52 @@ export default async function handler(request: Request, { env, userId }: Handler
                   .first()
               : null;
             if (wasPointLog && pointLogCol) {
-              await env.D1_DB.prepare('UPDATE user_profiles SET score = score + ? WHERE user_id = ?').bind(refundAmount, memberId).run();
+              await env.D1_DB.prepare('UPDATE user_profiles SET score = score + ? WHERE user_id = ?').bind(betPoints, memberId).run();
               await env.D1_DB
                 .prepare(`INSERT INTO point_logs (user_id, ${pointLogCol}, reason, created_at) VALUES (?, ?, ?, ?)`)
-                .bind(memberId, refundAmount, `challenge_bet:${id}:refund`, new Date().toISOString())
+                .bind(memberId, betPoints, `challenge_bet:${id}:refund`, new Date().toISOString())
                 .run();
             } else {
-              await env.D1_DB.prepare('UPDATE user_profiles SET score = score + ? WHERE user_id = ?').bind(refundAmount, memberId).run();
+              await env.D1_DB.prepare('UPDATE user_profiles SET score = score + ? WHERE user_id = ?').bind(betPoints, memberId).run();
+            }
+          }
+        }
+      } else {
+        // 시작 후 삭제 시: 참가자들의 score에서 배팅한 점수만큼 차감
+        const hasBetCol = await hasColumn('challenges', 'bet_points');
+        let betPoints = hasBetCol ? Number((challenge as any).bet_points || 0) : 0;
+        if (!hasBetCol) {
+          try {
+            await env.D1_DB.prepare(`CREATE TABLE IF NOT EXISTS challenge_bets (challenge_id INTEGER PRIMARY KEY, bet_points INTEGER NOT NULL)`).run();
+            const betRow = await env.D1_DB.prepare('SELECT bet_points FROM challenge_bets WHERE challenge_id = ?').bind(id).first();
+            betPoints = Number((betRow as any)?.bet_points || 0);
+          } catch (e) { /* ignore */ }
+        }
+
+        if (betPoints > 0) {
+          const allMembers = await env.D1_DB
+            .prepare('SELECT user_id FROM challenge_members WHERE challenge_id = ?')
+            .bind(id)
+            .all();
+
+          const pointLogInfo = await env.D1_DB.prepare("PRAGMA table_info('point_logs')").all();
+          const pointLogCols = Array.isArray(pointLogInfo?.results) ? pointLogInfo.results : [];
+          const pointLogCol = pointLogCols.some((c: any) => c.name === 'point') ? 'point'
+            : pointLogCols.some((c: any) => c.name === 'points') ? 'points' : null;
+
+          for (const row of (allMembers.results || [])) {
+            const memberId = (row as any).user_id;
+            await env.D1_DB.prepare("INSERT OR IGNORE INTO user_profiles (user_id, score, points) VALUES (?, 0, 0)").bind(memberId).run();
+            const currentProfile = await env.D1_DB.prepare('SELECT score FROM user_profiles WHERE user_id = ?').bind(memberId).first();
+            const currentScore = Number((currentProfile as any)?.score || 0);
+            const nextScore = Math.max(0, currentScore - betPoints);
+            await env.D1_DB.prepare('UPDATE user_profiles SET score = ? WHERE user_id = ?').bind(nextScore, memberId).run();
+
+            if (pointLogCol) {
+              await env.D1_DB
+                .prepare(`INSERT INTO point_logs (user_id, ${pointLogCol}, reason, created_at) VALUES (?, ?, ?, ?)`)
+                .bind(memberId, -betPoints, `challenge_bet:${id}:deleted`, new Date().toISOString())
+                .run();
             }
           }
         }

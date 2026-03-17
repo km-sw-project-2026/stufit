@@ -52,7 +52,7 @@ export async function onRequestGet(context: { request: Request; env: any; userId
             { status: 200, headers: { 'Content-Type': 'application/json' } }
         );
     } catch (err) {
-        console.error('❌ POINTS GET ERROR:', err?.message);
+        console.error('❌ POINTS GET ERROR:', (err as any)?.message);
         return new Response(
             JSON.stringify({ message: '포인트를 불러올 수 없습니다.' }),
             { status: 500, headers: { 'Content-Type': 'application/json' } }
@@ -199,7 +199,7 @@ export async function onRequestPost(context: { request: Request; env: any; userI
             { status: 200, headers: { 'Content-Type': 'application/json' } }
         );
     } catch (err) {
-        console.error('❌ POINTS POST ERROR:', err?.message);
+        console.error('❌ POINTS POST ERROR:', (err as any)?.message);
         return new Response(
             JSON.stringify({ message: '포인트 지급에 실패했습니다.' }),
             { status: 500, headers: { 'Content-Type': 'application/json' } }

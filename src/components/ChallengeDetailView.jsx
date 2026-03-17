@@ -765,26 +765,37 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
                     setRankingData(payload.ranking);
 
                     // 공동 1등(동점) 감지
-                    const isStudyType = getChallengeType() === 'study';
-                    const topMetric = isStudyType
-                        ? Number(payload.ranking[0]?.submittedScore ?? payload.ranking[0]?.score ?? 0)
-                        : Number(payload.ranking[0]?.ratio ?? 0);
-                    const tied = payload.ranking.filter((r) => {
-                        const metric = isStudyType
-                            ? Number(r?.submittedScore ?? r?.score ?? 0)
-                            : Number(r?.ratio ?? 0);
-                        return metric === topMetric;
-                    });
-                    const hasTieNow = tied.length >= 2;
-                    if (tied.length >= 2) {
+                    // - study 챌린지: 서버 hasTie + score 기준
+                    // - 일반 챌린지: ratio 기준 (topRatio > 0 인 경우만)
+                    let detectedTie = false;
+                    let tiedList = [];
+                    if (payload.hasTie !== undefined) {
+                        // 서버에서 직접 판단한 결과 사용 (study 모드)
+                        detectedTie = !!payload.hasTie;
+                        if (detectedTie) {
+                            const topScore = payload.ranking[0]?.score ?? 0;
+                            tiedList = payload.ranking
+                                .filter((r) => r.score === topScore && topScore > 0)
+                                .map((r) => r.name);
+                        }
+                    } else {
+                        // 일반 챌린지: ratio 기준 (topRatio > 0 인 경우만)
+                        const topRatio = payload.ranking[0]?.ratio ?? 0;
+                        const tied = payload.ranking.filter((r) => r.ratio === topRatio);
+                        if (tied.length >= 2 && topRatio > 0) {
+                            detectedTie = true;
+                            tiedList = tied.map((r) => r.name);
+                        }
+                    }
+                    if (detectedTie && tiedList.length >= 2) {
                         setHasTie(true);
-                        setTiedPlayers(tied.map((r) => r.name));
+                        setTiedPlayers(tiedList);
                     } else {
                         setHasTie(false);
                         setTiedPlayers([]);
                     }
 
-                    if (!hasTieNow) {
+                    if (!detectedTie) {
                         try {
                             const completeHeaders = buildAuthHeaders();
                             await fetch(`/api/challenges/${challenge.challenge_id}/complete`, {
@@ -835,7 +846,27 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
         // 점수를 state에 저장
         setStudyScore(score);
 
-        // study 챌린지는 점수 입력 후 정산을 실행해야 ranking/몰빵 포인트가 정확히 반영됨
+        // 1. 먼저 challenge_results 테이블에 점수 저장
+        try {
+            const response = await fetch(`/api/challenges/${challenge.challenge_id}/scores`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ userId, score })
+            });
+            
+            if (!response.ok) {
+                alert('점수 저장에 실패했습니다.');
+                return false;
+            }
+        } catch (error) {
+            console.error('[handleSubmitStudyScore] scores API failed:', error);
+            alert('점수 저장 중 오류가 발생했습니다.');
+            return false;
+        }
+
+        // 2. study 챌린지는 점수 입력 후 정산을 실행해야 ranking/몰빵 포인트가 정확히 반영됨
         await finalizeChallenge(score);
         return true;
     };
@@ -1197,6 +1228,7 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
                 hasTie={hasTie}
                 tiedPlayers={tiedPlayers}
                 challengeId={challenge?.challenge_id}
+                challenge={challenge}
                 onStartMiniGame={async (players) => {
                     const username = localStorage.getItem('username');
                     const headers = { 'Content-Type': 'application/json' };

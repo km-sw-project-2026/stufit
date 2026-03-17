@@ -128,7 +128,7 @@ export async function onRequestPost(context: { request: Request; env: any; userI
             { status: 200, headers: { 'Content-Type': 'application/json' } }
         );
     } catch (err) {
-        console.error('❌ PURCHASE ERROR:', err?.message);
+        console.error('❌ PURCHASE ERROR:', (err as any)?.message);
         return new Response(
             JSON.stringify({ message: '구매 처리에 실패했습니다.' }),
             { status: 500, headers: { 'Content-Type': 'application/json' } }

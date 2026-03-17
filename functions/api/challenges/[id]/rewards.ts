@@ -328,9 +328,9 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
       };
     });
 
+    // 일반 모드: ratio로 정렬 (높을수록 1등) - study 모드는 아래 블록에서 별도 처리
     if (type !== 'study') {
-      // 일반 모드: ratio로 정렬 (높을수록 1등)
-      base.sort((a, b) => {
+      base.sort((a: any, b: any) => {
         if (b.ratio !== a.ratio) return b.ratio - a.ratio;
         return String(a.name).localeCompare(String(b.name));
       });
@@ -338,7 +338,8 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
 
     // 1명 참여 시 보상 없음 (점수, 포인트 모두 지급 안 함)
     let ranking: any[] = [];
-    
+    let hasTie = false;
+
     // Study 모드: 전원 점수 제출 완료 후 정렬
     if (type === 'study') {
       if (submitScore !== null && !Number.isNaN(Number(submitScore))) {
@@ -415,6 +416,9 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
           submittedScore: item.score
         };
       });
+
+      const topSubmittedScore = Number(ranking[0]?.submittedScore || 0);
+      hasTie = topSubmittedScore > 0 && ranking.filter((r) => Number(r.submittedScore || 0) === topSubmittedScore).length >= 2;
     } else if (base.length > 1) {
       ranking = base.map((item, idx) => {
         const reward = mode === 'practice' ? { points: 0, score: 0 } : resolveRankReward(idx, base.length);
@@ -430,6 +434,9 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
           totalDays
         };
       });
+
+      const topRatio = Number(ranking[0]?.ratio || 0);
+      hasTie = topRatio > 0 && ranking.filter((r) => Number(r.ratio || 0) === topRatio).length >= 2;
     }
 
     let hasBet = false;
@@ -543,7 +550,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
     }
 
     return new Response(
-      JSON.stringify({ success: true, applied, ranking, type, mode, errors }),
+      JSON.stringify({ success: true, applied, ranking, type, mode, hasTie, errors }),
       { status: 200, headers: { 'Content-Type': 'application/json' } }
     );
   } catch (err: any) {
