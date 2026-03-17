@@ -795,6 +795,18 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
             if (rewardsResponse.ok) {
                 const payload = await rewardsResponse.json();
                 console.log('[finalizeChallenge] rewards success:', payload);
+                if (payload?.pendingMinigame) {
+                    setChallengeOverNotice(payload?.message || '공동 1등 미니게임 결과를 기다리는 중입니다.');
+                    if (Array.isArray(payload?.ranking)) {
+                        setRankingData(payload.ranking);
+                    }
+                    if (Array.isArray(payload?.tiedPlayers) && payload.tiedPlayers.length >= 2) {
+                        setHasTie(true);
+                        setTiedPlayers(payload.tiedPlayers);
+                    }
+                    return;
+                }
+
                 if (payload?.pendingSubmission) {
                     const pendingCount = Number(payload?.pendingCount || 0);
                     const notice = payload?.message || `아직 ${pendingCount}명이 제출하지 않았습니다.`;

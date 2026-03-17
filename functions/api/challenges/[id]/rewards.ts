@@ -393,10 +393,22 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
         return String(a.name).localeCompare(String(b.name));
       });
 
+      let prevSubmittedScore: number | null = null;
+      let competitionRank = 1;
       ranking = ranking.map((item, idx) => {
+        if (idx === 0) {
+          competitionRank = 1;
+        } else {
+          const currentSubmitted = Number(item.score || 0);
+          if (prevSubmittedScore !== null && currentSubmitted !== prevSubmittedScore) {
+            competitionRank = idx + 1;
+          }
+        }
+
         const reward = resolveRankReward(idx, ranking.length);
+        prevSubmittedScore = Number(item.score || 0);
         return {
-          rank: idx + 1,
+          rank: competitionRank,
           name: item.name,
           userId: item.userId,
           points: reward.points,
@@ -428,6 +440,124 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params, 
 
       const topRatio = Number(ranking[0]?.ratio || 0);
       hasTie = topRatio > 0 && ranking.filter((r) => Number(r.ratio || 0) === topRatio).length >= 2;
+    }
+
+    // 공동 1등이 있으면 미니게임 완료 후 승자를 1등으로 확정합니다.
+    if (hasTie && ranking.length > 0) {
+      const topMetric = type === 'study'
+        ? Number(ranking[0]?.submittedScore ?? ranking[0]?.score ?? 0)
+        : Number(ranking[0]?.ratio ?? 0);
+
+      const tiedEntries = ranking.filter((entry) => {
+        const metric = type === 'study'
+          ? Number(entry?.submittedScore ?? entry?.score ?? 0)
+          : Number(entry?.ratio ?? 0);
+        return metric === topMetric;
+      });
+
+      const tiedPlayers = tiedEntries.map((entry) => String(entry.name || ''));
+
+      if (tiedPlayers.length >= 2) {
+        try {
+          await env.D1_DB.prepare(`
+            CREATE TABLE IF NOT EXISTS minigame_ai_sessions (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              challenge_id INTEGER NOT NULL,
+              player_username TEXT NOT NULL,
+              score INTEGER NOT NULL DEFAULT 0,
+              words_count INTEGER NOT NULL DEFAULT 0,
+              status TEXT NOT NULL DEFAULT 'active',
+              last_word TEXT NOT NULL DEFAULT '',
+              history TEXT NOT NULL DEFAULT '[]',
+              result TEXT,
+              turn_started_at TEXT,
+              created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+              finished_at TEXT,
+              UNIQUE(challenge_id, player_username)
+            )
+          `).run();
+
+          const placeholders = tiedPlayers.map(() => '?').join(',');
+          const miniRowsRaw = await env.D1_DB
+            .prepare(`
+              SELECT player_username, score, words_count, status, finished_at
+              FROM minigame_ai_sessions
+              WHERE challenge_id = ?
+                AND player_username IN (${placeholders})
+            `)
+            .bind(challengeId, ...tiedPlayers)
+            .all();
+
+          const miniRows = Array.isArray(miniRowsRaw?.results) ? miniRowsRaw.results : [];
+          const finishedRows = miniRows
+            .filter((row: any) => String(row?.status) === 'finished')
+            .sort((a: any, b: any) => {
+              const scoreDiff = Number(b?.score || 0) - Number(a?.score || 0);
+              if (scoreDiff !== 0) return scoreDiff;
+
+              const wordsDiff = Number(b?.words_count || 0) - Number(a?.words_count || 0);
+              if (wordsDiff !== 0) return wordsDiff;
+
+              const aFinished = String(a?.finished_at || '9999-12-31T23:59:59.999Z');
+              const bFinished = String(b?.finished_at || '9999-12-31T23:59:59.999Z');
+              if (aFinished !== bFinished) return aFinished.localeCompare(bFinished);
+
+              return String(a?.player_username || '').localeCompare(String(b?.player_username || ''));
+            });
+
+          if (finishedRows.length < tiedPlayers.length) {
+            return new Response(
+              JSON.stringify({
+                success: true,
+                pendingMinigame: true,
+                message: '공동 1등 미니게임이 진행 중입니다. 종료 후 승자에게 몰빵 지급됩니다.',
+                applied: [],
+                ranking,
+                tiedPlayers,
+                hasTie: true,
+                type,
+                mode
+              }),
+              { status: 200, headers: { 'Content-Type': 'application/json' } }
+            );
+          }
+
+          const winnerName = String(finishedRows[0]?.player_username || '');
+          if (winnerName) {
+            const winnerEntry = ranking.find((entry) => String(entry.name) === winnerName);
+            const others = ranking.filter((entry) => String(entry.name) !== winnerName);
+
+            if (winnerEntry) {
+              ranking = [winnerEntry, ...others].map((entry, idx) => {
+                const reward = mode === 'practice' ? { points: 0, score: 0 } : resolveRankReward(idx, ranking.length);
+                return {
+                  ...entry,
+                  rank: idx + 1,
+                  points: reward.points,
+                  score: reward.score
+                };
+              });
+              hasTie = false;
+            }
+          }
+        } catch (miniErr) {
+          console.warn('[rewards] minigame resolution skipped:', miniErr);
+          return new Response(
+            JSON.stringify({
+              success: true,
+              pendingMinigame: true,
+              message: '공동 1등 미니게임 결과를 기다리는 중입니다.',
+              applied: [],
+              ranking,
+              tiedPlayers,
+              hasTie: true,
+              type,
+              mode
+            }),
+            { status: 200, headers: { 'Content-Type': 'application/json' } }
+          );
+        }
+      }
     }
 
     let betPool = 0;
