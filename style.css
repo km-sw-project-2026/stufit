@@ -101,6 +101,10 @@ body.modal-open {
     color: #096B68;
 }
 
+.mobile-menu-toggle {
+    display: none;
+}
+
 /* ==========================================
    메인 히어로 섹션: 서비스 소개 및 배경 이미지
    ========================================== */
@@ -934,7 +938,7 @@ body.modal-open {
 
 
 #challenge-detail-view {
-    background-color: #fff;
+    background-color: #eeeeee;
     align-items: stretch; 
     padding: 0;
     overflow: hidden; 
@@ -1275,6 +1279,18 @@ body.modal-open {
     box-shadow: 0 10px 25px rgba(0,0,0,0.2);
     z-index: 2001;
     border-radius: 30px;
+}
+
+#custom-alert-modal .popup-content {
+    width: 400px;
+    max-width: calc(100vw - 32px);
+    box-sizing: border-box;
+}
+
+#custom-alert-close {
+    width: 120px;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 .form-group {
@@ -1797,10 +1813,6 @@ body.modal-open {
 }
 
 .att-card.checked {
-    background-image: url('/img/attendance-check.png');
-    background-size: 70%;
-    background-repeat: no-repeat;
-    background-position: center;
     cursor: not-allowed;
     opacity: 0.8;
 }
@@ -1808,6 +1820,25 @@ body.modal-open {
 .att-card.checked span {
     display: none;
 }
+
+.today-label {
+    font-weight: 700;
+    color: #006d5d;
+    text-decoration: underline;
+}
+
+.att-card.today-active {
+    border: 2px solid #006d5d;
+    box-shadow: 0 0 0 2px rgba(0, 109, 93, 0.2);
+}
+
+.stamp-img {
+    width: 50px;
+    height: 50px;
+    object-fit: contain;
+    pointer-events: none;
+}
+
 .form-row {
     display: flex;
     gap: 15px;
@@ -3136,7 +3167,7 @@ body.modal-open {
     background: none; 
     border: none; 
     color: #999; 
-    font-size: 28px; 
+    font-size: 24px; 
     cursor: pointer;
     line-height: 1;
 }
@@ -3144,7 +3175,11 @@ body.modal-open {
 .pd-divider {
     height: 1px;
     background: #eee;
-    margin: 20px 0;
+    margin: 30px 0;
+}
+
+.pd-divider--lg {
+    margin: 40px 0;
 }
 
 .pd-meta-row {
@@ -3172,14 +3207,6 @@ body.modal-open {
     min-height: 800px; /* Added min-height to make it look bigger */
     display: flex;
     flex-direction: column;
-}
-
-.pd-title {
-    font-size: 75px; /* Adjusted from 42px */
-    font-weight: 800;
-    margin-bottom: 30px;
-    color: #000;
-    line-height: 1.2;
 }
 
 .pd-meta-row {
@@ -3478,6 +3505,24 @@ body.modal-open {
     display: flex;
     align-items: center;
     gap: 6px;
+}
+
+.pd-like-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px;
+    font-size: 18px;
+    color: #333;
+    font-weight: 700;
+    transition: color 0.2s;
+}
+
+.pd-like-btn.liked {
+    color: #ff4444;
 }
 
 .pd-body {
@@ -4541,6 +4586,286 @@ body.modal-open {
 }
 
 /* ==========================================
+   챌린지 모달 레이아웃 (인라인 스타일 대체)
+   ========================================== */
+#challenge-modal,
+#ongoing-challenge-modal {
+    background-color: #eeeeee;
+    min-height: 100vh;
+    padding: 38px 40px;
+    display: block;
+}
+
+.challenge-modal-container {
+    max-width: 1300px;
+    margin: 0 auto;
+}
+
+.challenge-modal-header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 50px;
+    gap: 30px;
+}
+
+.challenge-header-left {
+    display: flex;
+    align-items: center;
+    gap: 30px;
+}
+
+.challenge-header-left h2 {
+    font-size: 2rem;
+    margin: 0;
+    font-weight: bold;
+    letter-spacing: -0.5px;
+}
+
+.challenge-header-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+}
+
+.challenge-link-text {
+    color: #666;
+    font-size: 0.9rem;
+    text-decoration: none;
+    cursor: pointer;
+    padding: 0;
+    background: none;
+    border: none;
+}
+
+.challenge-search-bar {
+    display: flex;
+    align-items: center;
+    background-color: #fff;
+    border-radius: 25px;
+    padding: 8px 20px;
+    border: 1px solid #ccc;
+}
+
+.challenge-search-bar input {
+    border: none;
+    outline: none;
+    width: 180px;
+    font-size: 14px;
+}
+
+.challenge-search-bar button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+}
+
+.challenge-create-btn {
+    background-color: #fff;
+    border: 1px solid #70c1b3;
+    border-radius: 25px;
+    padding: 10px 25px;
+    cursor: pointer;
+    color: #247b7b;
+    font-weight: bold;
+}
+
+.challenge-modal-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    padding-top: 10px;
+}
+
+.challenge-modal-grid .loading-text,
+.challenge-modal-grid .empty-text {
+    text-align: center;
+    grid-column: span 2;
+    color: #888;
+    padding: 50px;
+}
+
+.challenge-modal-card {
+    border: 1px solid #70c1b3;
+    border-radius: 20px;
+    padding: 35px;
+    background-color: #fff;
+    min-height: 240px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+}
+
+.challenge-modal-card h3 {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin: 0;
+}
+
+.challenge-card-body-text {
+    color: #555;
+    margin-top: 15px;
+    line-height: 1.8;
+}
+
+.challenge-card-body-text p {
+    margin: 10px 0;
+}
+
+.challenge-card-footer-row {
+    margin-top: 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.challenge-edit-link {
+    background: none;
+    border: none;
+    color: #aaa;
+    cursor: pointer;
+    text-decoration: underline;
+    padding: 0;
+    font-size: 0.95rem;
+}
+
+.challenge-join-btn {
+    align-self: flex-end;
+    border: 1px solid #247b7b;
+    border-radius: 20px;
+    padding: 8px 25px;
+    background-color: #fff;
+    color: #247b7b;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.challenge-status-badge {
+    font-size: 0.9rem;
+    font-weight: bold;
+}
+
+.challenge-category-text {
+    color: #888;
+    margin-left: 12px;
+    font-size: 0.95rem;
+}
+
+.challenge-owner-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+}
+
+.challenge-owner-modal-content {
+    background: #fff;
+    padding: 24px;
+    border-radius: 12px;
+    min-width: 320px;
+    text-align: center;
+}
+
+/* ==========================================
+   WeeklySubmissionStatus (인라인 대체)
+   ========================================== */
+.weekly-status-container {
+    border: 1px solid #70c1b3;
+    border-radius: 15px;
+    padding: 12px 15px;
+    background-color: #f9fffe;
+}
+
+.weekly-status-user {
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #ddd;
+}
+
+.weekly-status-user-inner {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.weekly-status-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.weekly-status-username {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #333;
+}
+
+.weekly-status-grid {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 4px;
+}
+
+.weekly-status-day {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    flex: 1;
+}
+
+.weekly-status-day-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #666;
+    height: 14px;
+    display: flex;
+    align-items: center;
+}
+
+.weekly-status-circle {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 2px solid;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: default;
+    transition: all 0.2s;
+}
+
+.weekly-status-check {
+    color: #fff;
+    font-size: 0.9rem;
+    font-weight: bold;
+}
+
+.weekly-status-date {
+    font-size: 0.65rem;
+    color: #999;
+    height: 12px;
+}
+
+.detail-view-container.is-page {
+    max-width: 1920px;
+    margin: 0 auto;
+    padding: 12px 8px 12px 0;
+    width: 100vw;
+    box-sizing: border-box;
+}
+
+/* ==========================================
    티어 가이드 페이지
    ========================================== */
 .tier-guide-view {
@@ -4831,4 +5156,1670 @@ body.modal-open {
     0% { transform: scale(0.6); opacity: 0; }
     70% { transform: scale(1.08); opacity: 1; }
     100% { transform: scale(1); opacity: 1; }
+}
+
+/* 모바일(750px 이하)에서만 헤더 네비게이션을 햄버거 메뉴로 전환 */
+@media (max-width: 750px) {
+    html, body {
+        overflow-x: hidden !important;
+    }
+
+    .mobile-menu-toggle {
+        display: flex;
+        position: static;
+        margin-left: 8px;
+        width: 40px;
+        height: 40px;
+        align-items: center;
+        justify-content: center;
+        border: none;
+        background: transparent;
+        color: #333;
+        font-size: 30px;
+        line-height: 1;
+        padding: 0;
+        z-index: 2100;
+    }
+
+    .header {
+        height: 80px;
+        padding: 0 16px;
+        align-items: center;
+        flex-wrap: nowrap;
+    }
+
+    .header .logo {
+        margin-right: auto;
+    }
+
+    .header .logo img {
+        height: 70px;
+    }
+
+    .header .auth {
+        font-size: 14px;
+        margin-right: 0;
+        white-space: nowrap;
+        display: flex;
+        align-items: center;
+    }
+
+    .header .nav {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0;
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 80px;
+        background: #fff;
+        border-bottom: 1px solid #e0e0e0;
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+        max-height: 0;
+        opacity: 0;
+        transform: translateY(-8px);
+        pointer-events: none;
+        transition: max-height 0.28s ease, opacity 0.28s ease, transform 0.28s ease;
+        z-index: 2050;
+    }
+
+    .header.mobile-menu-open .nav {
+        max-height: 280px;
+        opacity: 1;
+        transform: translateY(0);
+        pointer-events: auto;
+        padding: 8px 16px 14px;
+    }
+
+    .header .nav a {
+        width: 100%;
+        text-align: left;
+        padding: 14px 0;
+        font-size: 16px;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    }
+
+    .header .nav a:last-child {
+        border-bottom: none;
+    }
+
+    .header .nav a:hover {
+        color: #096B68;
+    }
+
+    .attendance-section {
+        height: auto;
+        min-height: calc(100vh - 80px);
+        padding: 24px 12px 28px;
+        justify-content: flex-start;
+    }
+
+    .attendance-header {
+        margin-bottom: 24px;
+    }
+
+    .attendance-header h1 {
+        font-size: 40px;
+        letter-spacing: -1px;
+        margin-bottom: 8px;
+    }
+
+    .attendance-header p {
+        font-size: 15px;
+    }
+
+    .attendance-container {
+        width: 100%;
+        gap: 10px;
+    }
+
+    .attendance-days {
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 14px 12px;
+    }
+
+    .attendance-days span {
+        width: auto;
+        min-width: calc((100% - 16px) / 3);
+        font-size: 13px;
+        letter-spacing: 0;
+    }
+
+    .attendance-cards {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        padding: 14px 12px;
+    }
+
+    .att-card {
+        width: 100%;
+        height: 128px;
+        border-radius: 16px;
+        gap: 8px;
+    }
+
+    .att-card .label {
+        font-size: 13px;
+    }
+
+    .att-card .point {
+        font-size: 18px;
+    }
+
+    .attendance-footer-outside {
+        text-align: center;
+        font-size: 15px;
+        line-height: 1.4;
+    }
+
+    .ranking-view {
+        padding: 24px 12px 60px;
+        max-width: 100%;
+    }
+
+    .ranking-header-section {
+        flex-direction: column;
+        gap: 14px;
+        margin-bottom: 24px;
+    }
+
+    .rank-card {
+        width: 100%;
+        max-width: 360px;
+        height: auto;
+        padding: 18px 16px;
+        border-radius: 24px;
+    }
+
+    .rank-1, .rank-2, .rank-3 {
+        margin-bottom: 0;
+    }
+
+    .rank-icon-wrapper {
+        width: 72px;
+        height: 72px;
+        margin-bottom: 10px;
+    }
+
+    .rank-user-name {
+        font-size: 16px;
+        margin-bottom: 6px;
+    }
+
+    .rank-user-score {
+        font-size: 18px;
+    }
+
+    .ranking-list-container {
+        width: 100%;
+        padding: 18px 14px 20px;
+        border-radius: 24px;
+    }
+
+    .ranking-search-bar {
+        width: 100%;
+    }
+
+    .ranking-search-bar input {
+        flex: 1;
+        width: auto;
+        min-width: 0;
+        font-size: 16px;
+        padding: 12px 14px;
+    }
+
+    .ranking-search-btn {
+        min-width: 48px;
+    }
+
+    .ranking-grid-list {
+        grid-template-columns: 1fr;
+        column-gap: 0;
+        row-gap: 12px;
+        max-height: none;
+        overflow: visible;
+        padding-right: 0;
+    }
+
+    .ranking-list-item {
+        height: auto;
+        padding: 14px 16px;
+    }
+
+    .ranking-list-item .r-left {
+        gap: 10px;
+    }
+
+    .r-rank {
+        font-size: 18px;
+        width: 22px;
+    }
+
+    .r-name {
+        font-size: 15px;
+    }
+
+    .ranking-list-item .r-right {
+        align-items: flex-end;
+    }
+
+    .r-score {
+        font-size: 15px;
+    }
+
+    .community-layout {
+        flex-direction: column;
+        min-height: auto;
+    }
+
+    .community-sidebar {
+        width: 100%;
+        padding: 16px 12px 8px;
+        background: linear-gradient(180deg, rgba(18, 153, 144, 0.92) 0%, rgba(18, 153, 144, 0.72) 100%);
+    }
+
+    .sidebar-menu {
+        padding-left: 0;
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .menu-header {
+        width: 100%;
+        margin-bottom: 4px;
+        padding-right: 0;
+        font-size: 18px;
+        text-align: left;
+    }
+
+    .menu-item {
+        margin-bottom: 0;
+        padding: 10px 14px;
+        font-size: 14px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.14);
+        backdrop-filter: blur(4px);
+    }
+
+    .menu-item.active {
+        border-radius: 999px;
+    }
+
+    .community-main {
+        padding: 18px 12px 28px;
+        border-right: none;
+    }
+
+    .community-title-section {
+        margin-bottom: 20px;
+    }
+
+    .community-title-section h2 {
+        font-size: 28px;
+        margin-bottom: 10px;
+    }
+
+    .community-title-section p {
+        font-size: 14px;
+    }
+
+    .community-board-container {
+        flex-direction: column;
+        padding: 14px;
+        gap: 16px;
+    }
+
+    .community-feed {
+        max-height: none;
+        overflow: visible;
+        padding-right: 0;
+    }
+
+    .community-board-sidebar {
+        width: 100%;
+        border-left: none;
+        border-top: 1px solid #B7B7B7;
+        padding-left: 0;
+        padding-top: 16px;
+    }
+
+    .btn-new-post {
+        width: 100%;
+    }
+
+    .feed-card {
+        padding: 18px;
+    }
+
+    .feed-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .feed-meta {
+        align-self: flex-end;
+    }
+
+    .feed-user-name {
+        font-size: 14px;
+    }
+
+    .feed-content h3 {
+        font-size: 18px;
+    }
+
+    .feed-content p {
+        font-size: 15px;
+    }
+
+    /* PostDetailView 반응형 (750px 이하) */
+    #post-detail-view {
+        padding: 16px;
+    }
+
+    .post-detail-board {
+        padding: 20px;
+        min-height: auto;
+        border-radius: 16px;
+    }
+
+    .pd-header-top {
+        margin-bottom: 16px;
+    }
+
+    .pd-title {
+        font-size: 26px;
+    }
+
+    .pd-meta-row {
+        flex-direction: column;
+        gap: 16px;
+        align-items: flex-start;
+        padding-bottom: 16px;
+    }
+
+    .pd-actions {
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .pd-stats {
+        font-size: 16px;
+        gap: 12px;
+    }
+
+    .pd-like-btn {
+        font-size: 16px;
+    }
+
+    .pd-body {
+        padding: 24px 0;
+        margin-bottom: 12px;
+    }
+
+    .pd-content {
+        font-size: 18px;
+        line-height: 1.7;
+    }
+
+    .pd-divider {
+        margin: 20px 0;
+    }
+
+    .pd-divider--lg {
+        margin: 24px 0;
+    }
+
+    .pd-avatar {
+        width: 44px;
+        height: 44px;
+    }
+
+    .pd-user-info {
+        gap: 12px;
+    }
+
+    .pd-comments-section {
+        margin-top: 24px;
+    }
+
+    .comment-input-area {
+        flex-direction: row;
+        align-items: center;
+        padding: 8px 10px 8px 14px;
+        margin-bottom: 20px;
+    }
+
+    .comment-input {
+        padding: 12px 12px;
+        font-size: 16px;
+        padding-right: 12px;
+    }
+
+    .comment-submit-btn {
+        position: static;
+        transform: none;
+        padding: 8px 16px;
+        font-size: 14px;
+        margin-left: 8px;
+        flex-shrink: 0;
+    }
+
+    .comments-list {
+        max-height: none;
+        overflow: visible;
+        padding-right: 0;
+    }
+
+    .comment-item {
+        flex-direction: row;
+        gap: 10px;
+        padding: 12px 0;
+    }
+
+    .comment-avatar {
+        width: 36px;
+        height: 36px;
+    }
+
+    .comment-content-wrapper {
+        flex-direction: column;
+        gap: 8px;
+        align-items: stretch;
+    }
+
+    .comment-top-row {
+        flex-direction: column;
+        gap: 4px;
+        align-items: flex-start;
+    }
+
+    .comment-user-section {
+        flex-direction: row;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+    }
+
+    .comment-author {
+        font-size: 15px;
+    }
+
+    .comment-date {
+        font-size: 11px;
+    }
+
+    .comment-divider {
+        display: none;
+    }
+
+    .comment-text {
+        font-size: 15px;
+        line-height: 1.5;
+    }
+
+    .comment-actions-right {
+        padding: 4px 0;
+    }
+
+    .main {
+        height: auto;
+        min-height: calc(100vh - 80px);
+        padding: 72px 16px 64px;
+    }
+
+    .main h1 {
+        font-size: 30px;
+        line-height: 1.3;
+        margin-bottom: 14px;
+    }
+
+    .main p {
+        font-size: 15px;
+        line-height: 1.6;
+    }
+
+    .challenge-quicklink {
+        padding: 12px;
+    }
+
+    .challenge-quicklink-inner {
+        padding: 32px 16px;
+    }
+
+    .challenge-quicklink .stufit-logo {
+        font-size: 16px;
+        margin-bottom: 10px;
+    }
+
+    .challenge-quicklink h2 {
+        font-size: 28px;
+        white-space: normal;
+        border-right: none;
+        animation: none;
+        line-height: 1.15;
+        margin-bottom: 14px;
+        width: 100%;
+    }
+
+    .challenge-quicklink p {
+        font-size: 15px;
+        margin-bottom: 24px;
+    }
+
+    .challenge-quicklink button {
+        width: 100%;
+        max-width: 260px;
+        padding: 12px 24px;
+    }
+
+    .ranking-quicklink {
+        padding: 60px 16px;
+    }
+
+    .ranking-quicklink-title {
+        font-size: 34px;
+        margin-bottom: 24px;
+    }
+
+    .ranking-quicklink-container {
+        flex-direction: column;
+        padding: 24px 16px 20px;
+        gap: 16px;
+        border-radius: 24px;
+    }
+
+    .ranking-quicklink-arrow {
+        top: 12px;
+        right: 12px;
+        width: 34px;
+        height: 34px;
+    }
+
+    .ranking-quicklink-list {
+        width: 100%;
+        max-width: none;
+    }
+
+    .quick-rank-card {
+        height: 64px;
+        padding: 0 16px;
+    }
+
+    .rank-num {
+        font-size: 18px;
+    }
+
+    .rank-profile .name {
+        font-size: 14px;
+    }
+
+    .rank-score .value {
+        font-size: 14px;
+    }
+
+    .shop-quicklink {
+        padding: 56px 0;
+    }
+
+    .shop-header {
+        margin-bottom: 24px;
+    }
+
+    .shop-header h2 {
+        font-size: 34px;
+    }
+
+    .shop-header p {
+        font-size: 14px;
+    }
+
+    .shop-content {
+        padding: 0 12px;
+    }
+
+    .shop-more-link {
+        position: static;
+        display: inline-flex;
+        margin: 0 0 12px auto;
+    }
+
+    .shop-slider-container {
+        flex-direction: column;
+        gap: 12px;
+        height: auto;
+        margin-bottom: 20px;
+    }
+
+    .shop-nav {
+        padding: 6px;
+    }
+
+    .shop-nav svg {
+        width: 28px;
+        height: 28px;
+    }
+
+    .shop-items-wrapper {
+        gap: 12px;
+    }
+
+    .shop-item.small {
+        width: 72px;
+        height: 72px;
+    }
+
+    .shop-item.medium {
+        width: 96px;
+        height: 96px;
+    }
+
+    .shop-item.active {
+        width: 140px;
+        height: 140px;
+    }
+
+    .shop-item-info {
+        margin-bottom: 20px;
+    }
+
+    .shop-price {
+        font-size: 20px;
+    }
+
+    .shop-pagination {
+        gap: 6px;
+    }
+
+    .community-quicklink {
+        padding: 56px 0;
+    }
+
+    .community-header {
+        margin-bottom: 24px;
+    }
+
+    .community-header h2 {
+        font-size: 34px;
+        margin-bottom: 14px;
+    }
+
+    .community-header p {
+        font-size: 14px;
+    }
+
+    .community-container {
+        padding: 0 12px;
+    }
+
+    .community-nav-row {
+        text-align: left;
+        margin-bottom: 12px;
+    }
+
+    .community-cards-wrapper {
+        justify-content: flex-start;
+        gap: 16px;
+        padding-bottom: 12px;
+    }
+
+    .comm-card {
+        width: 280px;
+        min-height: 200px;
+        padding: 20px;
+    }
+
+    .comm-title {
+        font-size: 16px;
+    }
+
+    .comm-desc {
+        font-size: 13px;
+        margin-bottom: 18px;
+    }
+
+    .comm-footer {
+        gap: 12px;
+    }
+
+    .footer {
+        padding: 32px 16px;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 24px;
+    }
+
+    .footer-content {
+        gap: 24px;
+    }
+
+    .footer-links {
+        gap: 16px;
+        flex-wrap: wrap;
+    }
+
+    .footer-social {
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    /* ===== Challenge (챌린지) ===== */
+    #challenge-modal,
+    #ongoing-challenge-modal {
+        padding: 16px 12px;
+    }
+
+    .challenge-modal-header-top {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+
+    .challenge-header-left {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+
+    .challenge-header-left h2 {
+        font-size: 1.5rem;
+    }
+
+    .challenge-header-right {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+    }
+
+    .challenge-search-bar input {
+        width: auto;
+        flex: 1;
+        min-width: 0;
+    }
+
+    .challenge-modal-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    .challenge-modal-grid .loading-text,
+    .challenge-modal-grid .empty-text {
+        grid-column: span 1;
+        padding: 30px;
+    }
+
+    .challenge-modal-card {
+        padding: 18px;
+        min-height: auto;
+    }
+
+    .challenge-modal-card h3 {
+        font-size: 1.2rem;
+    }
+
+    .challenge-card-body-text {
+        font-size: 0.9rem;
+        line-height: 1.6;
+    }
+
+    .challenge-card-footer-row {
+        margin-top: 16px;
+    }
+
+    .challenge-join-btn,
+    .challenge-detail-btn {
+        padding: 8px 18px;
+        font-size: 0.85rem;
+    }
+
+    .challenge-create-btn {
+        padding: 8px 16px;
+        font-size: 0.85rem;
+    }
+
+    .challenge-owner-modal-content {
+        min-width: auto;
+        width: calc(100vw - 32px);
+        max-width: 320px;
+    }
+
+    /* ChallengeDetailView */
+    .detail-view-container {
+        flex-direction: column;
+    }
+
+    .detail-view-container.is-page {
+        width: 100%;
+        padding: 12px;
+    }
+
+    .detail-sidebar {
+        width: 100%;
+        padding: 20px 16px;
+        border-right: none;
+        border-bottom: 1px solid #ddd;
+        border-radius: 0 0 20px 20px;
+    }
+
+    .detail-sidebar h2 {
+        margin-bottom: 16px;
+        font-size: 20px;
+    }
+
+    .member-list {
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 12px;
+        max-height: none;
+    }
+
+    .member-item {
+        width: auto;
+        gap: 10px;
+    }
+
+    .member-avatar {
+        width: 36px;
+        height: 36px;
+    }
+
+    .detail-main {
+        padding: 20px 16px;
+    }
+
+    .detail-card {
+        padding: 16px;
+    }
+
+    .detail-title-left {
+        font-size: 1rem;
+    }
+
+    .progress-info .percentage {
+        font-size: 24px;
+    }
+
+    .timer-display {
+        min-height: 200px;
+    }
+
+    .timer-time {
+        font-size: 48px;
+    }
+
+    .timer-btn {
+        width: 100%;
+        max-width: 250px;
+        height: 42px;
+    }
+
+    .detail-actions {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .btn-giveup,
+    .btn-complete {
+        width: 100%;
+    }
+
+    .weekly-status-circle {
+        width: 28px;
+        height: 28px;
+    }
+}
+
+/* ============================================ */
+/* 480px 이하 반응형 (소형 모바일)              */
+/* ============================================ */
+@media (max-width: 480px) {
+    html, body {
+        overflow-x: hidden !important;
+    }
+
+    /* ===== Attendance ===== */
+    .attendance-section {
+        padding: 16px 8px 20px;
+    }
+
+    .attendance-header {
+        margin-bottom: 16px;
+    }
+
+    .attendance-header h1 {
+        font-size: 32px;
+        letter-spacing: -0.5px;
+    }
+
+    .attendance-header p {
+        font-size: 13px;
+    }
+
+    .attendance-container {
+        gap: 8px;
+    }
+
+    .attendance-board {
+        border-radius: 14px;
+    }
+
+    .attendance-days {
+        padding: 10px 6px;
+        gap: 4px;
+    }
+
+    .attendance-days span {
+        flex: 1;
+        min-width: 0;
+        font-size: 12px;
+        padding: 6px 2px;
+        text-align: center;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .attendance-cards {
+        grid-template-columns: 1fr;
+        gap: 8px;
+        padding: 10px 8px;
+    }
+
+    .att-card {
+        height: 92px;
+        border-radius: 12px;
+        gap: 4px;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 14px;
+    }
+
+    .att-card .label {
+        font-size: 12px;
+    }
+
+    .att-card .point {
+        font-size: 16px;
+    }
+
+    .stamp-img {
+        width: 36px;
+        height: 36px;
+    }
+
+    .attendance-footer-outside {
+        font-size: 13px;
+    }
+
+    /* ===== Ranking ===== */
+    .ranking-view {
+        padding: 16px 8px 40px;
+    }
+
+    .ranking-header-section {
+        gap: 10px;
+        margin-bottom: 18px;
+    }
+
+    .rank-card {
+        max-width: 100%;
+        padding: 14px 12px;
+        border-radius: 18px;
+    }
+
+    .rank-icon-wrapper {
+        width: 60px;
+        height: 60px;
+    }
+
+    .rank-user-name {
+        font-size: 15px;
+        margin-bottom: 4px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100%;
+    }
+
+    .rank-user-score {
+        font-size: 16px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100%;
+    }
+
+    .ranking-list-container {
+        padding: 14px 10px 16px;
+        border-radius: 18px;
+    }
+
+    .ranking-search-bar input {
+        padding: 10px 12px;
+        font-size: 15px;
+    }
+
+    .ranking-grid-list {
+        row-gap: 10px;
+    }
+
+    .ranking-list-item {
+        padding: 12px 12px;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .ranking-list-item .r-left {
+        gap: 8px;
+        min-width: 0;
+        flex: 1 1 auto;
+    }
+
+    .r-rank {
+        width: auto;
+        min-width: 24px;
+        font-size: 16px;
+    }
+
+    .r-name {
+        font-size: 14px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        min-width: 0;
+    }
+
+    .ranking-list-item .r-right {
+        flex-shrink: 0;
+    }
+
+    .r-score {
+        font-size: 14px;
+        white-space: nowrap;
+    }
+
+    /* Ranking quicklink (메인 페이지) */
+    .ranking-quicklink-title {
+        font-size: 26px;
+    }
+
+    .quick-rank-card {
+        height: 56px;
+        padding: 0 10px;
+    }
+
+    .rank-profile .name {
+        font-size: 13px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* ===== Community ===== */
+    .community-main {
+        padding: 14px 8px 20px;
+    }
+
+    .community-title-section {
+        margin-bottom: 14px;
+    }
+
+    .community-title-section h2 {
+        font-size: 24px;
+    }
+
+    .community-title-section p {
+        font-size: 13px;
+    }
+
+    .community-board-container {
+        padding: 10px;
+        gap: 12px;
+    }
+
+    .feed-card {
+        padding: 14px;
+        border-width: 2px;
+        border-radius: 12px;
+    }
+
+    .feed-header {
+        gap: 10px;
+    }
+
+    .feed-user-avatar {
+        width: 32px;
+        height: 32px;
+    }
+
+    .feed-user-name {
+        font-size: 13px;
+    }
+
+    .feed-meta {
+        font-size: 12px;
+        gap: 10px;
+    }
+
+    .feed-content h3 {
+        font-size: 16px;
+    }
+
+    .feed-content p {
+        font-size: 13px;
+    }
+
+    .btn-new-post {
+        font-size: 14px;
+        padding: 8px 0;
+    }
+
+    /* ===== PostDetailView ===== */
+    #post-detail-view {
+        padding: 10px;
+    }
+
+    .post-detail-board {
+        padding: 14px;
+        border-radius: 12px;
+    }
+
+    .pd-title {
+        font-size: 22px;
+    }
+
+    .close-detail-text-btn {
+        font-size: 22px;
+    }
+
+    .pd-body {
+        padding: 16px 0;
+    }
+
+    .pd-content {
+        font-size: 16px;
+        line-height: 1.6;
+    }
+
+    .pd-avatar {
+        width: 40px;
+        height: 40px;
+    }
+
+    .comment-avatar {
+        width: 32px;
+        height: 32px;
+    }
+
+    .comment-author {
+        font-size: 14px;
+    }
+
+    .comment-text {
+        font-size: 14px;
+    }
+
+    .comment-input {
+        font-size: 15px;
+    }
+
+    .comment-submit-btn {
+        padding: 8px 12px;
+        font-size: 13px;
+    }
+
+    /* CustomAlertModal */
+    #custom-alert-modal .popup-content {
+        padding: 24px 18px;
+    }
+
+    /* ===== Challenge (챌린지) ===== */
+    #challenge-modal,
+    #ongoing-challenge-modal {
+        padding: 12px 8px;
+    }
+
+    .challenge-modal-card {
+        padding: 14px;
+    }
+
+    .challenge-modal-card h3 {
+        font-size: 1.1rem;
+    }
+
+    .challenge-card-body-text {
+        font-size: 0.85rem;
+    }
+
+    .challenge-card-footer-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+
+    .challenge-join-btn,
+    .challenge-detail-btn,
+    .challenge-edit-link {
+        align-self: stretch;
+        text-align: center;
+    }
+
+    .detail-sidebar {
+        padding: 16px 12px;
+    }
+
+    .member-avatar {
+        width: 32px;
+        height: 32px;
+    }
+
+    .detail-main {
+        padding: 16px 10px;
+    }
+
+    .detail-card {
+        padding: 14px;
+    }
+
+    .timer-time {
+        font-size: 36px;
+    }
+
+    .timer-btn {
+        height: 38px;
+    }
+
+    .weekly-status-circle {
+        width: 24px;
+        height: 24px;
+    }
+
+    .weekly-status-day-label {
+        font-size: 0.65rem;
+    }
+
+    .weekly-status-date {
+        font-size: 0.55rem;
+    }
+}
+
+/* ============================================ */
+/* 360px 이하 반응형 (초소형 모바일)             */
+/* ============================================ */
+@media (max-width: 360px) {
+    html, body {
+        overflow-x: hidden !important;
+    }
+
+    /* ===== Attendance ===== */
+    .attendance-section {
+        padding: 12px 6px 16px;
+    }
+
+    .attendance-header h1 {
+        font-size: 26px;
+    }
+
+    .attendance-header p {
+        font-size: 12px;
+    }
+
+    .attendance-days {
+        padding: 8px 4px;
+        gap: 3px;
+    }
+
+    .attendance-days span {
+        flex: 1;
+        min-width: 0;
+        font-size: 11px;
+        padding: 5px 1px;
+        text-align: center;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .attendance-cards {
+        padding: 8px 6px;
+        gap: 6px;
+    }
+
+    .att-card {
+        height: 80px;
+        padding: 6px 10px;
+        border-radius: 10px;
+    }
+
+    .att-card .label {
+        font-size: 11px;
+    }
+
+    .att-card .point {
+        font-size: 14px;
+    }
+
+    .stamp-img {
+        width: 30px;
+        height: 30px;
+    }
+
+    .attendance-footer-outside {
+        font-size: 12px;
+    }
+
+    /* ===== Ranking ===== */
+    .ranking-view {
+        padding: 12px 6px 30px;
+    }
+
+    .rank-card {
+        padding: 12px 10px;
+        border-radius: 14px;
+    }
+
+    .rank-icon-wrapper {
+        width: 52px;
+        height: 52px;
+    }
+
+    .rank-user-name {
+        font-size: 14px;
+    }
+
+    .rank-user-label {
+        font-size: 11px;
+    }
+
+    .rank-user-score {
+        font-size: 15px;
+    }
+
+    .ranking-list-container {
+        padding: 12px 8px 14px;
+        border-radius: 14px;
+    }
+
+    .ranking-search-bar input {
+        padding: 10px 10px;
+        font-size: 14px;
+    }
+
+    .ranking-list-item {
+        padding: 10px 10px;
+        border-width: 1.5px;
+        border-radius: 8px;
+    }
+
+    .r-rank {
+        font-size: 15px;
+        min-width: 22px;
+    }
+
+    .r-name {
+        font-size: 13px;
+    }
+
+    .r-label {
+        font-size: 10px;
+    }
+
+    .r-score {
+        font-size: 13px;
+    }
+
+    /* Ranking quicklink */
+    .ranking-quicklink {
+        padding: 40px 8px;
+    }
+
+    .ranking-quicklink-title {
+        font-size: 22px;
+        margin-bottom: 16px;
+    }
+
+    .ranking-quicklink-container {
+        padding: 16px 10px 14px;
+        border-radius: 18px;
+    }
+
+    .quick-rank-card {
+        height: 52px;
+        padding: 0 8px;
+    }
+
+    .rank-num {
+        font-size: 16px;
+        width: 24px;
+    }
+
+    .profile-img {
+        width: 30px;
+        height: 30px;
+        margin-right: 10px;
+    }
+
+    .rank-profile .name {
+        font-size: 12px;
+    }
+
+    .rank-score .value {
+        font-size: 13px;
+    }
+
+    /* ===== Community ===== */
+    .community-sidebar {
+        padding: 12px 8px 6px;
+    }
+
+    .sidebar-menu {
+        gap: 6px;
+    }
+
+    .menu-header {
+        font-size: 16px;
+        margin-bottom: 4px;
+    }
+
+    .menu-item {
+        padding: 8px 10px;
+        font-size: 12px;
+        border-radius: 999px;
+    }
+
+    .community-main {
+        padding: 10px 6px 16px;
+    }
+
+    .community-title-section h2 {
+        font-size: 20px;
+    }
+
+    .community-title-section p {
+        font-size: 12px;
+    }
+
+    .community-board-container {
+        padding: 8px;
+        gap: 10px;
+        border-radius: 12px;
+    }
+
+    .feed-card {
+        padding: 12px;
+        border-width: 1.5px;
+    }
+
+    .feed-user-avatar {
+        width: 28px;
+        height: 28px;
+    }
+
+    .feed-user-name {
+        font-size: 12px;
+    }
+
+    .feed-meta {
+        font-size: 11px;
+        gap: 8px;
+    }
+
+    .feed-content h3 {
+        font-size: 15px;
+    }
+
+    .feed-content p {
+        font-size: 12px;
+    }
+
+    /* ===== PostDetailView ===== */
+    #post-detail-view {
+        padding: 6px;
+    }
+
+    .post-detail-board {
+        padding: 12px;
+        border-radius: 10px;
+    }
+
+    .pd-title {
+        font-size: 20px;
+    }
+
+    .close-detail-text-btn {
+        font-size: 20px;
+    }
+
+    .pd-avatar {
+        width: 36px;
+        height: 36px;
+    }
+
+    .pd-username {
+        font-size: 14px;
+    }
+
+    .pd-date-view {
+        font-size: 11px;
+    }
+
+    .pd-btn {
+        padding: 6px 14px;
+        font-size: 13px;
+    }
+
+    .pd-body {
+        padding: 12px 0;
+    }
+
+    .pd-content {
+        font-size: 15px;
+        line-height: 1.55;
+    }
+
+    .comment-avatar {
+        width: 28px;
+        height: 28px;
+    }
+
+    .comment-author {
+        font-size: 13px;
+    }
+
+    .comment-date {
+        font-size: 10px;
+    }
+
+    .comment-text {
+        font-size: 13px;
+    }
+
+    .comment-input {
+        font-size: 14px;
+        padding: 10px 10px;
+    }
+
+    .comment-submit-btn {
+        padding: 8px 10px;
+        font-size: 12px;
+        margin-left: 6px;
+    }
+
+    /* CustomAlertModal */
+    #custom-alert-modal .popup-content {
+        padding: 20px 14px;
+        width: calc(100vw - 24px);
+    }
+
+    #custom-alert-text {
+        font-size: 1rem;
+        margin-bottom: 18px;
+    }
+
+    #custom-alert-close {
+        width: 100px;
+        padding: 10px;
+    }
+
+    /* ===== Challenge (챌린지) ===== */
+    #challenge-modal,
+    #ongoing-challenge-modal {
+        padding: 10px 6px;
+    }
+
+    .challenge-modal-card {
+        padding: 12px;
+    }
+
+    .challenge-modal-card h3 {
+        font-size: 1rem;
+    }
+
+    .challenge-card-body-text {
+        font-size: 0.8rem;
+    }
+
+    .detail-sidebar {
+        padding: 12px 8px;
+    }
+
+    .member-avatar {
+        width: 28px;
+        height: 28px;
+    }
+
+    .detail-main {
+        padding: 12px 8px;
+    }
+
+    .detail-card {
+        padding: 12px;
+    }
+
+    .timer-time {
+        font-size: 28px;
+    }
+
+    .timer-btn {
+        height: 34px;
+        font-size: 0.8rem;
+    }
+
+    .weekly-status-circle {
+        width: 20px;
+        height: 20px;
+    }
+
+    .weekly-status-check {
+        font-size: 0.7rem;
+    }
 }

@@ -5,6 +5,8 @@ import MyPage from "../modal/MyPage";
 function Header() {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [isMyPageOpen, setIsMyPageOpen] = useState(false);
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [isMobileViewport, setIsMobileViewport] = useState(false);
     const [points, setPoints] = useState(0);
 
     useEffect(() => {
@@ -79,32 +81,58 @@ function Header() {
         window.addEventListener('loginStatusChanged', checkLoginStatus);
         window.addEventListener('pointsUpdated', handlePointsUpdate);
 
+        const updateViewport = () => {
+            setIsMobileViewport(window.innerWidth <= 750);
+        };
+
+        updateViewport();
+        window.addEventListener('resize', updateViewport);
+
         return () => {
             isMounted = false;
             window.removeEventListener('storage', checkLoginStatus);
             window.removeEventListener('loginStatusChanged', checkLoginStatus);
             window.removeEventListener('pointsUpdated', handlePointsUpdate);
+            window.removeEventListener('resize', updateViewport);
         };
     }, []);
+
+    useEffect(() => {
+        if (!isMobileViewport) {
+            setIsMobileMenuOpen(false);
+        }
+    }, [isMobileViewport]);
 
     const handleMyPageClick = () => {
         setIsMyPageOpen(true);
     };
 
+    const closeMobileMenu = () => {
+        setIsMobileMenuOpen(false);
+    };
+
     return (
         <>
-            <div className="header" style={{ position: 'relative', zIndex: 2000 }}>
+            <div className={`header ${isMobileMenuOpen ? 'mobile-menu-open' : ''}`} style={{ position: 'relative', zIndex: 2000 }}>
                 {/* 로고 이미지 영역 (클릭 시 메인 페이지로 이동) */}
                 <div className="logo">
-                    <Link to="/" id="logo-link"><img src="/img/logo.png" alt="Stufit Logo" /></Link>
+                    <Link to="/" id="logo-link" onClick={closeMobileMenu}><img src="/img/logo.png" alt="Stufit Logo" /></Link>
                 </div>
                 {/* 메인 네비게이션 메뉴: 출석체크, 챌린지, 랭킹 등 */}
-                <div className="nav">
-                    <Link to="/attendance" id="attendance-link">출석체크</Link>
-                    <Link to="/ongoing-challenges" id="challenge-link">챌린지</Link>
-                    <Link to="/ranking" id="ranking-link">랭킹</Link>
-                    <Link to="/community" id="community-link">커뮤니티</Link>
-                    <Link to="/shop" id="shop-link">상점</Link>
+                <div
+                    className={`nav ${isMobileMenuOpen ? 'mobile-menu-open' : ''}`}
+                    style={isMobileViewport ? {
+                        maxHeight: isMobileMenuOpen ? '280px' : '0px',
+                        opacity: isMobileMenuOpen ? 1 : 0,
+                        transform: isMobileMenuOpen ? 'translateY(0)' : 'translateY(-8px)',
+                        pointerEvents: isMobileMenuOpen ? 'auto' : 'none',
+                    } : undefined}
+                >
+                    <Link to="/attendance" id="attendance-link" onClick={closeMobileMenu}>출석체크</Link>
+                    <Link to="/ongoing-challenges" id="challenge-link" onClick={closeMobileMenu}>챌린지</Link>
+                    <Link to="/ranking" id="ranking-link" onClick={closeMobileMenu}>랭킹</Link>
+                    <Link to="/community" id="community-link" onClick={closeMobileMenu}>커뮤니티</Link>
+                    <Link to="/shop" id="shop-link" onClick={closeMobileMenu}>상점</Link>
                 </div>
                 {/* 사용자 인증 영역: 로그인 및 회원가입 링크 */}
                 <div className="auth">
@@ -118,14 +146,24 @@ function Header() {
                             }}>
                                 {points.toLocaleString()}P
                             </span>
-                            <button onClick={handleMyPageClick} id="mypage-btn" className="mypage-link">마이페이지</button>
+                            <button onClick={() => { closeMobileMenu(); handleMyPageClick(); }} id="mypage-btn" className="mypage-link">마이페이지</button>
                         </>
                     ) : (
                         <>
-                            <Link to="/login" id="login-link">로그인</Link> | <Link to="/signup" id="signup-link">회원가입</Link>
+                            <Link to="/login" id="login-link" onClick={closeMobileMenu}>로그인</Link> | <Link to="/signup" id="signup-link" onClick={closeMobileMenu}>회원가입</Link>
                         </>
                     )}
                 </div>
+                {/* 모바일 햄버거 버튼: 750px 이하에서만 표시 */}
+                <button
+                    type="button"
+                    className="mobile-menu-toggle"
+                    onClick={() => setIsMobileMenuOpen((prev) => !prev)}
+                    aria-label="메뉴 열기"
+                    aria-expanded={isMobileMenuOpen}
+                >
+                    ☰
+                </button>
             </div>
             
             <MyPage isOpen={isMyPageOpen} onClose={() => setIsMyPageOpen(false)} />

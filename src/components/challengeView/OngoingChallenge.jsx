@@ -795,44 +795,32 @@ function OngoingChallenge() {
         const isStarted = Number(challenge.is_started || 0) === 1 || Number(challenge.member_count || 0) >= Number(challenge.max_members || 0);
 
         return (
-            <div className="challenge-card" style={{ 
-                border: '1px solid #70c1b3', 
-                borderRadius: '20px', 
-                padding: '35px', 
-                backgroundColor: 'white',
-                minHeight: '220px',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'space-between',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
-            }}>
+            <div className="challenge-modal-card challenge-card">
                 <div>
-                    <div className="challenge-card-header" style={{ marginBottom: '25px' }}>
-                        <h3 style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontSize: '1.5rem', fontWeight: 'bold', margin: 0 }}>
+                    <div className="challenge-card-header">
+                        <h3>
                             <span>{challenge.title}</span>
-                            <span style={{ fontSize: '0.9rem', color: isStarted ? '#247b7b' : '#b08900', fontWeight: 'bold' }}>
+                            <span className="challenge-status-badge" style={{ color: isStarted ? '#247b7b' : '#b08900' }}>
                                 {isStarted ? '진행중' : '인원 충족 대기중'}
                             </span>
                         </h3>
-                        <span style={{ color: '#888', marginLeft: '12px', fontSize: '0.95rem' }}>({getCategoryName(challenge.category)})</span>
+                        <span className="challenge-category-text">({getCategoryName(challenge.category)})</span>
                     </div>
-                    <div className="challenge-card-body" style={{ color: '#555', fontSize: '1rem', lineHeight: '2' }}>
-                        <p style={{ margin: '10px 0' }}>참여 인원 - {Number(challenge.member_count || 0)} / {challenge.max_members}</p>
-                        <p style={{ margin: '10px 0' }}>기간 - {startDate} ~ {endDate}</p>
-                        <p style={{ margin: '10px 0' }}>목표 - {challenge.goal}</p>
+                    <div className="challenge-card-body challenge-card-body-text">
+                        <p>참여 인원 - {Number(challenge.member_count || 0)} / {challenge.max_members}</p>
+                        <p>기간 - {startDate} ~ {endDate}</p>
+                        <p>목표 - {challenge.goal}</p>
                     </div>
                 </div>
-                <div className="challenge-card-footer" style={{ marginTop: '30px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <button 
-                        className="edit-link" 
-                        style={{ background: 'none', border: 'none', color: '#aaa', cursor: 'pointer', textDecoration: 'underline', padding: 0, fontSize: '0.95rem' }}
+                <div className="challenge-card-footer challenge-card-footer-row">
+                    <button
+                        className="edit-link challenge-edit-link"
                         onClick={() => openEditModal(challenge)}
                     >
                         수정하기→
                     </button>
-                    <button 
-                        className="challenge-detail-btn" 
-                        style={{ border: '1px solid #247b7b', borderRadius: '20px', padding: '8px 25px', backgroundColor: 'white', color: '#247b7b', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.95rem' }}
+                    <button
+                        className="challenge-detail-btn challenge-join-btn"
                         onClick={() => openChallengeDetail(challenge)}
                     >
                         자세히 보기
@@ -843,32 +831,23 @@ function OngoingChallenge() {
     };
 
     return (
-        <div id="ongoing-challenge-modal" style={{ backgroundColor: '#eeeeee', minHeight: '100vh', padding: '38px 40px', display: 'block' }}>
+        <div id="ongoing-challenge-modal" className="challenge-modal-container">
             {!isChallengeModalVisible && (
-                <div style={{ maxWidth: '1300px', margin: '0 auto' }}>
-                    <div className="modal-content">
-                        <div className="modal-header-top" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '50px', gap: '30px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '30px' }}>
-                                <h2 style={{ fontSize: '2rem', margin: 0, fontWeight: 'bold', letterSpacing: '-0.5px' }}>진행중인 챌린지</h2>
+                <div className="modal-content">
+                        <div className="modal-header-top challenge-modal-header-top">
+                            <div className="challenge-header-left">
+                                <h2>진행중인 챌린지</h2>
                                 
                                 {/* ⭐️ 검색창 복구 (사진 디자인 반영) */}
-                                <div className="search-bar" style={{ 
-                                    display: 'flex', 
-                                    alignItems: 'center', 
-                                    backgroundColor: 'white', 
-                                    borderRadius: '25px', 
-                                    padding: '8px 20px', 
-                                    border: '1px solid #ccc' 
-                                }}>
+                                <div className="search-bar challenge-search-bar">
                                     <input 
                                         type="text" 
                                         placeholder="Enter code" 
                                         value={codeSearch}
                                         onChange={(e) => setCodeSearch(e.target.value)}
                                         onKeyDown={(e) => { if (e.key === 'Enter') handleCodeSearch(); }}
-                                        style={{ border: 'none', outline: 'none', width: '180px' }} 
                                     />
-                                    <button onClick={() => handleCodeSearch()} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}>
+                                    <button onClick={() => handleCodeSearch()}>
                                         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                             <circle cx="11" cy="11" r="8"></circle>
                                             <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
@@ -877,11 +856,10 @@ function OngoingChallenge() {
                                 </div>
                             </div>
                             
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '10px' }}>
-                                <a href="#" onClick={allChallenge} style={{ color: '#666', fontSize: '0.9rem', textDecoration: 'none' }}>챌린지 전체보기 →</a>
+                            <div className="challenge-header-right">
+                                <a href="#" onClick={allChallenge} className="challenge-link-text">챌린지 전체보기 →</a>
                                 <button 
-                                    className="create-challenge-btn" 
-                                    style={{ backgroundColor: 'white', border: '1px solid #70c1b3', borderRadius: '25px', padding: '10px 25px', cursor: 'pointer', color: '#247b7b', fontWeight: 'bold' }}
+                                    className="create-challenge-btn challenge-create-btn"
                                     onClick={CreateChallengeHandler}
                                 >
                                     챌린지 만들기
@@ -889,9 +867,9 @@ function OngoingChallenge() {
                             </div>
                         </div>
 
-                        <div className="challenge-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '40px', paddingTop: '10px' }}>
+                        <div className="challenge-grid challenge-modal-grid">
                             {loading ? (
-                                <p style={{ textAlign: 'center', gridColumn: 'span 2', color: '#888', padding: '50px' }}>
+                                <p className="challenge-grid-empty">
                                     챌린지를 불러오는 중...
                                 </p>
                             ) : challenges.length > 0 ? (
@@ -899,12 +877,11 @@ function OngoingChallenge() {
                                     <ChallengeCard key={challenge.challenge_id} challenge={challenge} />
                                 ))
                             ) : (
-                                <p style={{ textAlign: 'center', gridColumn: 'span 2', color: '#888', padding: '50px' }}>
+                                <p className="challenge-grid-empty">
                                     아직 진행 중인 챌린지가 없습니다. 상단의 버튼을 눌러 첫 챌린지를 만들어보세요!
                                 </p>
                             )}
                         </div>
-                    </div>
                 </div>
             )}
 
@@ -929,11 +906,11 @@ function OngoingChallenge() {
             )}
 
             {showOwnerOnlyModal && (
-                <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000 }} onClick={() => setShowOwnerOnlyModal(false)}>
-                    <div style={{ background: 'white', padding: '24px', borderRadius: '12px', minWidth: '320px', textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
-                        <h3 style={{ marginBottom: '12px' }}>수정 권한 안내</h3>
-                        <p style={{ marginBottom: '18px' }}>{ownerOnlyMessage}</p>
-                        <button onClick={() => setShowOwnerOnlyModal(false)} style={{ padding: '10px 18px', borderRadius: '8px', border: 'none', background: '#1f6157', color: 'white', cursor: 'pointer' }}>확인</button>
+                <div className="challenge-owner-modal-overlay" onClick={() => setShowOwnerOnlyModal(false)}>
+                    <div className="challenge-owner-modal-content" onClick={(e) => e.stopPropagation()}>
+                        <h3>수정 권한 안내</h3>
+                        <p>{ownerOnlyMessage}</p>
+                        <button onClick={() => setShowOwnerOnlyModal(false)}>확인</button>
                     </div>
                 </div>
             )}

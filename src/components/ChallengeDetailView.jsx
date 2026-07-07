@@ -80,101 +80,43 @@ function WeeklySubmissionStatus({ challengeId, refreshKey }) {
     };
 
     return (
-        <div style={{
-            border: '1px solid #70c1b3',
-            borderRadius: '15px',
-            padding: '12px 15px',
-            backgroundColor: '#f9fffe'
-        }}>
+        <div className="weekly-status-container">
             {/* 사용자 정보 */}
-            <div style={{
-                marginBottom: '10px',
-                paddingBottom: '8px',
-                borderBottom: '1px solid #ddd'
-            }}>
-                <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px'
-                }}>
+            <div className="weekly-status-user-info">
+                <div className="weekly-status-user-inner">
                     <img 
                         src="/img/Profile.png" 
                         alt="Profile" 
-                        style={{
-                            width: '28px',
-                            height: '28px',
-                            borderRadius: '50%',
-                            objectFit: 'cover'
-                        }}
+                        className="weekly-status-avatar"
                     />
-                    <span style={{
-                        fontSize: '0.85rem',
-                        fontWeight: '600',
-                        color: '#333'
-                    }}>
+                    <span className="weekly-status-username">
                         {username}
                     </span>
                 </div>
             </div>
 
             {/* 주간 제출 현황 */}
-            <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'flex-end',
-                gap: '4px'
-            }}>
+            <div className="weekly-status-week-row">
                 {weekData.map((day, idx) => (
-                    <div key={idx} style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        gap: '4px',
-                        flex: 1
-                    }}>
+                    <div key={idx} className="weekly-status-day-item">
                         {/* 요일 표시 */}
-                        <div style={{
-                            fontSize: '0.75rem',
-                            fontWeight: '600',
-                            color: '#666',
-                            height: '14px',
-                            display: 'flex',
-                            alignItems: 'center'
-                        }}>
+                        <div className="weekly-status-day-label">
                             {daysOfWeek[idx]}
                         </div>
 
                         {/* 제출 상태 원형 버튼 */}
-                        <div style={{
-                            width: '32px',
-                            height: '32px',
-                            borderRadius: '50%',
-                            border: '2px solid',
-                            borderColor: day.hasSubmitted ? '#70c1b3' : '#ddd',
-                            backgroundColor: day.hasSubmitted ? '#70c1b3' : 'white',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            cursor: 'default',
-                            transition: 'all 0.2s ease'
-                        }}>
+                        <div
+                            className={`weekly-status-circle ${day.hasSubmitted ? 'submitted' : ''}`}
+                        >
                             {day.hasSubmitted && (
-                                <span style={{
-                                    color: 'white',
-                                    fontSize: '0.9rem',
-                                    fontWeight: 'bold'
-                                }}>
+                                <span className="weekly-status-check">
                                     ✓
                                 </span>
                             )}
                         </div>
 
                         {/* 날짜 */}
-                        <div style={{
-                            fontSize: '0.65rem',
-                            color: '#999',
-                            height: '12px'
-                        }}>
+                        <div className="weekly-status-date">
                             {day.dateStr.split('-')[2]}
                         </div>
                     </div>
@@ -1122,12 +1064,7 @@ function ChallengeDetailView({ challenge: initialChallenge, onClose, isPage = fa
         <>
             <div id="challenge-detail-view" className={isPage ? "" : "modal"}>
                 <div
-                    className="detail-view-container"
-                    style={
-                        isPage
-                            ? { maxWidth: '1920px', margin: '0 auto', padding: '12px 8px 12px 0', width: '100vw', boxSizing: 'border-box' }
-                            : {}
-                    }
+                    className={`detail-view-container ${isPage ? 'is-page' : ''}`}
                 >
                     <div className="detail-sidebar">
                         <h2>MEMBER</h2>

@@ -8,12 +8,11 @@ function CustomAlertModal({ message, onClose }) {
         onClick={onClose} 
         style={{position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)'}}
       ></div>
-      <div 
-        className="popup-content" 
-        style={{ 
+      <div
+        className="popup-content"
+        style={{
             position: 'relative',
-            width: '400px', 
-            textAlign: 'center', 
+            textAlign: 'center',
             padding: '40px',
             backgroundColor: 'white',
             borderRadius: '12px',
@@ -22,12 +21,12 @@ function CustomAlertModal({ message, onClose }) {
         }}
       >
         <p id="custom-alert-text" style={{ marginBottom: '25px', fontSize: '1.1rem', color: '#333' }}>
-          {message} 
+          {message}
         </p>
-        <button 
-          id="custom-alert-close" 
-          className="start-challenge-btn" 
-          style={{ width: '120px', margin: '0 auto', padding: '12px', cursor: 'pointer', backgroundColor: '#006d5d', color: 'white', border: 'none', borderRadius: '4px' }}
+        <button
+          id="custom-alert-close"
+          className="start-challenge-btn"
+          style={{ margin: '0 auto', padding: '12px', cursor: 'pointer', backgroundColor: '#006d5d', color: 'white', border: 'none', borderRadius: '4px' }}
           onClick={onClose}
         >
           확인

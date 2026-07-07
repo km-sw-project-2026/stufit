@@ -424,30 +424,20 @@ function Challenge({ closeChallengeModal, onCreateSuccess }) {
         };
 
         return (
-            <div className="challenge-card" style={{ 
-                border: '1px solid #70c1b3', borderRadius: '20px', padding: '35px', 
-                backgroundColor: 'white', minHeight: '240px', display: 'flex',
-                flexDirection: 'column', justifyContent: 'space-between', position: 'relative'
-            }}>
+            <div className="challenge-modal-card challenge-card">
                 <div>
-                    <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{challenge.title}</h3>
-                    <div style={{ color: '#555', marginTop: '15px', lineHeight: '1.8' }}>
+                    <h3>{challenge.title}</h3>
+                    <div className="challenge-card-body-text">
                         <p>참여 인원: {Number(challenge.member_count || 0)} / {challenge.max_members}</p>
                         <p>기간: {challenge.created_at?.split('T')[0]} ~ {challenge.end_date?.split('T')[0]}</p>
                         <p>목표: {challenge.goal}</p>
                     </div>
                 </div>
-                <button 
+                <button
+                    className="challenge-join-btn"
                     onClick={handleJoin}
                     disabled={joinLoading}
-                    style={{ 
-                        alignSelf: 'flex-end', 
-                        border: '1px solid #247b7b', 
-                        borderRadius: '20px', 
-                        padding: '8px 25px', 
-                        backgroundColor: 'white', 
-                        color: '#247b7b', 
-                        fontWeight: 'bold',
+                    style={{
                         cursor: joinLoading ? 'not-allowed' : 'pointer',
                         opacity: joinLoading ? 0.6 : 1
                     }}
@@ -460,35 +450,20 @@ function Challenge({ closeChallengeModal, onCreateSuccess }) {
 
 return (
     <>
-        <div id="challenge-modal" style={{ backgroundColor: '#eeeeee', minHeight: '100vh', padding: '38px 40px', display: 'block' }}>
-            <div style={{ maxWidth: '1300px', margin: '0 auto' }}>
-                <div className="modal-content">
-                    <div className="modal-header-top" style={{ 
-                        display: 'flex', 
-                        justifyContent: 'space-between', 
-                        alignItems: 'flex-start', 
-                        marginBottom: '50px', 
-                        gap: '30px'
-                    }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '30px' }}>
-                            <h2 style={{ fontSize: '2rem', margin: 0, fontWeight: 'bold', letterSpacing: '-0.5px' }}>전체 챌린지</h2>
-                            <div className="search-bar" style={{ 
-                                display: 'flex', 
-                                alignItems: 'center', 
-                                backgroundColor: 'white', 
-                                borderRadius: '25px', 
-                                padding: '8px 20px', 
-                                border: '1px solid #ccc' 
-                            }}>
+        <div id="challenge-modal" className="challenge-modal-container">
+            <div className="modal-content">
+                    <div className="modal-header-top challenge-modal-header-top">
+                        <div className="challenge-header-left">
+                            <h2>전체 챌린지</h2>
+                            <div className="search-bar challenge-search-bar">
                                 <input 
                                     type="text" 
                                     placeholder="Enter code" 
                                     value={searchCode} 
                                     onChange={(e) => setSearchCode(e.target.value)} 
                                     onKeyDown={(e) => { if (e.key === 'Enter') joinByCode(); }} 
-                                    style={{ border: 'none', outline: 'none', width: '180px' }} 
                                 />
-                                <button onClick={() => joinByCode()} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}>
+                                <button onClick={() => joinByCode()}>
                                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                         <circle cx="11" cy="11" r="8"></circle>
                                         <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
@@ -497,36 +472,19 @@ return (
                             </div>
                         </div>
                         
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '10px' }}>
+                        <div className="challenge-header-right">
                             <button
+                                className="challenge-link-text"
                                 onClick={(e) => {
                                     e.preventDefault();
                                     e.stopPropagation();
                                     navigate('/ongoing-challenges');
                                 }}
-                                style={{ 
-                                    color: '#666', 
-                                    fontSize: '0.9rem', 
-                                    textDecoration: 'none',
-                                    cursor: 'pointer',
-                                    padding: 0,
-                                    background: 'none',
-                                    border: 'none'
-                                }}
                             >
                                 진행중인 챌린지 보러가기 →
                             </button>
                             <button 
-                                className="create-challenge-btn"
-                                style={{ 
-                                    backgroundColor: 'white', 
-                                    border: '1px solid #70c1b3', 
-                                    borderRadius: '25px', 
-                                    padding: '10px 25px', 
-                                    cursor: 'pointer', 
-                                    color: '#247b7b', 
-                                    fontWeight: 'bold'
-                                }}
+                                className="create-challenge-btn challenge-create-btn"
                                 onClick={handleCreateChallenge}
                             >
                                 챌린지 만들기
@@ -534,9 +492,9 @@ return (
                         </div>
                     </div>
 
-                    <div className="challenge-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '40px', paddingTop: '10px' }}>
+                    <div className="challenge-grid challenge-modal-grid">
                         {loading ? (
-                            <p style={{ textAlign: 'center', gridColumn: 'span 2', color: '#888', padding: '50px' }}>
+                            <p className="challenge-grid-empty">
                                 챌린지를 불러오는 중...
                             </p>
                         ) : challenges.length > 0 ? (
@@ -549,13 +507,12 @@ return (
                                 />
                             ))
                         ) : (
-                            <p style={{ textAlign: 'center', gridColumn: 'span 2', color: '#888', padding: '50px' }}>
+                            <p className="challenge-grid-empty">
                                 아직 공개된 챌린지가 없습니다.
                             </p>
                         )}
                     </div>
                 </div>
-            </div>
         </div>
         
         {createChallengeModalOpen && (

@@ -782,3 +782,131 @@
         font-size: 14px;
     }
 }
+
+/* 모바일(750px 이하) 전용 보정: 상점 화면만 좁은 폭에 맞춰 재배치 */
+@media (max-width: 750px) {
+    .shop-container {
+        min-height: unset;
+        flex-direction: column;
+    }
+
+    .shop-sidebar {
+        width: 100%;
+        padding-top: 20px;
+    }
+
+    .sidebar-menu {
+        padding: 16px;
+    }
+
+    .menu-header {
+        font-size: 20px;
+        margin-bottom: 16px;
+        padding-right: 0;
+    }
+
+    .menu-item {
+        min-width: 0;
+        flex: 1 1 calc(50% - 10px);
+        margin-bottom: 8px;
+        padding: 10px 12px;
+        font-size: 14px;
+        justify-content: center;
+        border-radius: 10px;
+    }
+
+    .shop-main {
+        padding: 18px 12px;
+    }
+
+    .shop-count-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+    }
+
+    .shop-header {
+        margin-bottom: 24px;
+    }
+
+    .shop-header h2 {
+        font-size: 24px;
+    }
+
+    .shop-items-grid,
+    .shop-wishlist-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    .item-image {
+        height: 120px;
+        font-size: 50px;
+    }
+
+    .item-details {
+        padding: 12px;
+    }
+
+    .item-name {
+        font-size: 13px;
+        min-height: 32px;
+    }
+
+    .item-price {
+        font-size: 14px;
+    }
+
+    .item-actions {
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .item-buy-btn {
+        width: 100%;
+        padding: 8px 12px;
+        font-size: 12px;
+    }
+
+    .cart-item {
+        padding: 12px;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .cart-item-icon {
+        width: 60px;
+        height: 60px;
+        font-size: 35px;
+    }
+
+    .cart-item-name,
+    .cart-item-price {
+        font-size: 14px;
+    }
+
+    .modal-overlay {
+        padding: 12px;
+        align-items: flex-start;
+    }
+
+    .item-detail-modal {
+        width: calc(100% - 24px);
+        padding: 16px;
+    }
+
+    .item-detail-image-section {
+        flex-direction: column;
+    }
+
+    .item-detail-image {
+        width: 100%;
+        height: auto;
+        aspect-ratio: 1 / 1;
+    }
+
+    .empty-cart,
+    .empty-wishlist {
+        min-height: 260px;
+    }
+}

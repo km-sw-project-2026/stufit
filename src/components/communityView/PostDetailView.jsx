@@ -304,12 +304,12 @@ function PostDetailView({ post, onClose, onDeletePost, onEditPost, onUpdatePostS
         <div id="post-detail-view" className="post-detail-view">
             <div className="post-detail-board">
                 <div className="pd-header">
-                    <div className="pd-header-top" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px'}}>
-                        <h2 className="pd-title" style={{margin: 0, fontSize: '32px', fontWeight: 700, color: '#000'}}>{postState?.title || '제목'}</h2>
-                        <button className="close-detail-text-btn" style={{background: 'none', border: 'none', color: '#999', fontSize: '24px', cursor: 'pointer'}} onClick={onClose}>×</button>
+                    <div className="pd-header-top">
+                        <h2 className="pd-title">{postState?.title || '제목'}</h2>
+                        <button className="close-detail-text-btn" onClick={onClose}>×</button>
                     </div>
 
-                    <div className="pd-meta-row" style={{border: 'none', padding: 0}}>
+                    <div className="pd-meta-row">
                         <div
                             className="pd-user-info"
                             role="button"
@@ -340,22 +340,9 @@ function PostDetailView({ post, onClose, onDeletePost, onEditPost, onUpdatePostS
                                 삭제하기
                             </button>
                             <div className="pd-stats">
-                                <button 
+                                <button
                                     className={`pd-like-btn ${postState?.liked ? 'liked' : ''}`}
                                     onClick={handleLikePost}
-                                    style={{
-                                        background: 'none',
-                                        border: 'none',
-                                        cursor: 'pointer',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '6px',
-                                        padding: '4px',
-                                        fontSize: '18px',
-                                        color: postState?.liked ? '#ff4444' : '#333',
-                                        fontWeight: '700',
-                                        transition: 'color 0.2s'
-                                    }}
                                 >
                                     <span>{postState?.liked ? '♥' : '♡'}</span>
                                     <span>{postState?.likes ?? 0}</span>
@@ -366,13 +353,13 @@ function PostDetailView({ post, onClose, onDeletePost, onEditPost, onUpdatePostS
                     </div>
                 </div>
 
-                <div className="pd-divider" style={{height: '1px', background: '#eee', margin: '30px 0'}}></div>
+                <div className="pd-divider"></div>
 
                 <div className="pd-body">
                     <div className="pd-content">{postState?.content || '내용'}</div>
                 </div>
 
-                <div className="pd-divider" style={{height: '1px', background: '#eee', margin: '40px 0'}}></div>
+                <div className="pd-divider pd-divider--lg"></div>
 
                 <div className="pd-comments-section">
                     <div className="comment-input-area">
