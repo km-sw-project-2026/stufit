@@ -14,7 +14,7 @@ try {
     new CustomEvent("pointsUpdated", { detail: { points: 100000 } }),
   );
   window.dispatchEvent(new Event("loginStatusChanged"));
-  // eslint-disable-next-line no-console
+   
   console.log("[setupDev] test user/dev points set (100,000P)");
 } catch (e) {
   // ignore in non-browser environments

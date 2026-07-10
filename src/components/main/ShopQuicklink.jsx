@@ -305,7 +305,7 @@ function ShopQuicklink() {
                         }
                       }}
                       onError={(e) => {
-                        // eslint-disable-next-line no-console
+                         
                         console.warn(
                           "ShopQuicklink image failed to load, using placeholder",
                           src,
