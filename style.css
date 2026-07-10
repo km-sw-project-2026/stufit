@@ -1832,8 +1832,8 @@ body.modal-open {
 }
 
 .stamp-img {
-    width: 80px;
-    height: 80px;
+    width: 87px;
+    height: 87px;
     object-fit: contain;
     pointer-events: none;
 }
