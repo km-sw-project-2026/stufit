@@ -4597,8 +4597,13 @@ body.modal-open {
 }
 
 .challenge-modal-container {
+}
+
+#challenge-modal .modal-content,
+#ongoing-challenge-modal .modal-content {
     max-width: 1300px;
     margin: 0 auto;
+    width: 100%;
 }
 
 .challenge-modal-header-top {
