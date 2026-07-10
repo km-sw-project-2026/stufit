@@ -4784,6 +4784,21 @@ body.modal-open {
     background-color: #f9fffe;
 }
 
+.weekly-status-week-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 4px;
+}
+
+.weekly-status-day-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    flex: 1;
+}
+
 .weekly-status-user {
     margin-bottom: 10px;
     padding-bottom: 8px;
