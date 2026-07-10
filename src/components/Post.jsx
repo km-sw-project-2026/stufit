@@ -3,29 +3,66 @@ import { Link, useParams } from "react-router-dom";
 
 const Post = () => {
   const [post, setPost] = useState(null);
+  const [error, setError] = useState(false);
+  const [loading, setLoading] = useState(true);
   const { id } = useParams();
 
   useEffect(() => {
+    let cancelled = false;
     const getPost = async () => {
+      setLoading(true);
+      setError(false);
       try {
         const resp = await fetch(`/api/post/${id}`);
         if (!resp.ok) {
-          console.error("Failed to fetch post", resp.status);
-          setPost(null);
+          if (!cancelled) {
+            setError(true);
+            setPost(null);
+          }
           return;
         }
         const postResp = await resp.json();
-        setPost(postResp);
+        if (!cancelled) setPost(postResp);
       } catch (err) {
-        console.error("Error fetching post", err);
-        setPost(null);
+        if (!cancelled) {
+          setError(true);
+          setPost(null);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
       }
     };
 
     getPost();
+    return () => { cancelled = true; };
   }, [id]);
 
-  if (!post) return <div>Loading...</div>;
+  if (loading) {
+    return (
+      <div style={{ padding: "var(--space-10)", textAlign: "center", color: "var(--color-text-secondary)" }}>
+        <p>게시글을 불러오는 중...</p>
+      </div>
+    );
+  }
+
+  if (error || !post) {
+    return (
+      <div style={{ padding: "var(--space-10)", textAlign: "center" }}>
+        <p style={{ color: "var(--color-text-secondary)", marginBottom: "var(--space-4)" }}>
+          게시글을 불러올 수 없습니다.
+        </p>
+        <Link
+          to="/"
+          style={{
+            color: "var(--color-primary)",
+            textDecoration: "underline",
+          }}
+        >
+          홈으로 돌아가기
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div>

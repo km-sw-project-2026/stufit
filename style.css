@@ -40,7 +40,8 @@ body.modal-open {
   justify-content: space-between;
   align-items: center;
   padding: 0 40px;
-  height: 80px;
+  padding-top: env(safe-area-inset-top);
+  height: calc(80px + env(safe-area-inset-top));
   background-color: #fff;
   border-bottom: 1px solid #e0e0e0;
 }
@@ -1241,6 +1242,11 @@ body.modal-open {
   display: flex;
   justify-content: center;
   align-items: center;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+  box-sizing: border-box;
 }
 
 #custom-alert-modal {
@@ -1306,7 +1312,7 @@ body.modal-open {
   padding: 12px 15px;
   border: 1px solid #096b68;
   border-radius: 10px;
-  font-size: 14px;
+  font-size: 16px;
   outline: none;
   color: #333;
 }
@@ -1683,7 +1689,8 @@ body.modal-open {
 }
 
 .attendance-container {
-  width: 1200px;
+  width: 100%;
+  max-width: 1200px;
   display: flex;
   flex-direction: column;
   gap: 15px;
@@ -2373,7 +2380,7 @@ body.modal-open {
   padding: 12px 15px;
   border: 1px solid #ddd;
   border-radius: 3px;
-  font-size: 14px;
+  font-size: 16px;
   box-sizing: border-box;
   outline: none;
   color: #333;
@@ -2623,6 +2630,10 @@ body.modal-open {
   font-size: 16px;
   font-weight: 700;
   color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 
 .ranking-list-item .r-right {
@@ -3966,13 +3977,14 @@ body.modal-open {
    ========================================== */
 .mypage-modal {
   position: fixed;
-  top: 43%;
-  left: 84%;
+  top: 50%;
+  left: 50%;
   transform: translate(-50%, -50%);
   background: white;
   border-radius: 20px;
   padding: 40px;
-  width: 550px;
+  width: calc(100vw - 64px);
+  max-width: 550px;
   max-height: 90vh;
   overflow-y: auto;
   box-shadow: 0 10px 50px rgba(0, 0, 0, 0.15);
@@ -4940,7 +4952,7 @@ body.modal-open {
   max-width: 1920px;
   margin: 0 auto;
   padding: 12px 8px 12px 0;
-  width: 100vw;
+  width: 100%;
   box-sizing: border-box;
 }
 

@@ -3,16 +3,12 @@ function Footer() {
     <div className="footer">
       <div className="footer-content">
         <div className="footer-links">
-          <a href="#">이용약관</a>
-          <a href="#" className="bold">
-            개인정보
-          </a>
-          <a href="#">처리방침</a>
-          <a href="#" className="bold">
-            고객센터
-          </a>
-          <a href="#">문의하기</a>
-          <a href="#">광고 상품 안내</a>
+          <span>이용약관</span>
+          <span className="bold">개인정보</span>
+          <span>처리방침</span>
+          <span className="bold">고객센터</span>
+          <span>문의하기</span>
+          <span>광고 상품 안내</span>
         </div>
         <div className="footer-info">
           근명고등학교: 경기도 안양시 만안구 삼덕로 49 : 평일 9시~18시(
@@ -20,7 +16,7 @@ function Footer() {
         </div>
       </div>
       <div className="footer-social">
-        <a href="#" className="social-icon talk">
+        <span className="social-icon talk">
           <svg
             width="24"
             height="24"
@@ -41,8 +37,8 @@ function Footer() {
               TALK
             </text>
           </svg>
-        </a>
-        <a href="#" className="social-icon insta">
+        </span>
+        <span className="social-icon insta">
           <svg
             width="24"
             height="24"
@@ -57,7 +53,7 @@ function Footer() {
             <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
             <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
           </svg>
-        </a>
+        </span>
       </div>
     </div>
   );

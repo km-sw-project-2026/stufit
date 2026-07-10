@@ -1,0 +1,113 @@
+/* ==========================================
+   Stufit Design Tokens
+   Extracted from repeated patterns across the codebase.
+   ========================================== */
+
+:root {
+  /* ---- Color: Primary Teal-Green ---- */
+  --color-primary: #129990;
+  --color-primary-hover: #0f7a78;
+  --color-primary-deep: #0d6b63;
+  --color-primary-outline: #247b7b;
+  --color-accent: #70c1b3;
+
+  /* ---- Color: Neutral / Gray ---- */
+  --color-text: #333333;
+  --color-text-secondary: #666666;
+  --color-text-muted: #888888;
+  --color-text-subtle: #999999;
+  --color-border: #e0e0e0;
+  --color-border-light: #dddddd;
+  --color-bg-page: #eeeeee;
+  --color-bg-subtle: #f5f5f5;
+  --color-bg-card: #f9f9f9;
+  --color-surface: #ffffff;
+
+  /* ---- Color: Status ---- */
+  --color-danger: #ff6b6b;
+  --color-success: #4caf50;
+
+  /* ---- Color: Overlay ---- */
+  --color-overlay: rgba(0, 0, 0, 0.5);
+  --color-overlay-light: rgba(0, 0, 0, 0.4);
+
+  /* ---- Color: Tier ---- */
+  --color-tier-bronze: #a97142;
+  --color-tier-silver: #8b949e;
+  --color-tier-gold: #d4af37;
+  --color-tier-platinum: #4fb1c6;
+  --color-tier-emerald: #2fa66a;
+  --color-tier-diamond: #3c84ff;
+  --color-tier-master: #7e57c2;
+  --color-tier-challenger: #e53935;
+
+  /* ---- Border Radius ---- */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --radius-xl: 20px;
+  --radius-pill: 24px;
+
+  /* ---- Shadows ---- */
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow-card-hover: 0 8px 20px rgba(0, 0, 0, 0.15);
+  --shadow-modal: 0 4px 12px rgba(0, 0, 0, 0.15);
+  --shadow-elevated: 0 8px 32px rgba(0, 0, 0, 0.13);
+  --shadow-popup: 0 10px 40px rgba(0, 0, 0, 0.2);
+
+  /* ---- Spacing ---- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-9: 36px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* ---- Typography ---- */
+  --font-body: "Noto Sans KR", system-ui, Avenir, Helvetica, Arial, sans-serif;
+  --font-display: "Instrument Sans", "Noto Sans KR", sans-serif;
+
+  --text-xs: 0.75rem;   /* 12px */
+  --text-sm: 0.875rem;  /* 14px */
+  --text-base: 1rem;    /* 16px */
+  --text-lg: 1.125rem;  /* 18px */
+  --text-xl: 1.25rem;   /* 20px */
+  --text-2xl: 1.5rem;   /* 24px */
+  --text-3xl: 2rem;     /* 32px */
+
+  --leading-tight: 1.25;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.7;
+
+  /* ---- Z-Index Layers ---- */
+  --z-header: 2000;
+  --z-modal-overlay: 3000;
+  --z-modal-content: 3001;
+  --z-toast: 100000;
+
+  /* ---- Misc ---- */
+  --transition-default: 0.2s ease;
+  --transition-slow: 0.3s ease;
+}
+
+/* ---- Global Focus Ring (compensates for outline:none patterns) ---- */
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+button:focus-visible {
+  box-shadow: 0 0 0 3px var(--color-accent);
+  outline: none;
+}
+
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 0;
+}
