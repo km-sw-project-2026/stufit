@@ -11,7 +11,7 @@ function WeeklySubmissionStatus({ challengeId, refreshKey }) {
     const [weekData, setWeekData] = useState([]);
     const [username, setUsername] = useState('');
 
-    const daysOfWeek = ['월', '화', '수', '목', '금', '토', '일'];
+    const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
 
     useEffect(() => {
         const user = localStorage.getItem('username');
@@ -101,7 +101,7 @@ function WeeklySubmissionStatus({ challengeId, refreshKey }) {
                     <div key={idx} className="weekly-status-day-item">
                         {/* 요일 표시 */}
                         <div className="weekly-status-day-label">
-                            {daysOfWeek[idx]}
+                            {dayNames[new Date(day.dateStr).getDay()]}
                         </div>
 
                         {/* 제출 상태 원형 버튼 */}

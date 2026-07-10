@@ -4864,6 +4864,11 @@ body.modal-open {
     transition: all 0.2s;
 }
 
+.weekly-status-circle.submitted {
+    background-color: #176B5F;
+    border-color: #176B5F;
+}
+
 .weekly-status-check {
     color: #fff;
     font-size: 0.9rem;
