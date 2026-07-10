@@ -52,9 +52,7 @@
 //                                         </div>
 //                                         <div className="feed-content">
 
-
 // --------------------------------------------
-
 
 // import React, { useState, useEffect } from 'react';
 //     // 2. 모달 열림 상태 관리
@@ -111,12 +109,7 @@
 
 // export default Community;
 
-
-
-
 // -----------------------------------------------------------------
-
-
 
 // import React, { useState, useEffect } from 'react';
 // import { useNavigate, useLocation } from 'react-router-dom';
@@ -136,7 +129,7 @@
 
 //     const [isNewPostModalOpen, setNewPostModalOpen] = useState(false);
 //     const [currentCategory, setCurrentCategory] = useState('popular');
-    
+
 //     // 기본 게시글 데이터
 //     const defaultPosts = {
 //         popular: [
@@ -150,7 +143,7 @@
 //         data: [],
 //         mypost: []
 //     };
-    
+
 //     // 게시글 상태 관리
 //     const [posts, setPosts] = useState(defaultPosts);
 
@@ -187,12 +180,12 @@
 //     useEffect(() => {
 //         fetchPosts();
 //     }, []);
-    
+
 //     const newPost = (category) => {
 //         setCurrentCategory(category || activeTab);
 //         setNewPostModalOpen(true);
 //     };
-    
+
 //     // 새 게시글 추가 함수
 //     const handleAddPost = async (newPost) => {
 //         const username = localStorage.getItem('username');
@@ -362,7 +355,7 @@
 //         // localStorage에 저장된 날짜 확인
 //         const hiddenDate = localStorage.getItem('hideCommunityRewardModal');
 //         const today = new Date().toDateString();
-        
+
 //         // 저장된 날짜가 없거나, 저장된 날짜가 오늘이 아니면 팝업 표시
 //         if (!hiddenDate || hiddenDate !== today) {
 //             setModalOpen(true);
@@ -397,7 +390,7 @@
 //             setShowPostDetail(false);
 //             setSelectedPost(null);
 //         }
-        
+
 //         if (tab === activeTab && !showPostDetail) return;
 //         navigate({ pathname: '/community', search: `?tab=${tab}` });
 //         setActiveTab(tab);
@@ -419,9 +412,9 @@
 //                         activeTab === 'mypost' ? <MyPost posts={posts.mypost} onOpenPost={detailPostView} onNewPost={() => newPost('mypost')} onToggleLike={handleToggleLike} /> :
 //                         <DataSharing posts={posts.data} onOpenPost={detailPostView} onNewPost={() => newPost('data')} onToggleLike={handleToggleLike} />
 //                     ) : (
-//                         <PostDetailView 
-//                             post={selectedPost} 
-//                             onClose={closeDetailView} 
+//                         <PostDetailView
+//                             post={selectedPost}
+//                             onClose={closeDetailView}
 //                             onDeletePost={handleDeletePost}
 //                             onEditPost={handleEditPost}
 //                             onToggleLike={handleToggleLike}
@@ -436,24 +429,20 @@
 //                 <CommunityRewardModal onClose={() => setModalOpen(false)} />
 //             )}
 //             {isNewPostModalOpen && (
-//                 <NewPostModal 
-//                     category={currentCategory} 
-//                     onClose={() => setNewPostModalOpen(false)} 
+//                 <NewPostModal
+//                     category={currentCategory}
+//                     onClose={() => setNewPostModalOpen(false)}
 //                     onSubmit={handleAddPost}
 //                 />
 //             )}
-            
+
 //         </div>
 //     );
 // }
 
 // export default Community;
 
-
-
 // --------------------------------------------------- 원래 쓰던 코드
-
-
 
 // import React, { useState, useEffect } from 'react';
 // import { useNavigate, useLocation } from 'react-router-dom';
@@ -480,7 +469,7 @@
 //         setAlertMessage(msg);
 //         setIsAlertOpen(true);
 //     };
-    
+
 //     // 게시글 상태 (DB에서만 가져옴)
 //     const [posts, setPosts] = useState({
 //         popular: [],
@@ -508,7 +497,7 @@
 //             const username = localStorage.getItem('username');
 //             const headers = {};
 //             if (username) headers['X-Username'] = username;
-            
+
 //             const response = await fetch('/api/posts', { headers });
 //             if (!response.ok) return;
 
@@ -532,12 +521,12 @@
 //     useEffect(() => {
 //         fetchPosts();
 //     }, []);
-    
+
 //     const newPost = (category) => {
 //         setCurrentCategory(category || activeTab);
 //         setNewPostModalOpen(true);
 //     };
-    
+
 //     // 새 게시글 추가
 //     const handleAddPost = async (newPostData) => {
 //         const username = localStorage.getItem('username');
@@ -709,9 +698,9 @@
 //                             {activeTab === 'mypost' && <MyPost posts={posts.mypost} onOpenPost={detailPostView} onNewPost={() => newPost('mypost')} onToggleLike={handleToggleLike} />}
 //                         </>
 //                     ) : (
-//                         <PostDetailView 
-//                             post={selectedPost} 
-//                             onClose={closeDetailView} 
+//                         <PostDetailView
+//                             post={selectedPost}
+//                             onClose={closeDetailView}
 //                             onDeletePost={handleDeletePost}
 //                             onEditPost={handleEditPost}
 //                             onToggleLike={handleToggleLike}
@@ -722,16 +711,16 @@
 //             </div>
 //             {isModalOpen && <CommunityRewardModal onClose={() => setModalOpen(false)} />}
 //             {isNewPostModalOpen && (
-//                 <NewPostModal 
-//                     category={currentCategory} 
-//                     onClose={() => setNewPostModalOpen(false)} 
+//                 <NewPostModal
+//                     category={currentCategory}
+//                     onClose={() => setNewPostModalOpen(false)}
 //                     onSubmit={handleAddPost}
 //                 />
 //             )}
 //             {isAlertOpen && (
-//                 <CustomAlertModal 
-//                     message={alertMessage} 
-//                     onClose={() => setIsAlertOpen(false)} 
+//                 <CustomAlertModal
+//                     message={alertMessage}
+//                     onClose={() => setIsAlertOpen(false)}
 //                 />
 //             )}
 //         </div>
@@ -740,12 +729,7 @@
 
 // export default Community;
 
-
-
-
 // ---------------------------좋아요200개 달성하면 인기글 등록(밑에)
-
-
 
 // import React, { useState, useEffect } from 'react';
 // import { useNavigate, useLocation } from 'react-router-dom';
@@ -770,7 +754,7 @@
 //         setAlertMessage(msg);
 //         setIsAlertOpen(true);
 //     };
-    
+
 //     const [posts, setPosts] = useState({
 //         popular: [],
 //         tips: [],
@@ -795,7 +779,7 @@
 //             const username = localStorage.getItem('username');
 //             const headers = {};
 //             if (username) headers['X-Username'] = username;
-            
+
 //             const response = await fetch('/api/posts', { headers });
 //             if (!response.ok) return;
 
@@ -827,7 +811,7 @@
 //             }
 //         }
 //     }, []);
-    
+
 //     const handleToggleLike = async (postId) => {
 //         const username = localStorage.getItem('username');
 //         if (!username) return alert('로그인이 필요합니다.');
@@ -835,7 +819,7 @@
 //         try {
 //             const response = await fetch(`/api/post/${postId}/like`, {
 //                 method: 'POST',
-//                 headers: { 
+//                 headers: {
 //                     'X-Username': username,
 //                     'Content-Type': 'application/json'
 //                 }
@@ -850,7 +834,7 @@
 //             setPosts(prev => {
 //                 const newState = { ...prev };
 //                 Object.keys(newState).forEach(cat => {
-//                     newState[cat] = newState[cat].map(p => 
+//                     newState[cat] = newState[cat].map(p =>
 //                         p.id === postId ? { ...p, liked: liked, likes: count } : p
 //                     );
 //                 });
@@ -870,7 +854,7 @@
 //         setCurrentCategory(category || activeTab);
 //         setNewPostModalOpen(true);
 //     };
-    
+
 //     const handleAddPost = async (newPostData) => {
 //         const username = localStorage.getItem('username');
 //         if (!username) return alert('로그인이 필요합니다.');
@@ -935,9 +919,9 @@
 //                             {activeTab === 'mypost' && <MyPost posts={posts.mypost} onOpenPost={detailPostView} onNewPost={() => newPost('mypost')} onToggleLike={handleToggleLike} />}
 //                         </>
 //                     ) : (
-//                         <PostDetailView 
-//                             post={selectedPost} 
-//                             onClose={closeDetailView} 
+//                         <PostDetailView
+//                             post={selectedPost}
+//                             onClose={closeDetailView}
 //                             onDeletePost={handleDeletePost}
 //                             onEditPost={handleEditPost}
 //                             onToggleLike={handleToggleLike}
@@ -955,272 +939,366 @@
 
 // export default Community;
 
-
-
-
 // ---------------------------------실험코드 좋아요1
 
-
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import CommunityRewardModal from '../modal/CommunityRewardModal';
-import NewPostModal from '../modal/NewPostModal';
-import CustomAlertModal from '../modal/CustomAlertModal';
-import PostDetailView from './PostDetailView';
-import SidebarMenu from './SidebarMenu';
-import Popular from './Popular';
-import Tips from './Tips';
-import DataSharing from './DataSharing';
-import MyPost from './MyPost';
-import UserProfilePreviewModal from '../modals/UserProfilePreviewModal';
+import React, { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import CommunityRewardModal from "../modal/CommunityRewardModal";
+import NewPostModal from "../modal/NewPostModal";
+import CustomAlertModal from "../modal/CustomAlertModal";
+import PostDetailView from "./PostDetailView";
+import SidebarMenu from "./SidebarMenu";
+import Popular from "./Popular";
+import Tips from "./Tips";
+import DataSharing from "./DataSharing";
+import MyPost from "./MyPost";
+import UserProfilePreviewModal from "../modals/UserProfilePreviewModal";
 
 function Community() {
-    const [isModalOpen, setModalOpen] = useState(false);
-    const [isNewPostModalOpen, setNewPostModalOpen] = useState(false);
-    const [currentCategory, setCurrentCategory] = useState('popular');
-    const [isAlertOpen, setIsAlertOpen] = useState(false);
-    const [alertMessage, setAlertMessage] = useState('');
-    const [profileModal, setProfileModal] = useState({ open: false, userId: null, username: '', anchorPosition: null });
+  const [isModalOpen, setModalOpen] = useState(false);
+  const [isNewPostModalOpen, setNewPostModalOpen] = useState(false);
+  const [currentCategory, setCurrentCategory] = useState("popular");
+  const [isAlertOpen, setIsAlertOpen] = useState(false);
+  const [alertMessage, setAlertMessage] = useState("");
+  const [profileModal, setProfileModal] = useState({
+    open: false,
+    userId: null,
+    username: "",
+    anchorPosition: null,
+  });
 
-    const showAlert = (msg) => {
-        setAlertMessage(msg);
-        setIsAlertOpen(true);
-    };
-    
-    const [posts, setPosts] = useState({
-        popular: [],
-        tips: [],
-        data: [],
-        mypost: []
-    });
+  const showAlert = (msg) => {
+    setAlertMessage(msg);
+    setIsAlertOpen(true);
+  };
 
-    // --- 좋아요 localStorage 캐시 헬퍼 ---
-    const getLikedCacheKey = (username) => `likedPosts_${username}`;
+  const [posts, setPosts] = useState({
+    popular: [],
+    tips: [],
+    data: [],
+    mypost: [],
+  });
 
-    const getLocalLikedIds = (username) => {
-        if (!username) return new Set();
-        try {
-            const raw = localStorage.getItem(getLikedCacheKey(username));
-            return new Set(raw ? JSON.parse(raw) : []);
-        } catch { return new Set(); }
-    };
+  // --- 좋아요 localStorage 캐시 헬퍼 ---
+  const getLikedCacheKey = (username) => `likedPosts_${username}`;
 
-    const updateLocalLikedId = (username, postId, liked) => {
-        if (!username) return;
-        const set = getLocalLikedIds(username);
-        if (liked) set.add(postId);
-        else set.delete(postId);
-        localStorage.setItem(getLikedCacheKey(username), JSON.stringify([...set]));
-    };
-    // --- 끝 ---
+  const getLocalLikedIds = (username) => {
+    if (!username) return new Set();
+    try {
+      const raw = localStorage.getItem(getLikedCacheKey(username));
+      return new Set(raw ? JSON.parse(raw) : []);
+    } catch {
+      return new Set();
+    }
+  };
 
-    const mapPost = (row) => ({
-        id: row.post_id,
-        userId: Number(row.user_id) || null,
-        title: row.title,
-        content: row.content,
-        author: row.username || '익명',
-        likes: Number(row.like_count) || 0,
-        comments: Number(row.comment_count) || 0,
-        liked: Number(row.user_liked) === 1,
-        date: row.created_at ? new Date(row.created_at).toLocaleString('ko-KR') : '',
-        category: row.category || 'data'
-    });
+  const updateLocalLikedId = (username, postId, liked) => {
+    if (!username) return;
+    const set = getLocalLikedIds(username);
+    if (liked) set.add(postId);
+    else set.delete(postId);
+    localStorage.setItem(getLikedCacheKey(username), JSON.stringify([...set]));
+  };
+  // --- 끝 ---
 
-    const fetchPosts = async () => {
-        try {
-            const username = localStorage.getItem('username');
-            const localLiked = getLocalLikedIds(username);
-            const headers = {};
-            if (username) headers['X-Username'] = username;
-            
-            const response = await fetch('/api/posts', { headers });
-            if (!response.ok) return;
+  const mapPost = (row) => ({
+    id: row.post_id,
+    userId: Number(row.user_id) || null,
+    title: row.title,
+    content: row.content,
+    author: row.username || "익명",
+    likes: Number(row.like_count) || 0,
+    comments: Number(row.comment_count) || 0,
+    liked: Number(row.user_liked) === 1,
+    date: row.created_at
+      ? new Date(row.created_at).toLocaleString("ko-KR")
+      : "",
+    category: row.category || "data",
+  });
 
-            const payload = await response.json();
-            const list = (payload.data || []).map(row => {
-                const post = mapPost(row);
-                // 서버 응답 또는 로컬 캐시 중 하나라도 liked 이면 true
-                post.liked = Number(row.user_liked) === 1 || localLiked.has(row.post_id);
-                return post;
-            });
+  const fetchPosts = async () => {
+    try {
+      const username = localStorage.getItem("username");
+      const localLiked = getLocalLikedIds(username);
+      const headers = {};
+      if (username) headers["X-Username"] = username;
 
-            const categorized = {
-                // 좋아요 1개 이상인 글들을 인기글 목록에 포함
-                popular: list.filter(p => p.category === 'popular' || p.likes >= 5),
-                tips: list.filter(p => p.category === 'tips'),
-                data: list.filter(p => p.category === 'data'),
-                mypost: username ? list.filter(p => String(p.author) === String(username)) : []
-            };
+      const response = await fetch("/api/posts", { headers });
+      if (!response.ok) return;
 
-            setPosts(categorized);
-        } catch (error) {
-            console.error('게시글 불러오기 실패:', error);
-        }
-    };
+      const payload = await response.json();
+      const list = (payload.data || []).map((row) => {
+        const post = mapPost(row);
+        // 서버 응답 또는 로컬 캐시 중 하나라도 liked 이면 true
+        post.liked =
+          Number(row.user_liked) === 1 || localLiked.has(row.post_id);
+        return post;
+      });
 
-    useEffect(() => {
-        fetchPosts();
-        const username = localStorage.getItem('username');
-        if (username) {
-            const today = new Date().toISOString().split('T')[0];
-            const storageKey = `hideCommunityModal_${username}`;
-            if (localStorage.getItem(storageKey) !== today) {
-                setModalOpen(true);
-            }
-        }
+      const categorized = {
+        // 좋아요 1개 이상인 글들을 인기글 목록에 포함
+        popular: list.filter((p) => p.category === "popular" || p.likes >= 5),
+        tips: list.filter((p) => p.category === "tips"),
+        data: list.filter((p) => p.category === "data"),
+        mypost: username
+          ? list.filter((p) => String(p.author) === String(username))
+          : [],
+      };
 
-        // 10초마다 게시글 목록 갱신 → Popular 승격/탈락 실시간 반영
-        const intervalId = setInterval(() => {
-            fetchPosts();
-        }, 10000);
+      setPosts(categorized);
+    } catch (error) {
+      console.error("게시글 불러오기 실패:", error);
+    }
+  };
 
-        return () => clearInterval(intervalId);
-    }, []);
-    
-    const handleToggleLike = async (postId) => {
-        const username = localStorage.getItem('username');
-        if (!username) return alert('로그인이 필요합니다.');
+  useEffect(() => {
+    fetchPosts();
+    const username = localStorage.getItem("username");
+    if (username) {
+      const today = new Date().toISOString().split("T")[0];
+      const storageKey = `hideCommunityModal_${username}`;
+      if (localStorage.getItem(storageKey) !== today) {
+        setModalOpen(true);
+      }
+    }
 
-        try {
-            const response = await fetch(`/api/post/${postId}/like`, {
-                method: 'POST',
-                headers: { 
-                    'X-Username': username,
-                    'Content-Type': 'application/json'
-                }
-            });
+    // 10초마다 게시글 목록 갱신 → Popular 승격/탈락 실시간 반영
+    const intervalId = setInterval(() => {
+      fetchPosts();
+    }, 10000);
 
-            const payload = await response.json();
-            if (!response.ok) return alert(payload.message || '좋아요 처리 실패');
+    return () => clearInterval(intervalId);
+  }, []);
 
-            const { liked, count } = payload.data;
+  const handleToggleLike = async (postId) => {
+    const username = localStorage.getItem("username");
+    if (!username) return alert("로그인이 필요합니다.");
 
-            // localStorage 캐시 업데이트 (새로고침 / 재방문 시 상태 유지)
-            updateLocalLikedId(username, postId, liked);
+    try {
+      const response = await fetch(`/api/post/${postId}/like`, {
+        method: "POST",
+        headers: {
+          "X-Username": username,
+          "Content-Type": "application/json",
+        },
+      });
 
-            // 1. 즉시 liked/likes 업데이트 (하트 색깔 반응 즉각 반영)
-            setPosts(prev => {
-                const newState = { ...prev };
-                Object.keys(newState).forEach(cat => {
-                    newState[cat] = newState[cat].map(p =>
-                        p.id === postId ? { ...p, liked, likes: count } : p
-                    );
-                });
-                return newState;
-            });
+      const payload = await response.json();
+      if (!response.ok) return alert(payload.message || "좋아요 처리 실패");
 
-            // 2. 서버에서 최신 목록 재조회 → Popular 승격 등 카테고리 변경 즉시 반영
-            //    (localStorage 캐시로 liked 상태 유지되므로 색깔 초기화 없음)
-            await fetchPosts();
-        } catch (error) {
-            console.error('좋아요 에러:', error);
-        }
-    };
+      const { liked, count } = payload.data;
 
-    const newPost = (category) => {
-        setCurrentCategory(category || activeTab);
-        setNewPostModalOpen(true);
-    };
-    
-    const handleAddPost = async (newPostData) => {
-        const username = localStorage.getItem('username');
-        if (!username) return alert('로그인이 필요합니다.');
-        try {
-            const response = await fetch('/api/posts', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-Username': username },
-                body: JSON.stringify({
-                    title: newPostData.title,
-                    content: newPostData.content,
-                    category: newPostData.category || 'data'
-                })
-            });
-            if (response.ok) { await fetchPosts(); setNewPostModalOpen(false); }
-        } catch (error) { alert('작성 실패'); }
-    };
+      // localStorage 캐시 업데이트 (새로고침 / 재방문 시 상태 유지)
+      updateLocalLikedId(username, postId, liked);
 
-    const [showPostDetail, setShowPostDetail] = useState(false);
-    const [selectedPost, setSelectedPost] = useState(null);
-    const detailPostView = (post) => { setSelectedPost(post); setShowPostDetail(true); };
-    const closeDetailView = () => { setShowPostDetail(false); setSelectedPost(null); };
-    const openUserProfile = (userId, username, event) => {
-        const resolvedUserId = Number(userId);
-        const rect = event?.currentTarget?.getBoundingClientRect ? event.currentTarget.getBoundingClientRect() : null;
-        setProfileModal({
-            open: true,
-            userId: Number.isNaN(resolvedUserId) ? null : resolvedUserId,
-            username: username || '',
-            anchorPosition: rect,
+      // 1. 즉시 liked/likes 업데이트 (하트 색깔 반응 즉각 반영)
+      setPosts((prev) => {
+        const newState = { ...prev };
+        Object.keys(newState).forEach((cat) => {
+          newState[cat] = newState[cat].map((p) =>
+            p.id === postId ? { ...p, liked, likes: count } : p,
+          );
         });
-    };
+        return newState;
+      });
 
-    const handleDeletePost = async (postId) => {
-        const username = localStorage.getItem('username');
-        try {
-            const response = await fetch(`/api/post/${postId}`, {
-                method: 'DELETE',
-                headers: { 'X-Username': username }
-            });
-            if (response.ok) { closeDetailView(); await fetchPosts(); }
-        } catch (error) { console.error(error); }
-    };
+      // 2. 서버에서 최신 목록 재조회 → Popular 승격 등 카테고리 변경 즉시 반영
+      //    (localStorage 캐시로 liked 상태 유지되므로 색깔 초기화 없음)
+      await fetchPosts();
+    } catch (error) {
+      console.error("좋아요 에러:", error);
+    }
+  };
 
-    const handleEditPost = async (updatedPost) => {
-        const username = localStorage.getItem('username');
-        try {
-            const response = await fetch(`/api/post/${updatedPost.id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json', 'X-Username': username },
-                body: JSON.stringify({ title: updatedPost.title, content: updatedPost.content })
-            });
-            if (response.ok) { closeDetailView(); await fetchPosts(); }
-        } catch (error) { console.error(error); }
-    };
+  const newPost = (category) => {
+    setCurrentCategory(category || activeTab);
+    setNewPostModalOpen(true);
+  };
 
-    const handleUpdatePostState = () => fetchPosts();
-    const navigate = useNavigate();
-    const location = useLocation();
-    const activeTab = new URLSearchParams(location.search).get('tab') || 'popular';
-    const goToTab = (tab) => { if (showPostDetail) closeDetailView(); navigate(`/community?tab=${tab}`); };
+  const handleAddPost = async (newPostData) => {
+    const username = localStorage.getItem("username");
+    if (!username) return alert("로그인이 필요합니다.");
+    try {
+      const response = await fetch("/api/posts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-Username": username },
+        body: JSON.stringify({
+          title: newPostData.title,
+          content: newPostData.content,
+          category: newPostData.category || "data",
+        }),
+      });
+      if (response.ok) {
+        await fetchPosts();
+        setNewPostModalOpen(false);
+      }
+    } catch (error) {
+      alert("작성 실패");
+    }
+  };
 
-    return (
-        <div id="community-view" className="community-view">
-            <div className="community-layout">
-                <SidebarMenu activeTab={activeTab} goToTab={goToTab} onNewPost={newPost} />
-                <div className="community-main">
-                    {!showPostDetail ? (
-                        <>
-                            {activeTab === 'popular' && <Popular posts={posts.popular} onOpenPost={detailPostView} onNewPost={() => newPost('popular')} onToggleLike={handleToggleLike} onOpenUserProfile={openUserProfile} />}
-                            {activeTab === 'tips' && <Tips posts={posts.tips} onOpenPost={detailPostView} onNewPost={() => newPost('tips')} onToggleLike={handleToggleLike} onOpenUserProfile={openUserProfile} />}
-                            {activeTab === 'data' && <DataSharing posts={posts.data} onOpenPost={detailPostView} onNewPost={() => newPost('data')} onToggleLike={handleToggleLike} onOpenUserProfile={openUserProfile} />}
-                            {activeTab === 'mypost' && <MyPost posts={posts.mypost} onOpenPost={detailPostView} onNewPost={() => newPost('mypost')} onToggleLike={handleToggleLike} onOpenUserProfile={openUserProfile} />}
-                        </>
-                    ) : (
-                        <PostDetailView 
-                            post={selectedPost} 
-                            onClose={closeDetailView} 
-                            onDeletePost={handleDeletePost}
-                            onEditPost={handleEditPost}
-                            onToggleLike={handleToggleLike}
-                            onUpdatePostState={handleUpdatePostState}
-                            onOpenUserProfile={openUserProfile}
-                        />
-                    )}
-                </div>
-            </div>
-            {isModalOpen && <CommunityRewardModal onClose={() => setModalOpen(false)} />}
-            {isNewPostModalOpen && <NewPostModal category={currentCategory} onClose={() => setNewPostModalOpen(false)} onSubmit={handleAddPost} />}
-            {isAlertOpen && <CustomAlertModal message={alertMessage} onClose={() => setIsAlertOpen(false)} />}
-            <UserProfilePreviewModal
-                isOpen={profileModal.open}
-                userId={profileModal.userId}
-                username={profileModal.username}
-                anchorPosition={profileModal.anchorPosition}
-                onClose={() => setProfileModal({ open: false, userId: null, username: '', anchorPosition: null })}
+  const [showPostDetail, setShowPostDetail] = useState(false);
+  const [selectedPost, setSelectedPost] = useState(null);
+  const detailPostView = (post) => {
+    setSelectedPost(post);
+    setShowPostDetail(true);
+  };
+  const closeDetailView = () => {
+    setShowPostDetail(false);
+    setSelectedPost(null);
+  };
+  const openUserProfile = (userId, username, event) => {
+    const resolvedUserId = Number(userId);
+    const rect = event?.currentTarget?.getBoundingClientRect
+      ? event.currentTarget.getBoundingClientRect()
+      : null;
+    setProfileModal({
+      open: true,
+      userId: Number.isNaN(resolvedUserId) ? null : resolvedUserId,
+      username: username || "",
+      anchorPosition: rect,
+    });
+  };
+
+  const handleDeletePost = async (postId) => {
+    const username = localStorage.getItem("username");
+    try {
+      const response = await fetch(`/api/post/${postId}`, {
+        method: "DELETE",
+        headers: { "X-Username": username },
+      });
+      if (response.ok) {
+        closeDetailView();
+        await fetchPosts();
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const handleEditPost = async (updatedPost) => {
+    const username = localStorage.getItem("username");
+    try {
+      const response = await fetch(`/api/post/${updatedPost.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", "X-Username": username },
+        body: JSON.stringify({
+          title: updatedPost.title,
+          content: updatedPost.content,
+        }),
+      });
+      if (response.ok) {
+        closeDetailView();
+        await fetchPosts();
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const handleUpdatePostState = () => fetchPosts();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const activeTab =
+    new URLSearchParams(location.search).get("tab") || "popular";
+  const goToTab = (tab) => {
+    if (showPostDetail) closeDetailView();
+    navigate(`/community?tab=${tab}`);
+  };
+
+  return (
+    <div id="community-view" className="community-view">
+      <div className="community-layout">
+        <SidebarMenu
+          activeTab={activeTab}
+          goToTab={goToTab}
+          onNewPost={newPost}
+        />
+        <div className="community-main">
+          {!showPostDetail ? (
+            <>
+              {activeTab === "popular" && (
+                <Popular
+                  posts={posts.popular}
+                  onOpenPost={detailPostView}
+                  onNewPost={() => newPost("popular")}
+                  onToggleLike={handleToggleLike}
+                  onOpenUserProfile={openUserProfile}
+                />
+              )}
+              {activeTab === "tips" && (
+                <Tips
+                  posts={posts.tips}
+                  onOpenPost={detailPostView}
+                  onNewPost={() => newPost("tips")}
+                  onToggleLike={handleToggleLike}
+                  onOpenUserProfile={openUserProfile}
+                />
+              )}
+              {activeTab === "data" && (
+                <DataSharing
+                  posts={posts.data}
+                  onOpenPost={detailPostView}
+                  onNewPost={() => newPost("data")}
+                  onToggleLike={handleToggleLike}
+                  onOpenUserProfile={openUserProfile}
+                />
+              )}
+              {activeTab === "mypost" && (
+                <MyPost
+                  posts={posts.mypost}
+                  onOpenPost={detailPostView}
+                  onNewPost={() => newPost("mypost")}
+                  onToggleLike={handleToggleLike}
+                  onOpenUserProfile={openUserProfile}
+                />
+              )}
+            </>
+          ) : (
+            <PostDetailView
+              post={selectedPost}
+              onClose={closeDetailView}
+              onDeletePost={handleDeletePost}
+              onEditPost={handleEditPost}
+              onToggleLike={handleToggleLike}
+              onUpdatePostState={handleUpdatePostState}
+              onOpenUserProfile={openUserProfile}
             />
+          )}
         </div>
-    );
+      </div>
+      {isModalOpen && (
+        <CommunityRewardModal onClose={() => setModalOpen(false)} />
+      )}
+      {isNewPostModalOpen && (
+        <NewPostModal
+          category={currentCategory}
+          onClose={() => setNewPostModalOpen(false)}
+          onSubmit={handleAddPost}
+        />
+      )}
+      {isAlertOpen && (
+        <CustomAlertModal
+          message={alertMessage}
+          onClose={() => setIsAlertOpen(false)}
+        />
+      )}
+      <UserProfilePreviewModal
+        isOpen={profileModal.open}
+        userId={profileModal.userId}
+        username={profileModal.username}
+        anchorPosition={profileModal.anchorPosition}
+        onClose={() =>
+          setProfileModal({
+            open: false,
+            userId: null,
+            username: "",
+            anchorPosition: null,
+          })
+        }
+      />
+    </div>
+  );
 }
 
 export default Community;

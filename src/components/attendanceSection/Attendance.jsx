@@ -1,7 +1,3 @@
-
-
-
-
 // import React, { useState, useEffect } from 'react';
 // import CustomAlertModal from '../modal/CustomAlertModal';
 
@@ -57,7 +53,7 @@
 //         <h1>출석체크</h1>
 //         <p>7일 연속 출석시 400포인트 지급!</p>
 //       </div>
-      
+
 //       <div className="attendance-container">
 //         {/* --- 흰색 박스 시작 --- */}
 //         <div className="attendance-board">
@@ -70,9 +66,9 @@
 //           </div>
 //           <div className="attendance-cards">
 //             {points.map((point, index) => (
-//               <div 
-//                 key={index} 
-//                 className={`att-card ${checkedDays[index] ? 'checked' : ''} ${index === todayIndex && !checkedDays[index] ? 'today-active' : ''}`} 
+//               <div
+//                 key={index}
+//                 className={`att-card ${checkedDays[index] ? 'checked' : ''} ${index === todayIndex && !checkedDays[index] ? 'today-active' : ''}`}
 //                 onClick={() => handleCardClick(index)}
 //               >
 //                 <span className="label">일일 포인트</span>
@@ -83,7 +79,7 @@
 //               </div>
 //             ))}
 //           </div>
-//         </div> 
+//         </div>
 //         {/* --- 흰색 박스 끝 (</div>) --- */}
 
 //         {/* ✅ 여기가 중요합니다! 박스 바깥(아래)으로 뺐습니다. */}
@@ -93,9 +89,9 @@
 //       </div>
 
 //       {isAlertOpen && (
-//         <CustomAlertModal 
-//           message={alertMessage} 
-//           onClose={() => setIsAlertOpen(false)} 
+//         <CustomAlertModal
+//           message={alertMessage}
+//           onClose={() => setIsAlertOpen(false)}
 //         />
 //       )}
 //     </div>
@@ -104,14 +100,9 @@
 
 // export default Attendance;
 
-
 // --------------------------------------------------------------
 
-
-
 // ----------------------   원래 쓰던거
-
-
 
 // import React, { useState, useEffect } from 'react';
 // import CustomAlertModal from '../modal/CustomAlertModal';
@@ -154,7 +145,7 @@
 
 //     // 🚀 서버(DB)에 출석 기록 보내기
 //     const userId = localStorage.getItem('userId'); // 로그인 시 저장된 userId 가져오기
-    
+
 //     if (!userId) {
 //       showAlert("로그인이 필요한 서비스입니다.");
 //       return;
@@ -174,12 +165,12 @@
 //         newCheckedDays[index] = true;
 //         setCheckedDays(newCheckedDays);
 //         setLastCheckDate(todayDateString);
-        
+
 //         localStorage.setItem('stufit_attendance', JSON.stringify({
 //           days: newCheckedDays,
 //           date: todayDateString
 //         }));
-        
+
 //         showAlert(`${days[index]}요일 출석 완료! 랭킹 포인트가 반영되었습니다.`);
 //       } else {
 //         showAlert("출석 처리 중 오류가 발생했습니다.");
@@ -196,7 +187,7 @@
 //         <h1>출석체크</h1>
 //         <p>7일 연속 출석시 400포인트 지급!</p>
 //       </div>
-      
+
 //       <div className="attendance-container">
 //         <div className="attendance-board">
 //           <div className="attendance-days">
@@ -208,9 +199,9 @@
 //           </div>
 //           <div className="attendance-cards">
 //             {points.map((point, index) => (
-//               <div 
-//                 key={index} 
-//                 className={`att-card ${checkedDays[index] ? 'checked' : ''} ${index === todayIndex && !checkedDays[index] ? 'today-active' : ''}`} 
+//               <div
+//                 key={index}
+//                 className={`att-card ${checkedDays[index] ? 'checked' : ''} ${index === todayIndex && !checkedDays[index] ? 'today-active' : ''}`}
 //                 onClick={() => handleCardClick(index)}
 //               >
 //                 <span className="label">일일 포인트</span>
@@ -221,7 +212,7 @@
 //               </div>
 //             ))}
 //           </div>
-//         </div> 
+//         </div>
 
 //         <div className="attendance-footer-outside">
 //           총 연속 출석체크일 수 : <span className="total-days-count">{checkedDays.filter(Boolean).length}</span>일
@@ -229,9 +220,9 @@
 //       </div>
 
 //       {isAlertOpen && (
-//         <CustomAlertModal 
-//           message={alertMessage} 
-//           onClose={() => setIsAlertOpen(false)} 
+//         <CustomAlertModal
+//           message={alertMessage}
+//           onClose={() => setIsAlertOpen(false)}
 //         />
 //       )}
 //     </div>
@@ -240,21 +231,12 @@
 
 // export default Attendance;
 
-
-
 // -----------------------------------------------------------
-
-
-
-
-
-
 
 // ------------------위에 코드에서 또 수정
 
-
-import React, { useState, useEffect } from 'react';
-import CustomAlertModal from '../modal/CustomAlertModal';
+import React, { useState, useEffect } from "react";
+import CustomAlertModal from "../modal/CustomAlertModal";
 
 function Attendance() {
   const [checkedDays, setCheckedDays] = useState(Array(7).fill(false));
@@ -266,22 +248,24 @@ function Attendance() {
   const points = ["100P", "120P", "140P", "160P", "180P", "200P", "220P"];
 
   const todayIndex = new Date().getDay();
-  const todayDateString = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD 형식 안전하게 생성
+  const todayDateString = new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD 형식 안전하게 생성
 
   useEffect(() => {
     const fetchAttendance = async () => {
-      const userId = localStorage.getItem('userId');
+      const userId = localStorage.getItem("userId");
       if (!userId || userId === "null" || userId === "undefined") {
         setCheckedDays(Array(7).fill(false));
         return;
       }
       try {
         // 캐시 방지 타임스탬프 추가
-        const response = await fetch(`/api/attendance?userId=${userId}&t=${new Date().getTime()}`);
+        const response = await fetch(
+          `/api/attendance?userId=${userId}&t=${new Date().getTime()}`,
+        );
         if (response.ok) {
           const data = await response.json();
           const newCheckedDays = Array(7).fill(false);
-          
+
           // 이번 주 일요일 구하기 (기준점)
           const today = new Date();
           const sunday = new Date(today);
@@ -289,30 +273,32 @@ function Attendance() {
           sunday.setHours(0, 0, 0, 0);
 
           if (data.logs && Array.isArray(data.logs)) {
-            data.logs.forEach(log => {
+            data.logs.forEach((log) => {
               // 서버에서 온 log.date ("YYYY-MM-DD")를 날짜 객체로 변환
-              const logDate = new Date(log.date + "T00:00:00"); 
+              const logDate = new Date(log.date + "T00:00:00");
 
               // 핵심: 이번 주 일요일 이후의 기록만 해당 요일 인덱스에 정확히 매핑
               if (logDate >= sunday) {
-                const dayIndex = logDate.getDay(); 
+                const dayIndex = logDate.getDay();
                 newCheckedDays[dayIndex] = true; // 기록이 실존하는 요일만 도장 찍기
               }
             });
-            
+
             // 오늘 날짜 출석 여부 업데이트
-            const hasCheckedToday = data.logs.some(log => log.date === todayDateString);
+            const hasCheckedToday = data.logs.some(
+              (log) => log.date === todayDateString,
+            );
             if (hasCheckedToday) setLastCheckDate(todayDateString);
           }
           setCheckedDays(newCheckedDays);
         }
       } catch (error) {
-        console.error('출석 데이터 로딩 실패:', error);
+        console.error("출석 데이터 로딩 실패:", error);
       }
     };
     fetchAttendance();
     // 유저가 바뀌어도 데이터를 새로 불러오도록 의존성 배열 보강
-  }, [todayDateString, localStorage.getItem('userId')]);
+  }, [todayDateString, localStorage.getItem("userId")]);
 
   const showAlert = (msg) => {
     setAlertMessage(msg);
@@ -320,7 +306,7 @@ function Attendance() {
   };
 
   const applyPointsUpdate = (rewardPoints) => {
-    const currentPoints = Number(localStorage.getItem('points') || '0');
+    const currentPoints = Number(localStorage.getItem("points") || "0");
     const safeCurrentPoints = Number.isNaN(currentPoints) ? 0 : currentPoints;
     const safeRewardPoints = Number(rewardPoints);
 
@@ -329,8 +315,10 @@ function Attendance() {
     }
 
     const nextPoints = safeCurrentPoints + safeRewardPoints;
-    localStorage.setItem('points', String(nextPoints));
-    window.dispatchEvent(new CustomEvent('pointsUpdated', { detail: { points: nextPoints } }));
+    localStorage.setItem("points", String(nextPoints));
+    window.dispatchEvent(
+      new CustomEvent("pointsUpdated", { detail: { points: nextPoints } }),
+    );
   };
 
   const getConsecutiveStreak = (arr) => {
@@ -352,7 +340,7 @@ function Attendance() {
 
     // 날짜 문자열 추출 및 정렬
     const dateStrings = logs
-      .map(log => (typeof log === 'string' ? log : log.date))
+      .map((log) => (typeof log === "string" ? log : log.date))
       .sort();
 
     // 최근부터 역순으로 연속 7일 확인
@@ -361,8 +349,8 @@ function Attendance() {
       let isConsecutive = true;
 
       for (let j = 0; j < 6; j++) {
-        const date1 = new Date(sevenDates[j] + 'T00:00:00');
-        const date2 = new Date(sevenDates[j + 1] + 'T00:00:00');
+        const date1 = new Date(sevenDates[j] + "T00:00:00");
+        const date2 = new Date(sevenDates[j + 1] + "T00:00:00");
         const diffDays = (date1 - date2) / (1000 * 60 * 60 * 24);
 
         if (diffDays !== 1) {
@@ -379,23 +367,25 @@ function Attendance() {
 
   const handleCardClick = async (index) => {
     if (index !== todayIndex) {
-      showAlert(`오늘은 ${days[todayIndex]}요일입니다. 해당 요일에만 출석 가능해요!`);
+      showAlert(
+        `오늘은 ${days[todayIndex]}요일입니다. 해당 요일에만 출석 가능해요!`,
+      );
       return;
     }
     if (lastCheckDate === todayDateString) {
-      showAlert('오늘 출석은 이미 완료되었습니다. 내일 다시 와주세요!');
+      showAlert("오늘 출석은 이미 완료되었습니다. 내일 다시 와주세요!");
       return;
     }
-    const userId = localStorage.getItem('userId');
-    if (!userId || userId === 'null') {
-      showAlert('로그인이 필요한 서비스입니다.');
+    const userId = localStorage.getItem("userId");
+    if (!userId || userId === "null") {
+      showAlert("로그인이 필요한 서비스입니다.");
       return;
     }
     try {
-      const response = await fetch('/api/attendance', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, date: todayDateString })
+      const response = await fetch("/api/attendance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, date: todayDateString }),
       });
 
       const responseData = await response.json().catch(() => null);
@@ -411,27 +401,27 @@ function Attendance() {
         let alertMsg = `${days[index]}요일 출석 완료!`;
 
         // 조건 1: 현재 주(일월화수목금토) 7일 모두 출석
-        const isFullWeek = nextCheckedDays.every(day => day === true);
+        const isFullWeek = nextCheckedDays.every((day) => day === true);
         if (isFullWeek) {
           totalPoints += 400;
-          alertMsg += '\n🎉 일주일 완성! 400포인트 보너스!';
+          alertMsg += "\n🎉 일주일 완성! 400포인트 보너스!";
         } else {
           // 조건 2: 최근 7일 연속 출석 (주를 넘어갈 수 있음)
           const logs = responseData?.logs;
           if (logs && hasSevenConsecutiveDays(logs)) {
             totalPoints += 400;
-            alertMsg += '\n🎉 7일 연속 출석! 400포인트 보너스!';
+            alertMsg += "\n🎉 7일 연속 출석! 400포인트 보너스!";
           }
         }
 
         applyPointsUpdate(totalPoints);
         showAlert(alertMsg);
       } else {
-        showAlert(responseData?.message || '출석 처리 중 오류가 발생했습니다.');
+        showAlert(responseData?.message || "출석 처리 중 오류가 발생했습니다.");
       }
     } catch (error) {
-      console.error('Attendance error:', error);
-      showAlert('서버와 통신할 수 없습니다.');
+      console.error("Attendance error:", error);
+      showAlert("서버와 통신할 수 없습니다.");
     }
   };
 
@@ -445,8 +435,11 @@ function Attendance() {
         <div className="attendance-board">
           <div className="attendance-days">
             {days.map((day, idx) => (
-              <span key={day} className={idx === todayIndex ? 'today-label' : ''}>
-                {day} {idx === todayIndex && '(TODAY)'}
+              <span
+                key={day}
+                className={idx === todayIndex ? "today-label" : ""}
+              >
+                {day} {idx === todayIndex && "(TODAY)"}
               </span>
             ))}
           </div>
@@ -454,21 +447,36 @@ function Attendance() {
             {points.map((point, index) => (
               <div
                 key={index}
-                className={`att-card ${checkedDays[index] ? 'checked' : ''} ${index === todayIndex && !checkedDays[index] ? 'today-active' : ''}`}
+                className={`att-card ${checkedDays[index] ? "checked" : ""} ${index === todayIndex && !checkedDays[index] ? "today-active" : ""}`}
                 onClick={() => handleCardClick(index)}
               >
                 <span className="label">일일 포인트</span>
                 <span className="point">{point}</span>
-                {checkedDays[index] && <img src="/img/attendance-check.png" alt="출석완료" className="stamp-img" />}
+                {checkedDays[index] && (
+                  <img
+                    src="/img/attendance-check.png"
+                    alt="출석완료"
+                    className="stamp-img"
+                  />
+                )}
               </div>
             ))}
           </div>
         </div>
         <div className="attendance-footer-outside">
-          연속 출석 일수 : <span className="total-days-count">{getConsecutiveStreak(checkedDays)}</span>일
+          연속 출석 일수 :{" "}
+          <span className="total-days-count">
+            {getConsecutiveStreak(checkedDays)}
+          </span>
+          일
         </div>
       </div>
-      {isAlertOpen && <CustomAlertModal message={alertMessage} onClose={() => setIsAlertOpen(false)} />}
+      {isAlertOpen && (
+        <CustomAlertModal
+          message={alertMessage}
+          onClose={() => setIsAlertOpen(false)}
+        />
+      )}
     </div>
   );
 }

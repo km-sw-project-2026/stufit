@@ -1,1 +1,5 @@
-{"success":false,"message":"DB 오류 발생","error":"D1_ERROR: no such column: cm.status at offset 30: SQLITE_ERROR"}
+{
+  "success": false,
+  "message": "DB 오류 발생",
+  "error": "D1_ERROR: no such column: cm.status at offset 30: SQLITE_ERROR"
+}

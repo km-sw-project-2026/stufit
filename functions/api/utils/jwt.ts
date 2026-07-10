@@ -16,7 +16,9 @@ export async function generateToken(userId: number): Promise<string> {
 }
 
 // 토큰 검증 함수
-export async function verifyToken(token: string): Promise<{ userId: number } | null> {
+export async function verifyToken(
+  token: string,
+): Promise<{ userId: number } | null> {
   try {
     // 실제 환경에서는 JWT 라이브러리의 verify 사용
     const decoded = JSON.parse(atob(token));

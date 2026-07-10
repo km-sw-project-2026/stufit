@@ -1,68 +1,108 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Stufit</title>
-    <link rel="stylesheet" href="style.css">
-        <style>
-            /* Override to ensure form alignment and select appearance across built bundles */
-            .form-row { align-items: flex-start !important; }
-            .select-wrapper select { border: 1px solid #096B68 !important; border-radius: 10px !important; font-size: 14px !important; color: #333 !important; padding: 12px 15px !important; }
-        </style>
-</head>
-<body>
+    <link rel="stylesheet" href="style.css" />
+    <style>
+      /* Override to ensure form alignment and select appearance across built bundles */
+      .form-row {
+        align-items: flex-start !important;
+      }
+      .select-wrapper select {
+        border: 1px solid #096b68 !important;
+        border-radius: 10px !important;
+        font-size: 14px !important;
+        color: #333 !important;
+        padding: 12px 15px !important;
+      }
+    </style>
+  </head>
+  <body>
     <div id="root"></div>
-        <!-- Fallback: attach click handlers to any search buttons so code-join works even if React bundle hasn't attached handlers yet -->
-        <script>
-            (function(){
-                function attachFallback() {
-                    const tryAttach = (btn) => {
-                        if (!btn || btn.__fallbackAttached) return;
-                        btn.__fallbackAttached = true;
-                        btn.addEventListener('click', async function(){
-                            try {
-                                const bar = btn.closest('.search-bar') || document;
-                                const input = bar.querySelector('input[placeholder="Enter code"]') || bar.querySelector('input') || document.querySelector('input[placeholder="Enter code"]') || document.querySelector('input');
-                                const code = input && input.value && input.value.trim();
-                                if (!code) return alert('코드를 입력해주세요.');
-                                const username = localStorage.getItem('username');
-                                if (!username) {
-                                    if (confirm('로그인이 필요합니다. 로그인 페이지로 이동하시겠습니까?')) window.location.href = '/login';
-                                    return;
-                                }
-                                const headersForGet = {};
-                                const headerUser = localStorage.getItem('username');
-                                if (headerUser) headersForGet['X-Username'] = encodeURIComponent(headerUser);
-                                const getRes = await fetch('/api/challenges?code='+encodeURIComponent(code), { headers: headersForGet });
-                                const getText = await getRes.text();
-                                if (!getRes.ok) return alert('챌린지 조회 실패: '+getText);
-                                const data = JSON.parse(getText);
-                                const ch = data.challenge;
-                                if (!ch) return alert('챌린지를 찾을 수 없습니다.');
-                                const headers = { 'Content-Type': 'application/json', 'X-Username': encodeURIComponent(username) };
-                                const joinRes = await fetch('/api/challenges/'+ch.challenge_id+'/join', { method: 'POST', headers });
-                                const joinText = await joinRes.text();
-                                if (!joinRes.ok) return alert('참가 실패: '+joinText);
-                                alert('참가 성공! 새로고침합니다.');
-                                location.reload();
-                            } catch (e) {
-                                console.error('fallback join error', e);
-                                alert('참가 중 오류가 발생했습니다. 콘솔을 확인하세요.');
-                            }
-                        });
-                    };
-                    const scan = () => document.querySelectorAll('.search-icon, .search-bar button, [id$="code-btn"], button[id*="code"]').forEach(tryAttach);
-                    if (document.readyState === 'complete' || document.readyState === 'interactive') scan(); else document.addEventListener('DOMContentLoaded', scan);
-                    // Also observe DOM additions
-                    try {
-                        const obs = new MutationObserver(scan);
-                        obs.observe(document.documentElement||document.body, { childList: true, subtree: true });
-                    } catch(e){}
+    <!-- Fallback: attach click handlers to any search buttons so code-join works even if React bundle hasn't attached handlers yet -->
+    <script>
+      (function () {
+        function attachFallback() {
+          const tryAttach = (btn) => {
+            if (!btn || btn.__fallbackAttached) return;
+            btn.__fallbackAttached = true;
+            btn.addEventListener("click", async function () {
+              try {
+                const bar = btn.closest(".search-bar") || document;
+                const input =
+                  bar.querySelector('input[placeholder="Enter code"]') ||
+                  bar.querySelector("input") ||
+                  document.querySelector('input[placeholder="Enter code"]') ||
+                  document.querySelector("input");
+                const code = input && input.value && input.value.trim();
+                if (!code) return alert("코드를 입력해주세요.");
+                const username = localStorage.getItem("username");
+                if (!username) {
+                  if (
+                    confirm(
+                      "로그인이 필요합니다. 로그인 페이지로 이동하시겠습니까?",
+                    )
+                  )
+                    window.location.href = "/login";
+                  return;
                 }
-                attachFallback();
-            })();
-        </script>
-        <script type="module" src="/src/main.jsx"></script>
-</body>
+                const headersForGet = {};
+                const headerUser = localStorage.getItem("username");
+                if (headerUser)
+                  headersForGet["X-Username"] = encodeURIComponent(headerUser);
+                const getRes = await fetch(
+                  "/api/challenges?code=" + encodeURIComponent(code),
+                  { headers: headersForGet },
+                );
+                const getText = await getRes.text();
+                if (!getRes.ok) return alert("챌린지 조회 실패: " + getText);
+                const data = JSON.parse(getText);
+                const ch = data.challenge;
+                if (!ch) return alert("챌린지를 찾을 수 없습니다.");
+                const headers = {
+                  "Content-Type": "application/json",
+                  "X-Username": encodeURIComponent(username),
+                };
+                const joinRes = await fetch(
+                  "/api/challenges/" + ch.challenge_id + "/join",
+                  { method: "POST", headers },
+                );
+                const joinText = await joinRes.text();
+                if (!joinRes.ok) return alert("참가 실패: " + joinText);
+                alert("참가 성공! 새로고침합니다.");
+                location.reload();
+              } catch (e) {
+                console.error("fallback join error", e);
+                alert("참가 중 오류가 발생했습니다. 콘솔을 확인하세요.");
+              }
+            });
+          };
+          const scan = () =>
+            document
+              .querySelectorAll(
+                '.search-icon, .search-bar button, [id$="code-btn"], button[id*="code"]',
+              )
+              .forEach(tryAttach);
+          if (
+            document.readyState === "complete" ||
+            document.readyState === "interactive"
+          )
+            scan();
+          else document.addEventListener("DOMContentLoaded", scan);
+          // Also observe DOM additions
+          try {
+            const obs = new MutationObserver(scan);
+            obs.observe(document.documentElement || document.body, {
+              childList: true,
+              subtree: true,
+            });
+          } catch (e) {}
+        }
+        attachFallback();
+      })();
+    </script>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
 </html>

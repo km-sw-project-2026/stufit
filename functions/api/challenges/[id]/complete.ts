@@ -6,19 +6,28 @@ interface Env {
   D1_DB: D1Database;
 }
 
-type PagesFunction<T = any> = (context: { params: { id: string }, env: T }) => Promise<Response>;
+type PagesFunction<T = any> = (context: {
+  params: { id: string };
+  env: T;
+}) => Promise<Response>;
 
 async function ensureMiniGameTables(db: any) {
-  await db.prepare(`
+  await db
+    .prepare(
+      `
     CREATE TABLE IF NOT EXISTS minigame_meta (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       challenge_id INTEGER NOT NULL UNIQUE,
       tied_players TEXT NOT NULL,
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     )
-  `).run();
+  `,
+    )
+    .run();
 
-  await db.prepare(`
+  await db
+    .prepare(
+      `
     CREATE TABLE IF NOT EXISTS minigame_ai_sessions (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       challenge_id INTEGER NOT NULL,
@@ -34,37 +43,47 @@ async function ensureMiniGameTables(db: any) {
       finished_at TEXT,
       UNIQUE(challenge_id, player_username)
     )
-  `).run();
+  `,
+    )
+    .run();
 }
 
 async function getMiniGameState(db: any, challengeId: number) {
   await ensureMiniGameTables(db);
 
   const meta = await db
-    .prepare('SELECT tied_players FROM minigame_meta WHERE challenge_id = ?')
+    .prepare("SELECT tied_players FROM minigame_meta WHERE challenge_id = ?")
     .bind(challengeId)
     .first();
 
-  const tiedPlayers = meta ? JSON.parse((meta as any).tied_players || '[]') : [];
-  const players = Array.isArray(tiedPlayers) ? tiedPlayers.filter((p: any) => typeof p === 'string' && p.trim()) : [];
+  const tiedPlayers = meta
+    ? JSON.parse((meta as any).tied_players || "[]")
+    : [];
+  const players = Array.isArray(tiedPlayers)
+    ? tiedPlayers.filter((p: any) => typeof p === "string" && p.trim())
+    : [];
 
   if (players.length < 2) {
     return { hasTie: false, allDone: true, remainingPlayers: [] as string[] };
   }
 
-  const placeholders = players.map(() => '?').join(',');
+  const placeholders = players.map(() => "?").join(",");
   const rows = await db
-    .prepare(`SELECT player_username, status FROM minigame_ai_sessions WHERE challenge_id = ? AND player_username IN (${placeholders})`)
+    .prepare(
+      `SELECT player_username, status FROM minigame_ai_sessions WHERE challenge_id = ? AND player_username IN (${placeholders})`,
+    )
     .bind(challengeId, ...players)
     .all();
 
   const finished = new Set(
     (Array.isArray(rows?.results) ? rows.results : [])
-      .filter((r: any) => String(r?.status) === 'finished')
-      .map((r: any) => String(r?.player_username))
+      .filter((r: any) => String(r?.status) === "finished")
+      .map((r: any) => String(r?.player_username)),
   );
 
-  const remainingPlayers = players.filter((name: string) => !finished.has(name));
+  const remainingPlayers = players.filter(
+    (name: string) => !finished.has(name),
+  );
   return {
     hasTie: true,
     allDone: remainingPlayers.length === 0,
@@ -74,12 +93,15 @@ async function getMiniGameState(db: any, challengeId: number) {
 
 export const onRequestPatch: PagesFunction<Env> = async ({ params, env }) => {
   const challengeId = Number(params.id);
-  
+
   // 유효성 검사
   if (!challengeId || Number.isNaN(challengeId)) {
-    return Response.json({ success: false, message: "Invalid challenge ID" }, { status: 400 });
+    return Response.json(
+      { success: false, message: "Invalid challenge ID" },
+      { status: 400 },
+    );
   }
-  
+
   try {
     const miniGameState = await getMiniGameState(env.D1_DB, challengeId);
 
@@ -88,17 +110,23 @@ export const onRequestPatch: PagesFunction<Env> = async ({ params, env }) => {
         success: true,
         pendingMinigame: true,
         remainingPlayers: miniGameState.remainingPlayers,
-        message: '공동 1등 미니게임이 진행 중입니다. 전원 완료 후 최종 종료됩니다.'
+        message:
+          "공동 1등 미니게임이 진행 중입니다. 전원 완료 후 최종 종료됩니다.",
       });
     }
 
-    await env.D1_DB.prepare("UPDATE challenges SET deleted_at = CURRENT_TIMESTAMP WHERE challenge_id = ?")
+    await env.D1_DB.prepare(
+      "UPDATE challenges SET deleted_at = CURRENT_TIMESTAMP WHERE challenge_id = ?",
+    )
       .bind(challengeId)
       .run();
 
-    return Response.json({ success: true, message: "챌린지가 종료 처리되었습니다." });
+    return Response.json({
+      success: true,
+      message: "챌린지가 종료 처리되었습니다.",
+    });
   } catch (e) {
-    console.error('Complete error:', e);
+    console.error("Complete error:", e);
     return new Response("챌린지 종료 처리 실패", { status: 500 });
   }
 };

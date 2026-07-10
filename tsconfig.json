@@ -9,9 +9,5 @@
     "allowJs": true,
     "outDir": "./dist"
   },
-  "include": [
-    "functions/**/*.ts",
-    "worker/**/*.ts",
-    "types/**/*.d.ts"
-  ]
+  "include": ["functions/**/*.ts", "worker/**/*.ts", "types/**/*.d.ts"]
 }

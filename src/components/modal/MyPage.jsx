@@ -1,14 +1,14 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { shopItems } from '../shopView/shopItems';
-import { getTierProgress } from '../../constants/tiers';
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { shopItems } from "../shopView/shopItems";
+import { getTierProgress } from "../../constants/tiers";
 
 function MyPage({ isOpen, onClose }) {
   const [userData, setUserData] = useState(null);
   const navigate = useNavigate();
 
   const getStoredUserId = () => {
-    const rawUserId = localStorage.getItem('userId');
+    const rawUserId = localStorage.getItem("userId");
     const parsedUserId = Number(rawUserId);
     if (!Number.isInteger(parsedUserId) || parsedUserId <= 0) {
       return null;
@@ -17,7 +17,7 @@ function MyPage({ isOpen, onClose }) {
   };
 
   const encodeUsernameHeader = (username) => {
-    if (!username) return '';
+    if (!username) return "";
     try {
       return encodeURIComponent(username);
     } catch {
@@ -25,28 +25,29 @@ function MyPage({ isOpen, onClose }) {
     }
   };
 
-  const isStatsDebugEnabled = () => localStorage.getItem('debugMyPageStats') === '1';
+  const isStatsDebugEnabled = () =>
+    localStorage.getItem("debugMyPageStats") === "1";
   const debugStatsLog = (...args) => {
     if (!isStatsDebugEnabled()) return;
-    console.info('[MyPageStatsDebug]', ...args);
+    console.info("[MyPageStatsDebug]", ...args);
   };
 
   const parseCountText = (value) => {
-    const numeric = Number(String(value ?? '').replace(/[^0-9-]/g, ''));
+    const numeric = Number(String(value ?? "").replace(/[^0-9-]/g, ""));
     if (Number.isNaN(numeric)) return 0;
     return numeric;
   };
 
   const getBestRankLabel = () => {
-    const stored = Number(localStorage.getItem('bestRank') || '0');
-    return stored > 0 ? `${stored}위` : '-';
+    const stored = Number(localStorage.getItem("bestRank") || "0");
+    return stored > 0 ? `${stored}위` : "-";
   };
 
   // 랭킹을 불러와 현재 순위와 최고 순위를 계산해 userData에 반영
   const updateRanks = async (username, userId) => {
     if (!username && !userId) return;
     try {
-      const res = await fetch('/api/users', { cache: 'no-cache' });
+      const res = await fetch("/api/users", { cache: "no-cache" });
       const payload = await res.json().catch(() => null);
       if (!res.ok || !Array.isArray(payload?.users)) return;
 
@@ -58,10 +59,14 @@ function MyPage({ isOpen, onClose }) {
 
       users.sort((a, b) => b.score - a.score);
 
-      const meIndex = users.findIndex((u) => (username && String(u.username) === String(username)) || (userId && Number(u.userId) === Number(userId)));
+      const meIndex = users.findIndex(
+        (u) =>
+          (username && String(u.username) === String(username)) ||
+          (userId && Number(u.userId) === Number(userId)),
+      );
       const currentRankNum = meIndex >= 0 ? meIndex + 1 : null;
 
-      const storedBest = Number(localStorage.getItem('bestRank') || '0');
+      const storedBest = Number(localStorage.getItem("bestRank") || "0");
       // 동작 요구사항:
       // - 최초 접근 시(저장된 bestRank가 없으면) 현재 순위를 최고기록으로 초기화해서 보여줌
       // - 이후에는 최고기록은 오직 더 높은(숫자가 더 작은) 순위를 달성했을 때만 갱신
@@ -69,20 +74,38 @@ function MyPage({ isOpen, onClose }) {
       if (!bestRankNum && currentRankNum) {
         // 최초 초기화: 현재 순위를 최고로 설정
         bestRankNum = currentRankNum;
-        try { localStorage.setItem('bestRank', String(bestRankNum)); } catch (e) { /* ignore */ }
-      } else if (currentRankNum && storedBest > 0 && currentRankNum < storedBest) {
+        try {
+          localStorage.setItem("bestRank", String(bestRankNum));
+        } catch (e) {
+          /* ignore */
+        }
+      } else if (
+        currentRankNum &&
+        storedBest > 0 &&
+        currentRankNum < storedBest
+      ) {
         // 새로운 최고 기록 달성 시 갱신
         bestRankNum = currentRankNum;
-        try { localStorage.setItem('bestRank', String(bestRankNum)); } catch (e) { /* ignore */ }
+        try {
+          localStorage.setItem("bestRank", String(bestRankNum));
+        } catch (e) {
+          /* ignore */
+        }
       }
 
-      setUserData((prev) => (prev ? {
-        ...prev,
-        currentRank: currentRankNum ? `${currentRankNum}위` : prev.currentRank,
-        rank: bestRankNum ? `${bestRankNum}위` : prev.rank,
-      } : prev));
+      setUserData((prev) =>
+        prev
+          ? {
+              ...prev,
+              currentRank: currentRankNum
+                ? `${currentRankNum}위`
+                : prev.currentRank,
+              rank: bestRankNum ? `${bestRankNum}위` : prev.rank,
+            }
+          : prev,
+      );
     } catch (err) {
-      console.warn('Failed to update ranks:', err);
+      console.warn("Failed to update ranks:", err);
     }
   };
 
@@ -92,17 +115,22 @@ function MyPage({ isOpen, onClose }) {
     }
 
     try {
-      const response = await fetch('/api/posts', {
-        headers: { 'X-Username': encodeUsernameHeader(username) },
+      const response = await fetch("/api/posts", {
+        headers: { "X-Username": encodeUsernameHeader(username) },
       });
       const payload = await response.json().catch(() => null);
       if (!response.ok || !payload?.data) {
         return null;
       }
 
-      const myPosts = (payload.data || []).filter((post) => String(post?.username || '') === String(username));
+      const myPosts = (payload.data || []).filter(
+        (post) => String(post?.username || "") === String(username),
+      );
       const posts = myPosts.length;
-      const comments = myPosts.reduce((sum, post) => sum + (Number(post?.comment_count) || 0), 0);
+      const comments = myPosts.reduce(
+        (sum, post) => sum + (Number(post?.comment_count) || 0),
+        0,
+      );
       return { posts, comments };
     } catch {
       return null;
@@ -110,8 +138,10 @@ function MyPage({ isOpen, onClose }) {
   };
 
   const getCachedCommunityCounts = () => {
-    const posts = Number(localStorage.getItem('communityPostsCount') || '0');
-    const comments = Number(localStorage.getItem('communityCommentsCount') || '0');
+    const posts = Number(localStorage.getItem("communityPostsCount") || "0");
+    const comments = Number(
+      localStorage.getItem("communityCommentsCount") || "0",
+    );
     return {
       posts: Number.isNaN(posts) ? 0 : Math.max(0, posts),
       comments: Number.isNaN(comments) ? 0 : Math.max(0, comments),
@@ -121,47 +151,51 @@ function MyPage({ isOpen, onClose }) {
   const formatPoints = (value) => {
     const numeric = Number(value);
     if (Number.isNaN(numeric)) {
-      return '0 P';
+      return "0 P";
     }
 
-    return `${numeric.toLocaleString('ko-KR')} P`;
+    return `${numeric.toLocaleString("ko-KR")} P`;
   };
 
   const handleTierGuideClick = () => {
     onClose();
-    navigate('/tier-guide');
+    navigate("/tier-guide");
   };
-
-  
 
   const handleMyItemsClick = () => {
     onClose();
-    navigate('/my-items');
+    navigate("/my-items");
   };
 
   useEffect(() => {
     // 전역 이벤트 리스너: MyPage가 닫혀있어도 localStorage는 업데이트
     const globalPointsUpdater = (event) => {
-      console.log('🌍 전역: pointsUpdated 이벤트 수신!', event.detail);
+      console.log("🌍 전역: pointsUpdated 이벤트 수신!", event.detail);
       const nextPoints = Number(event?.detail?.points);
       const nextScore = Number(event?.detail?.score);
-      
+
       if (!Number.isNaN(nextPoints)) {
-        const oldPoints = localStorage.getItem('points');
-        console.log('🌍 전역: 포인트 localStorage 업데이트', { oldPoints, nextPoints });
-        localStorage.setItem('points', String(nextPoints));
+        const oldPoints = localStorage.getItem("points");
+        console.log("🌍 전역: 포인트 localStorage 업데이트", {
+          oldPoints,
+          nextPoints,
+        });
+        localStorage.setItem("points", String(nextPoints));
       }
       if (!Number.isNaN(nextScore)) {
-        const oldScore = localStorage.getItem('score');
-        console.log('🌍 전역: 점수 localStorage 업데이트', { oldScore, nextScore });
-        localStorage.setItem('score', String(nextScore));
+        const oldScore = localStorage.getItem("score");
+        console.log("🌍 전역: 점수 localStorage 업데이트", {
+          oldScore,
+          nextScore,
+        });
+        localStorage.setItem("score", String(nextScore));
       }
     };
 
-    window.addEventListener('pointsUpdated', globalPointsUpdater);
+    window.addEventListener("pointsUpdated", globalPointsUpdater);
 
     return () => {
-      window.removeEventListener('pointsUpdated', globalPointsUpdater);
+      window.removeEventListener("pointsUpdated", globalPointsUpdater);
     };
   }, []); // 마운트 시 한 번만
 
@@ -171,58 +205,66 @@ function MyPage({ isOpen, onClose }) {
     }
 
     const handlePointsUpdated = (event) => {
-      console.log('🟢 MyPage: pointsUpdated 이벤트 수신!', event.detail);
+      console.log("🟢 MyPage: pointsUpdated 이벤트 수신!", event.detail);
       const nextPoints = Number(event?.detail?.points);
       const nextScore = Number(event?.detail?.score);
-      
+
       if (!Number.isNaN(nextPoints)) {
-        const oldPoints = localStorage.getItem('points');
-        console.log('🟢 MyPage: 포인트 업데이트', { oldPoints, nextPoints });
-        localStorage.setItem('points', String(nextPoints));
+        const oldPoints = localStorage.getItem("points");
+        console.log("🟢 MyPage: 포인트 업데이트", { oldPoints, nextPoints });
+        localStorage.setItem("points", String(nextPoints));
       }
       if (!Number.isNaN(nextScore)) {
-        const oldScore = localStorage.getItem('score');
-        console.log('🟢 MyPage: 점수 업데이트', { oldScore, nextScore });
-        localStorage.setItem('score', String(nextScore));
+        const oldScore = localStorage.getItem("score");
+        console.log("🟢 MyPage: 점수 업데이트", { oldScore, nextScore });
+        localStorage.setItem("score", String(nextScore));
       }
-      
+
       setUserData((prev) => {
         const cachedCommunity = getCachedCommunityCounts();
-        const cachedSuccessful = Number(localStorage.getItem('successfulChallengesCount') || '0');
-        const cachedPoints = localStorage.getItem('points');
-        const cachedScore = localStorage.getItem('score');
+        const cachedSuccessful = Number(
+          localStorage.getItem("successfulChallengesCount") || "0",
+        );
+        const cachedPoints = localStorage.getItem("points");
+        const cachedScore = localStorage.getItem("score");
 
         const base = prev || {
-          username: localStorage.getItem('username') || '',
+          username: localStorage.getItem("username") || "",
           score: cachedScore ? Number(cachedScore) : 0,
-          joinDate: localStorage.getItem('joinDate') || '2024년 7월 1일',
+          joinDate: localStorage.getItem("joinDate") || "2024년 7월 1일",
           rank: getBestRankLabel(),
-          currentRank: '-',
+          currentRank: "-",
           challenges: `${cachedSuccessful}개`,
           points: cachedPoints ? Number(cachedPoints) : 0,
           posts: `${cachedCommunity.posts}개`,
           comments: `${cachedCommunity.comments}개`,
-          items: '0개'
+          items: "0개",
         };
 
         const updated = { ...base };
         if (!Number.isNaN(nextPoints)) updated.points = nextPoints;
         if (!Number.isNaN(nextScore)) updated.score = nextScore;
-        console.log('🟢 MyPage: userData 업데이트 완료', updated);
+        console.log("🟢 MyPage: userData 업데이트 완료", updated);
         return updated;
       });
       // 포인트/스코어 업데이트 후 랭킹 갱신
-      try { updateRanks(localStorage.getItem('username'), getStoredUserId()); } catch (e) { console.warn(e); }
+      try {
+        updateRanks(localStorage.getItem("username"), getStoredUserId());
+      } catch (e) {
+        console.warn(e);
+      }
     };
 
-    window.addEventListener('pointsUpdated', handlePointsUpdated);
+    window.addEventListener("pointsUpdated", handlePointsUpdated);
 
-    const username = localStorage.getItem('username');
+    const username = localStorage.getItem("username");
     const userId = getStoredUserId();
-    const cachedPoints = localStorage.getItem('points');
-    const cachedScore = localStorage.getItem('score');
+    const cachedPoints = localStorage.getItem("points");
+    const cachedScore = localStorage.getItem("score");
     const cachedCommunity = getCachedCommunityCounts();
-    const cachedSuccessful = Number(localStorage.getItem('successfulChallengesCount') || '0');
+    const cachedSuccessful = Number(
+      localStorage.getItem("successfulChallengesCount") || "0",
+    );
 
     const fetchStats = async () => {
       if (!userId && !username) {
@@ -231,34 +273,44 @@ function MyPage({ isOpen, onClose }) {
 
       // API 실패가 있어도 마이페이지는 열리도록 기본값을 먼저 세팅
       setUserData({
-        username: username || '',
+        username: username || "",
         score: cachedScore ? Number(cachedScore) : 0,
-        joinDate: localStorage.getItem('joinDate') || '2024년 7월 1일',
+        joinDate: localStorage.getItem("joinDate") || "2024년 7월 1일",
         rank: getBestRankLabel(),
-        currentRank: '-',
+        currentRank: "-",
         challenges: `${cachedSuccessful}개`,
         points: cachedPoints ? Number(cachedPoints) : 0,
         posts: `${cachedCommunity.posts}개`,
         comments: `${cachedCommunity.comments}개`,
-        items: '0개'
+        items: "0개",
       });
 
       try {
         // 완료된 챌린지 개수 가져오기
-        const challengesResponse = await fetch('/api/challenges?includeCompleted=true&countOnly=true', {
-          headers: { 'X-Username': encodeUsernameHeader(username) },
-        });
+        const challengesResponse = await fetch(
+          "/api/challenges?includeCompleted=true&countOnly=true",
+          {
+            headers: { "X-Username": encodeUsernameHeader(username) },
+          },
+        );
         if (challengesResponse.ok) {
           const challengesData = await challengesResponse.json();
           const completedCount = challengesData?.count || 0;
-          localStorage.setItem('successfulChallengesCount', String(completedCount));
-          setUserData((prev) => (prev ? { ...prev, challenges: `${completedCount}개` } : prev));
+          localStorage.setItem(
+            "successfulChallengesCount",
+            String(completedCount),
+          );
+          setUserData((prev) =>
+            prev ? { ...prev, challenges: `${completedCount}개` } : prev,
+          );
         }
 
         // 사용자 아이템 정보 가져오기
-        const itemsUrl = userId ? `/api/user/items?userId=${userId}` : '/api/user/items';
+        const itemsUrl = userId
+          ? `/api/user/items?userId=${userId}`
+          : "/api/user/items";
         const itemsResponse = await fetch(itemsUrl, {
-          headers: { 'X-Username': encodeUsernameHeader(username) },
+          headers: { "X-Username": encodeUsernameHeader(username) },
         });
         let itemsData = null;
         try {
@@ -268,23 +320,28 @@ function MyPage({ isOpen, onClose }) {
         }
         const ownedCount = itemsData?.purchasedItems?.length || 0;
 
-        setUserData((prev) => (prev ? { ...prev, items: `${ownedCount}개` } : prev));
+        setUserData((prev) =>
+          prev ? { ...prev, items: `${ownedCount}개` } : prev,
+        );
 
         // 통계 정보 가져오기
         const statsParams = new URLSearchParams({ t: String(Date.now()) });
         if (userId) {
-          statsParams.set('userId', String(userId));
+          statsParams.set("userId", String(userId));
         }
 
-        const response = await fetch(`/api/user/stats?${statsParams.toString()}`, {
-          headers: { 
-            'X-Username': encodeUsernameHeader(username),
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache',
-            'Expires': '0'
+        const response = await fetch(
+          `/api/user/stats?${statsParams.toString()}`,
+          {
+            headers: {
+              "X-Username": encodeUsernameHeader(username),
+              "Cache-Control": "no-cache, no-store, must-revalidate",
+              Pragma: "no-cache",
+              Expires: "0",
+            },
           },
-        });
-        debugStatsLog('initial stats request', {
+        );
+        debugStatsLog("initial stats request", {
           username,
           userId,
           url: `/api/user/stats?${statsParams.toString()}`,
@@ -298,19 +355,32 @@ function MyPage({ isOpen, onClose }) {
         } catch {
           data = null;
         }
-        debugStatsLog('initial stats response', data);
+        debugStatsLog("initial stats response", data);
 
         if (!response.ok) {
-          debugStatsLog('initial stats failed', { status: response.status, data });
+          debugStatsLog("initial stats failed", {
+            status: response.status,
+            data,
+          });
           const fallbackCounts = await fetchCommunityCountsFromPosts(username);
           if (fallbackCounts) {
-            localStorage.setItem('communityPostsCount', String(fallbackCounts.posts));
-            localStorage.setItem('communityCommentsCount', String(fallbackCounts.comments));
-            setUserData((prev) => (prev ? {
-              ...prev,
-              posts: `${fallbackCounts.posts}개`,
-              comments: `${fallbackCounts.comments}개`
-            } : prev));
+            localStorage.setItem(
+              "communityPostsCount",
+              String(fallbackCounts.posts),
+            );
+            localStorage.setItem(
+              "communityCommentsCount",
+              String(fallbackCounts.comments),
+            );
+            setUserData((prev) =>
+              prev
+                ? {
+                    ...prev,
+                    posts: `${fallbackCounts.posts}개`,
+                    comments: `${fallbackCounts.comments}개`,
+                  }
+                : prev,
+            );
           }
           return;
         }
@@ -320,46 +390,80 @@ function MyPage({ isOpen, onClose }) {
           const comments = data.stats.comments;
           const nextPoints = Number(data.stats.points) || 0;
           const nextScore = Number(data.stats.score) || 0;
-          
-          localStorage.setItem('points', String(nextPoints));
-          localStorage.setItem('score', String(nextScore));
-          localStorage.setItem('communityPostsCount', String(Number(posts) || 0));
-          localStorage.setItem('communityCommentsCount', String(Number(comments) || 0));
 
-          setUserData((prev) => (prev ? {
-            ...prev,
-            points: nextPoints,
-            score: nextScore,
-            posts: `${posts}개`,
-            comments: `${comments}개`
-          } : prev));
+          localStorage.setItem("points", String(nextPoints));
+          localStorage.setItem("score", String(nextScore));
+          localStorage.setItem(
+            "communityPostsCount",
+            String(Number(posts) || 0),
+          );
+          localStorage.setItem(
+            "communityCommentsCount",
+            String(Number(comments) || 0),
+          );
+
+          setUserData((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  points: nextPoints,
+                  score: nextScore,
+                  posts: `${posts}개`,
+                  comments: `${comments}개`,
+                }
+              : prev,
+          );
           // 초기 stats 반영 후 랭킹 갱신
-          try { updateRanks(username, userId); } catch (e) { console.warn(e); }
+          try {
+            updateRanks(username, userId);
+          } catch (e) {
+            console.warn(e);
+          }
         } else {
-          debugStatsLog('initial stats missing payload', data);
+          debugStatsLog("initial stats missing payload", data);
           const fallbackCounts = await fetchCommunityCountsFromPosts(username);
           if (fallbackCounts) {
-            localStorage.setItem('communityPostsCount', String(fallbackCounts.posts));
-            localStorage.setItem('communityCommentsCount', String(fallbackCounts.comments));
-            setUserData((prev) => (prev ? {
-              ...prev,
-              posts: `${fallbackCounts.posts}개`,
-              comments: `${fallbackCounts.comments}개`
-            } : prev));
+            localStorage.setItem(
+              "communityPostsCount",
+              String(fallbackCounts.posts),
+            );
+            localStorage.setItem(
+              "communityCommentsCount",
+              String(fallbackCounts.comments),
+            );
+            setUserData((prev) =>
+              prev
+                ? {
+                    ...prev,
+                    posts: `${fallbackCounts.posts}개`,
+                    comments: `${fallbackCounts.comments}개`,
+                  }
+                : prev,
+            );
           }
         }
       } catch (err) {
-        console.error('Stats fetch error:', err);
-        debugStatsLog('initial stats exception', err);
+        console.error("Stats fetch error:", err);
+        debugStatsLog("initial stats exception", err);
         const fallbackCounts = await fetchCommunityCountsFromPosts(username);
         if (fallbackCounts) {
-          localStorage.setItem('communityPostsCount', String(fallbackCounts.posts));
-          localStorage.setItem('communityCommentsCount', String(fallbackCounts.comments));
-          setUserData((prev) => (prev ? {
-            ...prev,
-            posts: `${fallbackCounts.posts}개`,
-            comments: `${fallbackCounts.comments}개`
-          } : prev));
+          localStorage.setItem(
+            "communityPostsCount",
+            String(fallbackCounts.posts),
+          );
+          localStorage.setItem(
+            "communityCommentsCount",
+            String(fallbackCounts.comments),
+          );
+          setUserData((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  posts: `${fallbackCounts.posts}개`,
+                  comments: `${fallbackCounts.comments}개`,
+                }
+              : prev,
+          );
         }
       }
     };
@@ -367,17 +471,21 @@ function MyPage({ isOpen, onClose }) {
     fetchStats();
 
     return () => {
-      window.removeEventListener('pointsUpdated', handlePointsUpdated);
+      window.removeEventListener("pointsUpdated", handlePointsUpdated);
     };
   }, [isOpen]);
 
   // MyPage 열려있을 때 랭킹을 주기적으로 동기화 및 포커스/visibility 시 동기화
   useEffect(() => {
     if (!isOpen) return;
-    const username = localStorage.getItem('username');
+    const username = localStorage.getItem("username");
     const userId = getStoredUserId();
     const sync = () => {
-      try { updateRanks(username, userId); } catch (e) { console.warn(e); }
+      try {
+        updateRanks(username, userId);
+      } catch (e) {
+        console.warn(e);
+      }
     };
 
     // 즉시 동기화
@@ -385,14 +493,16 @@ function MyPage({ isOpen, onClose }) {
     const id = setInterval(sync, 30000);
 
     const onFocus = () => sync();
-    const onVisibility = () => { if (document.visibilityState === 'visible') sync(); };
-    window.addEventListener('focus', onFocus);
-    document.addEventListener('visibilitychange', onVisibility);
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") sync();
+    };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisibility);
 
     return () => {
       clearInterval(id);
-      window.removeEventListener('focus', onFocus);
-      document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisibility);
     };
   }, [isOpen]);
 
@@ -402,53 +512,67 @@ function MyPage({ isOpen, onClose }) {
 
     const applyActiveToUI = async () => {
       const userId = getStoredUserId();
-      const username = localStorage.getItem('username');
+      const username = localStorage.getItem("username");
 
       const applyFromActive = (active) => {
-        const frameItem = active?.frame ? shopItems.find(s => s.id === Number(active.frame)) : null;
-        const bgItem = active?.bg ? shopItems.find(s => s.id === Number(active.bg)) : null;
-        const imageItem = active?.image ? shopItems.find(s => s.id === Number(active.image)) : null;
+        const frameItem = active?.frame
+          ? shopItems.find((s) => s.id === Number(active.frame))
+          : null;
+        const bgItem = active?.bg
+          ? shopItems.find((s) => s.id === Number(active.bg))
+          : null;
+        const imageItem = active?.image
+          ? shopItems.find((s) => s.id === Number(active.image))
+          : null;
 
-        const headerBgEl = document.querySelector('.mypage-header .mypage-header-bg');
+        const headerBgEl = document.querySelector(
+          ".mypage-header .mypage-header-bg",
+        );
         if (headerBgEl) {
           if (bgItem && bgItem.image) {
             headerBgEl.style.backgroundImage = `url(${bgItem.image})`;
-            headerBgEl.style.backgroundSize = 'cover';
-            headerBgEl.style.backgroundPosition = 'center';
-            headerBgEl.style.backgroundRepeat = 'no-repeat';
-            headerBgEl.style.display = 'block';
+            headerBgEl.style.backgroundSize = "cover";
+            headerBgEl.style.backgroundPosition = "center";
+            headerBgEl.style.backgroundRepeat = "no-repeat";
+            headerBgEl.style.display = "block";
           } else {
-            headerBgEl.style.backgroundImage = '';
-            headerBgEl.style.display = 'none';
+            headerBgEl.style.backgroundImage = "";
+            headerBgEl.style.display = "none";
           }
         }
 
-        const profileImgEl = document.querySelector('.mypage-modal .profile-img img:not(.profile-frame-overlay)');
+        const profileImgEl = document.querySelector(
+          ".mypage-modal .profile-img img:not(.profile-frame-overlay)",
+        );
         if (profileImgEl) {
-          profileImgEl.src = (imageItem?.image) ? imageItem.image : '/img/Profile2.png';
-          profileImgEl.style.objectFit = 'contain';
+          profileImgEl.src = imageItem?.image
+            ? imageItem.image
+            : "/img/Profile2.png";
+          profileImgEl.style.objectFit = "contain";
 
           if (frameItem?.myPageImageFront) {
-            profileImgEl.style.position = 'relative';
-            profileImgEl.style.zIndex = '1020';
+            profileImgEl.style.position = "relative";
+            profileImgEl.style.zIndex = "1020";
           } else {
-            profileImgEl.style.position = '';
-            profileImgEl.style.zIndex = '';
+            profileImgEl.style.position = "";
+            profileImgEl.style.zIndex = "";
           }
         }
 
-        const frameOverlay = document.querySelector('.mypage-modal .profile-frame-overlay');
+        const frameOverlay = document.querySelector(
+          ".mypage-modal .profile-frame-overlay",
+        );
         if (frameOverlay) {
           if (frameItem && frameItem.image) {
             const scale = frameItem.myPageScale || 2.2;
 
             frameOverlay.src = frameItem.image;
-            frameOverlay.style.display = 'block';
-            frameOverlay.style.position = 'absolute';
-            frameOverlay.style.top = '0';
-            frameOverlay.style.left = '0';
-            const widthPct = (scale * 100).toFixed(2) + '%';
-            const offsetPct = (scale - 1) / 2 * 100;
+            frameOverlay.style.display = "block";
+            frameOverlay.style.position = "absolute";
+            frameOverlay.style.top = "0";
+            frameOverlay.style.left = "0";
+            const widthPct = (scale * 100).toFixed(2) + "%";
+            const offsetPct = ((scale - 1) / 2) * 100;
             const additionalOffsetY = frameItem.myPageOffsetY ?? 20;
             const additionalOffsetX = frameItem.myPageOffsetX ?? 0;
             const topOffset = offsetPct + additionalOffsetY;
@@ -457,15 +581,17 @@ function MyPage({ isOpen, onClose }) {
             frameOverlay.style.height = widthPct;
             frameOverlay.style.left = `-${leftOffset.toFixed(2)}%`;
             frameOverlay.style.top = `-${topOffset.toFixed(2)}%`;
-            frameOverlay.style.zIndex = frameItem.myPageImageFront ? '1005' : '1015';
+            frameOverlay.style.zIndex = frameItem.myPageImageFront
+              ? "1005"
+              : "1015";
           } else {
-            frameOverlay.style.display = 'none';
-            frameOverlay.style.position = '';
-            frameOverlay.style.left = '';
-            frameOverlay.style.top = '';
-            frameOverlay.style.width = '';
-            frameOverlay.style.height = '';
-            frameOverlay.style.zIndex = '';
+            frameOverlay.style.display = "none";
+            frameOverlay.style.position = "";
+            frameOverlay.style.left = "";
+            frameOverlay.style.top = "";
+            frameOverlay.style.width = "";
+            frameOverlay.style.height = "";
+            frameOverlay.style.zIndex = "";
           }
         }
       };
@@ -475,9 +601,11 @@ function MyPage({ isOpen, onClose }) {
       }
 
       try {
-        const itemsUrl = userId ? `/api/user/items?userId=${userId}` : '/api/user/items';
+        const itemsUrl = userId
+          ? `/api/user/items?userId=${userId}`
+          : "/api/user/items";
         const response = await fetch(itemsUrl, {
-          headers: { 'X-Username': encodeUsernameHeader(username) },
+          headers: { "X-Username": encodeUsernameHeader(username) },
         });
         let data = null;
         try {
@@ -487,23 +615,23 @@ function MyPage({ isOpen, onClose }) {
         }
 
         if (!response.ok) {
-          console.error('Failed to fetch active items:', data?.message);
+          console.error("Failed to fetch active items:", data?.message);
           return;
         }
 
         const active = data?.activeItems || {};
         applyFromActive(active);
       } catch (err) {
-        console.error('Active items fetch error:', err);
+        console.error("Active items fetch error:", err);
       }
     };
 
     applyActiveToUI();
 
     const handleActiveEvent = () => applyActiveToUI();
-    window.addEventListener('activeItemsUpdated', handleActiveEvent);
+    window.addEventListener("activeItemsUpdated", handleActiveEvent);
     return () => {
-      window.removeEventListener('activeItemsUpdated', handleActiveEvent);
+      window.removeEventListener("activeItemsUpdated", handleActiveEvent);
     };
   }, [isOpen]);
 
@@ -514,7 +642,7 @@ function MyPage({ isOpen, onClose }) {
 
     const refreshCommunityStats = (event) => {
       const userId = getStoredUserId();
-      const username = localStorage.getItem('username');
+      const username = localStorage.getItem("username");
       if (!userId && !username) return;
 
       const postsDelta = Number(event?.detail?.postsDelta || 0);
@@ -529,30 +657,36 @@ function MyPage({ isOpen, onClose }) {
           return {
             ...prev,
             posts: `${nextPosts}개`,
-            comments: `${nextComments}개`
+            comments: `${nextComments}개`,
           };
         });
 
         const cached = getCachedCommunityCounts();
-        localStorage.setItem('communityPostsCount', String(Math.max(0, cached.posts + postsDelta)));
-        localStorage.setItem('communityCommentsCount', String(Math.max(0, cached.comments + commentsDelta)));
+        localStorage.setItem(
+          "communityPostsCount",
+          String(Math.max(0, cached.posts + postsDelta)),
+        );
+        localStorage.setItem(
+          "communityCommentsCount",
+          String(Math.max(0, cached.comments + commentsDelta)),
+        );
       }
 
       const statsParams = new URLSearchParams({ t: String(Date.now()) });
       if (userId) {
-        statsParams.set('userId', String(userId));
+        statsParams.set("userId", String(userId));
       }
 
       fetch(`/api/user/stats?${statsParams.toString()}`, {
         headers: {
-          'X-Username': encodeUsernameHeader(username),
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0'
+          "X-Username": encodeUsernameHeader(username),
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+          Pragma: "no-cache",
+          Expires: "0",
         },
       })
         .then((response) => {
-          debugStatsLog('event stats request', {
+          debugStatsLog("event stats request", {
             username,
             userId,
             url: `/api/user/stats?${statsParams.toString()}`,
@@ -560,133 +694,206 @@ function MyPage({ isOpen, onClose }) {
             ok: response.ok,
             status: response.status,
           });
-          return response.json().then((data) => ({ ok: response.ok, status: response.status, data })).catch(() => ({ ok: response.ok, status: response.status, data: null }));
+          return response
+            .json()
+            .then((data) => ({
+              ok: response.ok,
+              status: response.status,
+              data,
+            }))
+            .catch(() => ({
+              ok: response.ok,
+              status: response.status,
+              data: null,
+            }));
         })
         .then(async ({ ok, status, data }) => {
-          debugStatsLog('event stats response', { ok, status, data });
+          debugStatsLog("event stats response", { ok, status, data });
           if (!ok || !data?.success || !data?.stats) {
-            const fallbackCounts = await fetchCommunityCountsFromPosts(username);
+            const fallbackCounts =
+              await fetchCommunityCountsFromPosts(username);
             if (fallbackCounts) {
-              localStorage.setItem('communityPostsCount', String(fallbackCounts.posts));
-              localStorage.setItem('communityCommentsCount', String(fallbackCounts.comments));
-              setUserData((prev) => (prev ? {
-                ...prev,
-                posts: `${fallbackCounts.posts}개`,
-                comments: `${fallbackCounts.comments}개`
-              } : prev));
+              localStorage.setItem(
+                "communityPostsCount",
+                String(fallbackCounts.posts),
+              );
+              localStorage.setItem(
+                "communityCommentsCount",
+                String(fallbackCounts.comments),
+              );
+              setUserData((prev) =>
+                prev
+                  ? {
+                      ...prev,
+                      posts: `${fallbackCounts.posts}개`,
+                      comments: `${fallbackCounts.comments}개`,
+                    }
+                  : prev,
+              );
             }
             return;
           }
           const posts = data.stats.posts;
           const comments = data.stats.comments;
           const nextPoints = Number(data.stats.points) || 0;
-          localStorage.setItem('points', String(nextPoints));
-          localStorage.setItem('communityPostsCount', String(Number(posts) || 0));
-          localStorage.setItem('communityCommentsCount', String(Number(comments) || 0));
-          setUserData((prev) => (prev ? {
-            ...prev,
-            points: nextPoints,
-            posts: `${posts}개`,
-            comments: `${comments}개`
-          } : prev));
+          localStorage.setItem("points", String(nextPoints));
+          localStorage.setItem(
+            "communityPostsCount",
+            String(Number(posts) || 0),
+          );
+          localStorage.setItem(
+            "communityCommentsCount",
+            String(Number(comments) || 0),
+          );
+          setUserData((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  points: nextPoints,
+                  posts: `${posts}개`,
+                  comments: `${comments}개`,
+                }
+              : prev,
+          );
           // 이벤트 기반 stats 갱신 후 랭킹 갱신
-          try { updateRanks(username, userId); } catch (e) { console.warn(e); }
+          try {
+            updateRanks(username, userId);
+          } catch (e) {
+            console.warn(e);
+          }
         })
         .catch(async (err) => {
-          debugStatsLog('event stats exception', err);
+          debugStatsLog("event stats exception", err);
           const fallbackCounts = await fetchCommunityCountsFromPosts(username);
           if (fallbackCounts) {
-            localStorage.setItem('communityPostsCount', String(fallbackCounts.posts));
-            localStorage.setItem('communityCommentsCount', String(fallbackCounts.comments));
-            setUserData((prev) => (prev ? {
-              ...prev,
-              posts: `${fallbackCounts.posts}개`,
-              comments: `${fallbackCounts.comments}개`
-            } : prev));
+            localStorage.setItem(
+              "communityPostsCount",
+              String(fallbackCounts.posts),
+            );
+            localStorage.setItem(
+              "communityCommentsCount",
+              String(fallbackCounts.comments),
+            );
+            setUserData((prev) =>
+              prev
+                ? {
+                    ...prev,
+                    posts: `${fallbackCounts.posts}개`,
+                    comments: `${fallbackCounts.comments}개`,
+                  }
+                : prev,
+            );
           }
         });
     };
 
     const handlePointsUpdated = (event) => {
       const nextPoints = event?.detail?.points;
-      if (typeof nextPoints === 'number') {
-        localStorage.setItem('points', String(nextPoints));
+      if (typeof nextPoints === "number") {
+        localStorage.setItem("points", String(nextPoints));
         setUserData((prev) => (prev ? { ...prev, points: nextPoints } : prev));
       }
     };
 
-    window.addEventListener('pointsUpdated', handlePointsUpdated);
+    window.addEventListener("pointsUpdated", handlePointsUpdated);
     const handlePurchasedUpdated = () => {
       const userId = getStoredUserId();
-      const username = localStorage.getItem('username');
+      const username = localStorage.getItem("username");
       if (!userId && !username) return;
 
-      const itemsUrl = userId ? `/api/user/items?userId=${userId}` : '/api/user/items';
+      const itemsUrl = userId
+        ? `/api/user/items?userId=${userId}`
+        : "/api/user/items";
 
       fetch(itemsUrl, {
-        headers: { 'X-Username': encodeUsernameHeader(username) },
+        headers: { "X-Username": encodeUsernameHeader(username) },
       })
-        .then((response) => response.json().then((data) => ({ ok: response.ok, data })).catch(() => ({ ok: response.ok, data: null })))
+        .then((response) =>
+          response
+            .json()
+            .then((data) => ({ ok: response.ok, data }))
+            .catch(() => ({ ok: response.ok, data: null })),
+        )
         .then(({ ok, data }) => {
           if (!ok) return;
           const count = data?.purchasedItems?.length || 0;
-          setUserData((prev) => (prev ? { ...prev, items: `${count}개` } : prev));
+          setUserData((prev) =>
+            prev ? { ...prev, items: `${count}개` } : prev,
+          );
         })
         .catch(() => {});
     };
 
-    window.addEventListener('purchasedItemsUpdated', handlePurchasedUpdated);
-    window.addEventListener('storage', handlePurchasedUpdated);
-    window.addEventListener('communityActivityUpdated', refreshCommunityStats);
+    window.addEventListener("purchasedItemsUpdated", handlePurchasedUpdated);
+    window.addEventListener("storage", handlePurchasedUpdated);
+    window.addEventListener("communityActivityUpdated", refreshCommunityStats);
     const handleChallengeCompleted = (event) => {
       const delta = Number(event?.detail?.delta ?? 1);
       if (!delta) return;
-      console.log('✅ [MyPage] challengeCompleted 이벤트 수신! delta:', delta);
+      console.log("✅ [MyPage] challengeCompleted 이벤트 수신! delta:", delta);
       setUserData((prev) => {
         if (!prev) return prev;
         const prevCount = parseCountText(prev.challenges);
         const nextCount = Math.max(0, prevCount + delta);
-        try { localStorage.setItem('successfulChallengesCount', String(nextCount)); } catch (e) { }
-        console.log('📊 [MyPage] 성공한 챌린지 개수 업데이트:', prevCount, '->', nextCount);
+        try {
+          localStorage.setItem("successfulChallengesCount", String(nextCount));
+        } catch (e) {}
+        console.log(
+          "📊 [MyPage] 성공한 챌린지 개수 업데이트:",
+          prevCount,
+          "->",
+          nextCount,
+        );
         return { ...prev, challenges: `${nextCount}개` };
       });
     };
-    window.addEventListener('challengeCompleted', handleChallengeCompleted);
+    window.addEventListener("challengeCompleted", handleChallengeCompleted);
     return () => {
-      window.removeEventListener('pointsUpdated', handlePointsUpdated);
-      window.removeEventListener('purchasedItemsUpdated', handlePurchasedUpdated);
-      window.removeEventListener('storage', handlePurchasedUpdated);
-      window.removeEventListener('communityActivityUpdated', refreshCommunityStats);
-      window.removeEventListener('challengeCompleted', handleChallengeCompleted);
+      window.removeEventListener("pointsUpdated", handlePointsUpdated);
+      window.removeEventListener(
+        "purchasedItemsUpdated",
+        handlePurchasedUpdated,
+      );
+      window.removeEventListener("storage", handlePurchasedUpdated);
+      window.removeEventListener(
+        "communityActivityUpdated",
+        refreshCommunityStats,
+      );
+      window.removeEventListener(
+        "challengeCompleted",
+        handleChallengeCompleted,
+      );
     };
   }, [isOpen]);
 
   const handleLogout = async () => {
     const clearClientSession = () => {
-      localStorage.removeItem('username');
-      localStorage.removeItem('userId');
-      localStorage.removeItem('joinDate');
-      localStorage.removeItem('points');
-      localStorage.removeItem('purchasedItems');
-      window.dispatchEvent(new Event('loginStatusChanged'));
-      window.dispatchEvent(new CustomEvent('pointsUpdated', { detail: { points: 0 } }));
+      localStorage.removeItem("username");
+      localStorage.removeItem("userId");
+      localStorage.removeItem("joinDate");
+      localStorage.removeItem("points");
+      localStorage.removeItem("purchasedItems");
+      window.dispatchEvent(new Event("loginStatusChanged"));
+      window.dispatchEvent(
+        new CustomEvent("pointsUpdated", { detail: { points: 0 } }),
+      );
     };
 
     try {
-      await fetch('/api/auth/logout', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json'
-        }
+      await fetch("/api/auth/logout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
       });
     } catch {
       // ignore network/server logout failure and continue with client logout
     }
 
     clearClientSession();
-    alert('로그아웃 되었습니다.');
+    alert("로그아웃 되었습니다.");
     onClose();
-    navigate('/');
+    navigate("/");
     window.location.reload();
   };
 
@@ -702,29 +909,56 @@ function MyPage({ isOpen, onClose }) {
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="mypage-modal" onClick={(e) => e.stopPropagation()}>
-        <button className="modal-close-btn" onClick={onClose}>×</button>
-        
+        <button className="modal-close-btn" onClick={onClose}>
+          ×
+        </button>
+
         <div className="mypage-header">
           <div className="mypage-header-bg" />
           <div className="mypage-header-divider" />
           <div className="profile-img">
             <img src="/img/Profile2.png" alt="프로필" />
-            <img src="" alt="frame" className="profile-frame-overlay" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'none', pointerEvents: 'none' }} />
+            <img
+              src=""
+              alt="frame"
+              className="profile-frame-overlay"
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                width: "100%",
+                height: "100%",
+                display: "none",
+                pointerEvents: "none",
+              }}
+            />
           </div>
           <div className="profile-info">
             <div className="profile-name-score">
               <h3>{userData.username}</h3>
               <div className="score-container">
-                <img src={currentTier.image} alt={currentTier.name} className="score-icon" title={currentTier.name} />
+                <img
+                  src={currentTier.image}
+                  alt={currentTier.name}
+                  className="score-icon"
+                  title={currentTier.name}
+                />
                 <div className="score-right-section">
                   <div className="score-bottom">
                     <span className="score-value">{userData.score}</span>
-                    <button className="score-help-btn" title="점수 정보" onClick={handleTierGuideClick}>
+                    <button
+                      className="score-help-btn"
+                      title="점수 정보"
+                      onClick={handleTierGuideClick}
+                    >
                       <span>?</span>
                     </button>
                   </div>
                   <div className="score-progress-bar">
-                    <div className="score-progress-fill" style={progressFillStyle}></div>
+                    <div
+                      className="score-progress-fill"
+                      style={progressFillStyle}
+                    ></div>
                   </div>
                 </div>
               </div>
@@ -768,11 +1002,13 @@ function MyPage({ isOpen, onClose }) {
             </div>
           </div>
           <div className="activity-section">
-            <h4 
+            <h4
               onClick={handleMyItemsClick}
-              style={{ cursor: 'pointer', color: '#4CAF50' }}
-              onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
-              onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
+              style={{ cursor: "pointer", color: "#4CAF50" }}
+              onMouseEnter={(e) =>
+                (e.target.style.textDecoration = "underline")
+              }
+              onMouseLeave={(e) => (e.target.style.textDecoration = "none")}
             >
               보유 중인 아이템 →
             </h4>
@@ -793,6 +1029,3 @@ function MyPage({ isOpen, onClose }) {
 }
 
 export default MyPage;
-
-
-

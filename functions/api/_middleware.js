@@ -3,9 +3,9 @@
 
 export async function onRequest(context) {
   const { request, env, next } = context;
-  
+
   // X-Username 헤더 확인
-  const rawUsername = request.headers.get('X-Username');
+  const rawUsername = request.headers.get("X-Username");
   let username = rawUsername;
   if (rawUsername) {
     try {
@@ -14,28 +14,30 @@ export async function onRequest(context) {
       username = rawUsername;
     }
   }
-  
+
   let userId;
-  
+
   if (username && env?.D1_DB) {
     try {
       // username으로 userId 조회
-      const userRow = await env.D1_DB
-        .prepare('SELECT user_id FROM users WHERE username = ?')
+      const userRow = await env.D1_DB.prepare(
+        "SELECT user_id FROM users WHERE username = ?",
+      )
         .bind(username)
         .first();
-      
+
       if (userRow?.user_id) {
         userId = userRow.user_id;
       }
     } catch (err) {
-      console.warn('Failed to resolve username to userId:', err);
+      console.warn("Failed to resolve username to userId:", err);
     }
   }
 
   // Fallback: allow clients to send userId directly (useful for dev or when username lookup fails)
   if (!userId) {
-    const headerUserId = request.headers.get('X-User-Id') || request.headers.get('X-UserId');
+    const headerUserId =
+      request.headers.get("X-User-Id") || request.headers.get("X-UserId");
     if (headerUserId) {
       const parsed = Number(headerUserId);
       if (!Number.isNaN(parsed)) {
@@ -46,14 +48,16 @@ export async function onRequest(context) {
 
   if (!userId) {
     // Add a helpful debug note; avoid leaking sensitive data in production logs.
-    console.debug('[middleware] userId not resolved from X-Username or X-User-Id');
+    console.debug(
+      "[middleware] userId not resolved from X-Username or X-User-Id",
+    );
   } else {
-    console.debug('[middleware] resolved userId:', userId);
+    console.debug("[middleware] resolved userId:", userId);
   }
-  
+
   // userId를 context에 추가
   context.userId = userId;
-  
+
   // 다음 핸들러로 전달
   const response = await next();
   return response;

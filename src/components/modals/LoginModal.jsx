@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState } from "react";
 
 function LoginModal({ onClose, onSignup, onLogin }) {
-  const [id, setId] = useState('');
-  const [password, setPassword] = useState('');
+  const [id, setId] = useState("");
+  const [password, setPassword] = useState("");
 
   const handleLogin = () => {
     if (id && password) {
@@ -34,8 +34,12 @@ function LoginModal({ onClose, onSignup, onLogin }) {
           />
         </div>
         <div className="button-group">
-          <button className="login-btn" onClick={handleLogin}>로그인</button>
-          <button className="signup-btn" onClick={onSignup}>회원가입</button>
+          <button className="login-btn" onClick={handleLogin}>
+            로그인
+          </button>
+          <button className="signup-btn" onClick={onSignup}>
+            회원가입
+          </button>
         </div>
         <div className="login-footer-links">
           <a href="#">아이디 찾기</a>

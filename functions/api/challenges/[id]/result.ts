@@ -1,6 +1,6 @@
 export default async function handler(
   request: Request,
-  { env, params, userId }: { env: any; params: { id: string }; userId: number }
+  { env, params, userId }: { env: any; params: { id: string }; userId: number },
 ) {
   if (request.method !== "GET") {
     return new Response("Method Not Allowed", { status: 405 });
@@ -12,7 +12,7 @@ export default async function handler(
   // 참여자인지 확인
   const memberCheck = await db
     .prepare(
-      "SELECT 1 FROM challenge_members WHERE challenge_id = ? AND user_id = ?"
+      "SELECT 1 FROM challenge_members WHERE challenge_id = ? AND user_id = ?",
     )
     .bind(challengeId, userId)
     .all();
@@ -29,7 +29,7 @@ export default async function handler(
       FROM challenge_results
       WHERE challenge_id = ?
       ORDER BY score DESC
-      `
+      `,
     )
     .bind(challengeId)
     .all();

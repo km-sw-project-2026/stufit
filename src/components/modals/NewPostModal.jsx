@@ -1,17 +1,28 @@
-import { useState } from 'react';
+import { useState } from "react";
 
 function NewPostModal({ onClose }) {
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
 
   const handleSubmit = () => {
-    console.log('Post created:', { title, content });
+    console.log("Post created:", { title, content });
     onClose();
   };
 
   return (
     <div className="popup-modal">
-      <div className="popup-overlay" style={{ width: '100%', height: '100%', background: 'rgba(0, 0, 0, 0.5)', position: 'fixed', top: 0, left: 0, zIndex: 50 }}></div>
+      <div
+        className="popup-overlay"
+        style={{
+          width: "100%",
+          height: "100%",
+          background: "rgba(0, 0, 0, 0.5)",
+          position: "fixed",
+          top: 0,
+          left: 0,
+          zIndex: 50,
+        }}
+      ></div>
       <div className="popup-content notice-board-popup">
         <h2 className="notice-board-title">notice board</h2>
 
@@ -36,7 +47,9 @@ function NewPostModal({ onClose }) {
           ></textarea>
         </div>
 
-        <button className="notice-submit-btn" onClick={handleSubmit}>글 작성하기</button>
+        <button className="notice-submit-btn" onClick={handleSubmit}>
+          글 작성하기
+        </button>
       </div>
     </div>
   );

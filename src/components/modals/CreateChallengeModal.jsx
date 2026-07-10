@@ -1,16 +1,16 @@
-import { useState } from 'react';
-import CustomAlertModal from './CustomAlertModal';
+import { useState } from "react";
+import CustomAlertModal from "./CustomAlertModal";
 
 function CreateChallengeModal({ onClose }) {
   const [formData, setFormData] = useState({
-    name: '',
+    name: "",
     // user: '',
-    duration: '',
-    category: '',
-    goal: '',
-    code: ''
+    duration: "",
+    category: "",
+    goal: "",
+    code: "",
   });
-  const [alertMessage, setAlertMessage] = useState('');
+  const [alertMessage, setAlertMessage] = useState("");
   const [onAlertClose, setOnAlertClose] = useState(null);
 
   const showAlert = (message, closeHandler = null) => {
@@ -19,32 +19,32 @@ function CreateChallengeModal({ onClose }) {
   };
 
   const handleAlertClose = () => {
-    if (typeof onAlertClose === 'function') {
+    if (typeof onAlertClose === "function") {
       onAlertClose();
     }
-    setAlertMessage('');
+    setAlertMessage("");
     setOnAlertClose(null);
   };
 
   const handleInputChange = (e) => {
     const { id, value } = e.target;
-    const key = id.replace('new-challenge-', '');
-    setFormData(prev => ({ ...prev, [key]: value }));
+    const key = id.replace("new-challenge-", "");
+    setFormData((prev) => ({ ...prev, [key]: value }));
   };
 
   const handleSubmit = () => {
     // Basic validation
     const durationNum = Number(formData.duration) || 0;
-    let errorMessage = '';
+    let errorMessage = "";
 
     if (!formData.name) {
-      errorMessage = '챌린지 이름을 입력해주세요.';
+      errorMessage = "챌린지 이름을 입력해주세요.";
     } else if (!formData.category) {
-      errorMessage = '카테고리를 선택해주세요.';
+      errorMessage = "카테고리를 선택해주세요.";
     } else if (!durationNum) {
-      errorMessage = '기간을 올바르게 입력해주세요.';
+      errorMessage = "기간을 올바르게 입력해주세요.";
     } else if (!formData.goal) {
-      errorMessage = '목표를 입력해주세요.';
+      errorMessage = "목표를 입력해주세요.";
     }
 
     if (errorMessage) {
@@ -52,9 +52,9 @@ function CreateChallengeModal({ onClose }) {
       return;
     }
 
-    const username = localStorage.getItem('username');
+    const username = localStorage.getItem("username");
     if (!username) {
-      showAlert('로그인이 필요합니다.');
+      showAlert("로그인이 필요합니다.");
       return;
     }
 
@@ -63,15 +63,18 @@ function CreateChallengeModal({ onClose }) {
     const daysToAdd = Math.max(0, durationNum - 1);
     const endDateObj = new Date(start);
     endDateObj.setDate(start.getDate() + daysToAdd);
-    const pad = (n) => String(n).padStart(2, '0');
+    const pad = (n) => String(n).padStart(2, "0");
     const endDateStr = `${endDateObj.getFullYear()}-${pad(endDateObj.getMonth() + 1)}-${pad(endDateObj.getDate())}`;
 
     // Send create request to server
     (async () => {
       try {
-        const res = await fetch('/api/challenges', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'X-Username': encodeURIComponent(username) },
+        const res = await fetch("/api/challenges", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Username": encodeURIComponent(username),
+          },
           body: JSON.stringify({
             challengeName: formData.name,
             category: formData.category.toUpperCase(),
@@ -79,20 +82,20 @@ function CreateChallengeModal({ onClose }) {
             endDate: endDateStr,
             duration: durationNum,
             goalDescription: formData.goal,
-            inviteCode: formData.code || null
-          })
+            inviteCode: formData.code || null,
+          }),
         });
 
         const json = await res.json();
         if (!res.ok) {
-          showAlert(json.message || '챌린지 생성에 실패했습니다.');
+          showAlert(json.message || "챌린지 생성에 실패했습니다.");
           return;
         }
 
-        showAlert('챌린지가 성공적으로 생성되었습니다!', onClose);
+        showAlert("챌린지가 성공적으로 생성되었습니다!", onClose);
       } catch (e) {
-        console.error('챌린지 생성 오류', e);
-        showAlert('서버 오류가 발생했습니다.');
+        console.error("챌린지 생성 오류", e);
+        showAlert("서버 오류가 발생했습니다.");
       }
     })();
   };
@@ -131,13 +134,26 @@ function CreateChallengeModal({ onClose }) {
                 value={formData.category}
                 onChange={handleInputChange}
               >
-                <option value="" disabled>예: 공부</option>
+                <option value="" disabled>
+                  예: 공부
+                </option>
                 <option value="study">공부</option>
                 <option value="exercise">운동</option>
                 <option value="daily">일상</option>
               </select>
               <div className="select-arrow">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
               </div>
             </div>
           </div>
@@ -162,13 +178,12 @@ function CreateChallengeModal({ onClose }) {
             onChange={handleInputChange}
           />
         </div>
-        <button className="start-challenge-btn" onClick={handleSubmit}>챌린지 시작하기</button>
+        <button className="start-challenge-btn" onClick={handleSubmit}>
+          챌린지 시작하기
+        </button>
       </div>
       {alertMessage && (
-        <CustomAlertModal
-          message={alertMessage}
-          onClose={handleAlertClose}
-        />
+        <CustomAlertModal message={alertMessage} onClose={handleAlertClose} />
       )}
     </div>
   );

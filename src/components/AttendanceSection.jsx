@@ -1,12 +1,12 @@
 function AttendanceSection({ attendanceCount }) {
   const days = [
-    { day: 'SUN', points: '100P' },
-    { day: 'MON', points: '120P' },
-    { day: 'TUE', points: '140P' },
-    { day: 'WED', points: '160P' },
-    { day: 'THU', points: '180P' },
-    { day: 'FRI', points: '200P' },
-    { day: 'SAT', points: '220P' }
+    { day: "SUN", points: "100P" },
+    { day: "MON", points: "120P" },
+    { day: "TUE", points: "140P" },
+    { day: "WED", points: "160P" },
+    { day: "THU", points: "180P" },
+    { day: "FRI", points: "200P" },
+    { day: "SAT", points: "220P" },
   ];
 
   return (

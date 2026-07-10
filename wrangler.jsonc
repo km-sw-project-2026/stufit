@@ -1,21 +1,21 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
-  "name": "stufit",  // 프로젝트 이름
-  "main": "worker/index.js",  // 메인 Worker 파일
-  "compatibility_date": "2026-01-20",  // Worker의 호환성 날짜
+  "name": "stufit", // 프로젝트 이름
+  "main": "worker/index.js", // 메인 Worker 파일
+  "compatibility_date": "2026-01-20", // Worker의 호환성 날짜
   "assets": {
     "directory": "./dist/client",
-    "binding": "ASSETS"
+    "binding": "ASSETS",
   },
   "observability": {
-    "enabled": true  // Observability 기능 활성화
+    "enabled": true, // Observability 기능 활성화
   },
   "d1_databases": [
     {
-      "binding": "D1_DB",  // Worker 코드 내에서 사용할 바인딩 이름
-      "database_name": "stufit",  // 데이터베이스 이름
-      "database_id": "cc896ec3-95aa-4b4b-aed3-8bd90bdbe633"  // D1 데이터베이스의 고유 ID
-    }
+      "binding": "D1_DB", // Worker 코드 내에서 사용할 바인딩 이름
+      "database_name": "stufit", // 데이터베이스 이름
+      "database_id": "cc896ec3-95aa-4b4b-aed3-8bd90bdbe633", // D1 데이터베이스의 고유 ID
+    },
   ],
   /**
    * Smart Placement

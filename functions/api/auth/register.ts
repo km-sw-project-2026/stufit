@@ -7,7 +7,7 @@ export async function onRequestPost(context: { request: Request; env: any }) {
       console.error("❌ D1_DB 없음");
       return new Response(
         JSON.stringify({ message: "서버 설정 오류입니다." }),
-        { status: 500, headers: { "Content-Type": "application/json" } }
+        { status: 500, headers: { "Content-Type": "application/json" } },
       );
     }
 
@@ -18,7 +18,7 @@ export async function onRequestPost(context: { request: Request; env: any }) {
       console.error("❌ JSON 파싱 오류:", parseErr);
       return new Response(
         JSON.stringify({ message: "요청 본문이 유효하지 않습니다." }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
+        { status: 400, headers: { "Content-Type": "application/json" } },
       );
     }
 
@@ -27,32 +27,35 @@ export async function onRequestPost(context: { request: Request; env: any }) {
     if (!username || !password) {
       return new Response(
         JSON.stringify({ message: "username과 password는 필수입니다." }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
+        { status: 400, headers: { "Content-Type": "application/json" } },
       );
     }
 
     // 아이디 중복 체크
-    const exists = await env.D1_DB
-      .prepare("SELECT user_id FROM users WHERE username = ?")
+    const exists = await env.D1_DB.prepare(
+      "SELECT user_id FROM users WHERE username = ?",
+    )
       .bind(username)
       .first();
 
     if (exists) {
       return new Response(
         JSON.stringify({ message: "이미 사용 중인 아이디입니다." }),
-        { status: 409, headers: { "Content-Type": "application/json" } }
+        { status: 409, headers: { "Content-Type": "application/json" } },
       );
     }
 
     // users 테이블에 삽입
-    await env.D1_DB
-      .prepare("INSERT INTO users (username, password) VALUES (?, ?)")
+    await env.D1_DB.prepare(
+      "INSERT INTO users (username, password) VALUES (?, ?)",
+    )
       .bind(username, password)
       .run();
 
     // 새로 생성된 사용자 조회
-    const newUser = await env.D1_DB
-      .prepare("SELECT user_id FROM users WHERE username = ?")
+    const newUser = await env.D1_DB.prepare(
+      "SELECT user_id FROM users WHERE username = ?",
+    )
       .bind(username)
       .first();
 
@@ -62,10 +65,9 @@ export async function onRequestPost(context: { request: Request; env: any }) {
 
     // user_profiles 초기화 (실패해도 계속)
     try {
-      await env.D1_DB
-        .prepare(
-          "INSERT INTO user_profiles (user_id, tier, score, points) VALUES (?, ?, ?, ?)"
-        )
+      await env.D1_DB.prepare(
+        "INSERT INTO user_profiles (user_id, tier, score, points) VALUES (?, ?, ?, ?)",
+      )
         .bind(newUser.user_id, "bronze", 0, 0)
         .run();
     } catch (profileErr) {
@@ -74,13 +76,13 @@ export async function onRequestPost(context: { request: Request; env: any }) {
 
     return new Response(
       JSON.stringify({ message: "회원가입 성공", userId: newUser.user_id }),
-      { status: 201, headers: { "Content-Type": "application/json" } }
+      { status: 201, headers: { "Content-Type": "application/json" } },
     );
   } catch (err) {
     console.error("❌ REGISTER ERROR:", (err as any)?.message);
     return new Response(
       JSON.stringify({ message: "회원가입 중 오류가 발생했습니다." }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
+      { status: 500, headers: { "Content-Type": "application/json" } },
     );
   }
 }

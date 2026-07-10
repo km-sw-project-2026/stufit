@@ -8,12 +8,12 @@ const GIVE_UP_QUOTES = [
   "포기하고 싶다는 건, 진지하게 임하고 있다는 뜻이에요.",
   "오늘 하루만 더 가볼까요?",
   "여기서 한 걸음만 더 가면, 어제의 나를 이길 수 있어요.",
-  "당신은 이미 시작했고, 그건 아무나 못 해요."
+  "당신은 이미 시작했고, 그건 아무나 못 해요.",
 ];
 
 export default async function handler(
   request: Request,
-  context: { params: { id: string } }
+  context: { params: { id: string } },
 ) {
   const method = request.method;
   const challengeId = context.params.id;
@@ -22,7 +22,7 @@ export default async function handler(
   if (method !== "GET") {
     return new Response(
       JSON.stringify({ ok: false, message: "Method Not Allowed" }),
-      { status: 405 }
+      { status: 405 },
     );
   }
 
@@ -36,6 +36,6 @@ export default async function handler(
       challenge_id: challengeId,
       quote,
     }),
-    { headers: { "Content-Type": "application/json" } }
+    { headers: { "Content-Type": "application/json" } },
   );
 }

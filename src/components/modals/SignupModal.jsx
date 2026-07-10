@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useState } from "react";
 
 function SignupModal({ onClose, onSignup }) {
-  const [id, setId] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [id, setId] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   const handleSignup = () => {
     if (id && password && confirmPassword && password === confirmPassword) {
@@ -45,7 +45,9 @@ function SignupModal({ onClose, onSignup }) {
           />
         </div>
         <div className="button-group">
-          <button className="login-btn" onClick={handleSignup}>회원가입</button>
+          <button className="login-btn" onClick={handleSignup}>
+            회원가입
+          </button>
         </div>
       </div>
     </div>

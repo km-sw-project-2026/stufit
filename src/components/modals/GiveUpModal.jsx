@@ -9,7 +9,9 @@ function GiveUpModal({ onClose }) {
           <p className="confirm-desc">나중에 이어서 불가능 합니다.</p>
         </div>
         <div className="confirm-buttons">
-          <button className="confirm-btn cancel" onClick={onClose}>취소</button>
+          <button className="confirm-btn cancel" onClick={onClose}>
+            취소
+          </button>
           <button className="confirm-btn giveup">포기하기</button>
         </div>
       </div>

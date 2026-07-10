@@ -117,34 +117,31 @@ color: #000;
 
  */
 
+/* －－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－ */
 
-
-
- /* －－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－ */
-
-
- /* 기본 레이아웃: 스크롤이 가능하도록 높이 제한 해제 */
-html, body {
+/* 기본 레이아웃: 스크롤이 가능하도록 높이 제한 해제 */
+html,
+body {
   margin: 0 !important;
   padding: 0 !important;
   width: 100% !important;
-  height: auto !important;     /* 컨텐츠 길이에 맞춰 늘어남 */
+  height: auto !important; /* 컨텐츠 길이에 맞춰 늘어남 */
   min-height: 100vh !important;
-  overflow-y: auto !important;  /* 브라우저 스크롤 활성화 */
+  overflow-y: auto !important; /* 브라우저 스크롤 활성화 */
   background-color: #eeeeee;
 }
 
 #root {
   width: 100%;
   height: auto !important;
-  display: block !important;    /* 레이아웃 붕괴 방지 */
+  display: block !important; /* 레이아웃 붕괴 방지 */
   margin: 0 auto;
   text-align: center;
 }
 
 /* 챌린지 페이지: fixed를 해제하여 검색창이 같이 움직이게 함 */
 #challenge-modal {
-  position: relative !important; 
+  position: relative !important;
   width: 100%;
   height: auto !important;
   min-height: 100vh;
@@ -160,15 +157,23 @@ html, body {
   will-change: filter;
   transition: filter 300ms;
 }
-.logo:hover { filter: drop-shadow(0 0 2em #646cffaa); }
+.logo:hover {
+  filter: drop-shadow(0 0 2em #646cffaa);
+}
 
 @keyframes logo-spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo { animation: logo-spin infinite 20s linear; }
+  a:nth-of-type(2) .logo {
+    animation: logo-spin infinite 20s linear;
+  }
 }
 
 /* 타이머 디자인 (원본 유지) */
@@ -189,7 +194,7 @@ html, body {
 .timer-time {
   font-size: 90px;
   font-weight: 300;
-  font-family: 'Courier New', monospace;
+  font-family: "Courier New", monospace;
   letter-spacing: 4px;
   color: #1a1a1a;
   line-height: 1;
@@ -210,5 +215,10 @@ html, body {
   font-weight: 600;
 }
 
-.timer-btn:hover { background-color: #138d75; }
-.timer-btn.reset { background-color: #e0e0e0; color: #333; }
+.timer-btn:hover {
+  background-color: #138d75;
+}
+.timer-btn.reset {
+  background-color: #e0e0e0;
+  color: #333;
+}
