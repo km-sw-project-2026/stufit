@@ -63,26 +63,23 @@ export default {
 
       // ===== 먼저 API가 아닌 경로는 정적 파일로 제공 =====
       if (!pathname.startsWith("/api/")) {
-        console.log("[Worker] Non-API path, serving static assets");
+        console.log("[Worker] Non-API path");
 
-        if (env.ASSETS) {
-          try {
-            // 정적 자산 요청 시도
+        // 이미지/CSS/JS 등 정적 파일은 ASSETS에서 직접 제공
+        const staticExtensions = /\.(png|jpg|jpeg|gif|svg|ico|webp|css|js|json|woff2?|ttf|eot|pdf)$/i;
+        if (staticExtensions.test(pathname)) {
+          if (env.ASSETS) {
             const assetResponse = await env.ASSETS.fetch(request);
-
-            // 자산이 존재하면 반환
-            if (assetResponse.status !== 404) {
-              return assetResponse;
-            }
-
-            // 자산이 없으면 index.html 반환 (SPA 라우팅)
-            const indexUrl = new URL(request.url);
-            indexUrl.pathname = "/index.html";
-            const indexRequest = new Request(indexUrl, request);
-            return env.ASSETS.fetch(indexRequest);
-          } catch (assetError) {
-            console.error("[Worker] 정적 자산 제공 오류:", assetError);
+            if (assetResponse.status !== 404) return assetResponse;
           }
+          return new Response("Not Found", { status: 404 });
+        }
+
+        // 그 외 모든 경로는 index.html 반환 (SPA 라우팅)
+        if (env.ASSETS) {
+          const indexUrl = new URL(request.url);
+          indexUrl.pathname = "/index.html";
+          return env.ASSETS.fetch(new Request(indexUrl, request));
         }
         return new Response("Not Found", { status: 404 });
       }
