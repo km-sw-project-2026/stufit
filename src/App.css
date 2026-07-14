@@ -222,7 +222,6 @@ body {
   background-color: #e0e0e0;
   color: #333;
 }
-<<<<<<< HEAD
 .shop-slider-container {
   display: flex;
   align-items: center;
@@ -305,5 +304,4 @@ body {
   .shop-item.medium img { width: 160px; height: 160px; }
   .shop-item.small img { width: 96px; height: 96px; }
 }
-=======
->>>>>>> 9aaa13e65c403a588f75d9d52e8e5d736dfe47e2
+
