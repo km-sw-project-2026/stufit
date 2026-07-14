@@ -50,6 +50,14 @@ text-align: center;
 .naver-btn { background: #03C75A; color: #fff; }
 .kakao-btn { background: #FEE500; color: #371D1E; }
 
+/* ─── 마이페이지 긴 이름 처리 ─── */
+.profile-info h3 {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .logo {
 height: 6em;
 padding: 1.5em;
