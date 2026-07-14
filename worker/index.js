@@ -8,6 +8,9 @@ import { verifyToken } from "../functions/api/utils/jwt";
 import * as login from "../functions/api/auth/login";
 import * as register from "../functions/api/auth/register";
 import * as logout from "../functions/api/auth/logout";
+import * as socialConfig from "../functions/api/auth/social-config";
+import * as naverCallback from "../functions/api/auth/naver/callback";
+import * as kakaoCallback from "../functions/api/auth/kakao/callback";
 
 import * as attendance from "../functions/api/attendance";
 
@@ -168,6 +171,18 @@ export default {
 
       if (pathname === "/api/auth/logout") {
         return logout.onRequestPost({ request, env });
+      }
+
+      if (pathname === "/api/auth/social-config") {
+        return socialConfig.onRequestGet({ request, env });
+      }
+
+      if (pathname === "/api/auth/naver/callback") {
+        return naverCallback.onRequestGet({ request, env });
+      }
+
+      if (pathname === "/api/auth/kakao/callback") {
+        return kakaoCallback.onRequestGet({ request, env });
       }
 
       // Public Challenges API (인증 불필요)
