@@ -4152,6 +4152,10 @@ body.modal-open {
   font-weight: 700;
   color: #222;
   margin: 0;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .score-container {

@@ -50,7 +50,7 @@ export async function onRequestGet(context: { request: Request; env: any }) {
     const profileData = await profileRes.json();
     const naverId = profileData?.response?.id;
     const email = profileData?.response?.email || "";
-    const nickname = profileData?.response?.nickname || `naver_user`;
+    const nickname = profileData?.response?.nickname?.replace(/^naver_?/i, "") || `u`;
 
     if (!naverId) {
       return new Response("사용자 정보 조회 실패", { status: 400 });
@@ -73,7 +73,7 @@ export async function onRequestGet(context: { request: Request; env: any }) {
     } else {
       // 새 사용자 생성
       const safeNick = nickname.replace(/[^a-zA-Z0-9가-힣_]/g, "");
-      const baseUsername = `naver_${safeNick}`;
+      const baseUsername = `n${safeNick}`;
       username = baseUsername;
       username = await ensureUniqueUsername(env.D1_DB, username);
 

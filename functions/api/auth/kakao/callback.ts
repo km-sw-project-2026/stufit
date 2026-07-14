@@ -49,7 +49,7 @@ export async function onRequestGet(context: { request: Request; env: any }) {
     const kakaoId = String(profileData?.id || "");
     const kakaoAccount = profileData?.kakao_account || {};
     const profile = kakaoAccount?.profile || {};
-    const nickname = profile?.nickname || `kakao_user`;
+    const nickname = profile?.nickname || `u`;
 
     if (!kakaoId) {
       return new Response("사용자 정보 조회 실패", { status: 400 });
@@ -71,7 +71,7 @@ export async function onRequestGet(context: { request: Request; env: any }) {
       username = (user as any)?.username || "";
     } else {
       const safeNick = nickname.replace(/[^a-zA-Z0-9가-힣_]/g, "");
-      const baseUsername = `kakao_${safeNick}`;
+      const baseUsername = `k${safeNick}`;
       username = await ensureUniqueUsername(env.D1_DB, baseUsername);
 
       await env.D1_DB.prepare(
