@@ -39,7 +39,10 @@ export async function onRequestGet(context: { request: Request; env: any }) {
     const tokenData = await tokenRes.json();
     const accessToken = tokenData.access_token;
     if (!accessToken) {
-      return new Response("토큰 교환 실패", { status: 400 });
+      const errMsg = `토큰 교환 실패: ${tokenRes.status} ${JSON.stringify(tokenData)}`;
+      console.error(errMsg);
+      const errorHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>토큰 오류</title></head><body><script>alert(${JSON.stringify(errMsg)});window.location.href="/login";</script></body></html>`;
+      return new Response(errorHtml, { status: 200, headers: { "Content-Type": "text/html; charset=utf-8" } });
     }
 
     // 2. access_token → 사용자 정보 조회
