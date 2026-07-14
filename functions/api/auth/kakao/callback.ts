@@ -24,16 +24,17 @@ export async function onRequestGet(context: { request: Request; env: any }) {
 
   try {
     // 1. code → access_token 교환
+    const tokenParams: Record<string, string> = {
+      grant_type: "authorization_code",
+      client_id: KAKAO_CLIENT_ID,
+      code,
+      redirect_uri: redirectUri,
+    };
+    if (KAKAO_CLIENT_SECRET) tokenParams.client_secret = KAKAO_CLIENT_SECRET;
     const tokenRes = await fetch("https://kauth.kakao.com/oauth/token", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        grant_type: "authorization_code",
-        client_id: KAKAO_CLIENT_ID,
-        client_secret: KAKAO_CLIENT_SECRET,
-        code,
-        redirect_uri: redirectUri,
-      }),
+      body: new URLSearchParams(tokenParams),
     });
     const tokenData = await tokenRes.json();
     const accessToken = tokenData.access_token;
