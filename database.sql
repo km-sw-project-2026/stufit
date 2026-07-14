@@ -91,6 +91,8 @@ CREATE TABLE challenges (
   category TEXT NOT NULL,
   timer_hours INTEGER DEFAULT 0,
   timer_minutes INTEGER DEFAULT 0,
+  bet_points INTEGER NOT NULL DEFAULT 0,
+  is_started INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   deleted_at TEXT,
   FOREIGN KEY (created_by_user_id) REFERENCES users(user_id)

@@ -1,89 +1,143 @@
-import { useState } from 'react';
+import { useState } from "react";
 
 function CreateChallengeModal({ closeCreateChallengeModal, onCreateSuccess }) {
-  const [challengeName, setChallengeName] = useState('');
-  const [category, setCategory] = useState('');
-  const [duration, setDuration] = useState('');
-  const [timerHours, setTimerHours] = useState('');
-  const [timerMinutes, setTimerMinutes] = useState('');
-  const [goalDescription, setGoalDescription] = useState('');
-  const [inviteCode, setInviteCode] = useState('');
+  const [challengeName, setChallengeName] = useState("");
+  const [category, setCategory] = useState("");
+  const [duration, setDuration] = useState("");
+  const [timerHours, setTimerHours] = useState("");
+  const [timerMinutes, setTimerMinutes] = useState("");
+  const [goalDescription, setGoalDescription] = useState("");
+  const [inviteCode, setInviteCode] = useState("");
+  const [maxParticipants, setMaxParticipants] = useState("");
+  const [betPoints, setBetPoints] = useState("");
 
   const createChallenge = async () => {
     // inviteCode는 선택사항으로 변경
     if (!challengeName || !category || !duration || !goalDescription) {
-      alert('필수 항목을 모두 입력해주세요.');
+      alert("필수 항목을 모두 입력해주세요.");
       return;
     }
 
     // 공부, 운동 카테고리는 타이머 필수
-    if ((category === 'STUDY' || category === 'EXERCISE') && (!timerHours || !timerMinutes)) {
-      alert('공부/운동 카테고리는 타이머 시간을 설정해주세요.');
+    if (
+      (category === "STUDY" || category === "EXERCISE") &&
+      (!timerHours || !timerMinutes)
+    ) {
+      alert("공부/운동 카테고리는 타이머 시간을 설정해주세요.");
+      return;
+    }
+
+    // 인원 수 검증: 최소 2명 이상
+    if (
+      !maxParticipants ||
+      isNaN(Number(maxParticipants)) ||
+      Number(maxParticipants) < 2
+    ) {
+      alert("인원 수는 2명 이상이어야 합니다.");
+      return;
+    }
+
+    // 점수 배팅은 선택이지만 입력 시 음수 불가
+    if (betPoints && Number(betPoints) < 0) {
+      alert("점수 배팅은 0 이상이어야 합니다.");
       return;
     }
 
     // 로그인한 사용자 확인
-    const username = localStorage.getItem('username');
+    const username = localStorage.getItem("username");
     if (!username) {
-      alert('로그인이 필요합니다.');
+      alert("로그인이 필요합니다.");
       return;
     }
 
-    // 오늘 날짜 기준으로 종료일 계산 (로컬 날짜 기준 포맷)
-    // 사용자가 입력한 "기간(일)"이 예: 1이면 당일만 해당하므로
-    // 종료일을 (duration - 1)일 뒤로 설정해 기간이 정확히 일치하도록 보정합니다.
-    const start = new Date();
-    const daysToAdd = Math.max(0, Number(duration) - 1);
-    const endDateObj = new Date(start);
-    endDateObj.setDate(start.getDate() + daysToAdd);
-    const pad = (n) => String(n).padStart(2, '0');
-    const endDateStr = `${endDateObj.getFullYear()}-${pad(endDateObj.getMonth() + 1)}-${pad(endDateObj.getDate())}`;
+    // endDate를 서버 created_at(UTC datetime('now'))과 일치하도록 UTC 기준으로 계산
+    const now = new Date();
+    const pad = (n) => String(n).padStart(2, "0");
+    const utcDateStr = `${now.getUTCFullYear()}-${pad(now.getUTCMonth() + 1)}-${pad(now.getUTCDate())}`;
+    const utcStart = new Date(utcDateStr + "T00:00:00Z");
+    const endDateObj = new Date(utcStart);
+    endDateObj.setUTCDate(utcStart.getUTCDate() + Number(duration) - 1);
+    const endDateStr = `${endDateObj.getUTCFullYear()}-${pad(endDateObj.getUTCMonth() + 1)}-${pad(endDateObj.getUTCDate())}`;
 
     try {
       const normalizedInviteCode = inviteCode.trim();
 
-      const response = await fetch('/api/challenges', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'X-Username': encodeURIComponent(username)
-        },
-          body: JSON.stringify({
+      const headers = {
+        "Content-Type": "application/json",
+      };
+      if (username) headers["X-Username"] = encodeURIComponent(username);
+      const storedUserId = localStorage.getItem("userId");
+      if (storedUserId) headers["X-User-Id"] = storedUserId;
+
+      const response = await fetch("/api/challenges", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
           challengeName,
           category,
-          maxParticipants: 10, // 기본값
+          maxParticipants: Number(maxParticipants) || 10,
           endDate: endDateStr,
           duration: Number(duration) || null,
           goalDescription,
           inviteCode: normalizedInviteCode || null,
-          timerHours: category === 'STUDY' || category === 'EXERCISE' ? Number(timerHours) : null,
-          timerMinutes: category === 'STUDY' || category === 'EXERCISE' ? Number(timerMinutes) : null
+          timerHours:
+            category === "STUDY" || category === "EXERCISE"
+              ? Number(timerHours)
+              : null,
+          timerMinutes:
+            category === "STUDY" || category === "EXERCISE"
+              ? Number(timerMinutes)
+              : null,
+          betPoints: betPoints ? Number(betPoints) : null,
         }),
       });
 
       const result = await response.json();
 
       if (!response.ok) {
-        alert(result.message || '챌린지 생성에 실패했습니다.');
+        console.error("챌린지 생성 실패 응답:", result);
+        const errMsg = result.message || "챌린지 생성에 실패했습니다.";
+        const errDetail = result.error ? `\n\n상세: ${result.error}` : "";
+        alert(errMsg + errDetail);
         return;
       }
 
-      alert('챌린지가 성공적으로 생성되었습니다!');
+      alert("챌린지가 성공적으로 생성되었습니다!");
       // 자동 참가 반영: 생성 성공 시 최신 멤버 목록을 받아와 이벤트로 알림
       try {
-        const createdId = result?.data?.challengeId || (result?.data?.challenge && result.data.challenge.challenge_id);
+        const createdId =
+          result?.data?.challengeId ||
+          (result?.data?.challenge && result.data.challenge.challenge_id);
         if (createdId) {
           // fetch members to include in event so detail view doesn't get cleared
           try {
-            const membersRes = await fetch(`/api/challenges/${createdId}/members`, { headers: { 'X-Username': username } });
+            const membersRes = await fetch(
+              `/api/challenges/${createdId}/members`,
+              { headers: { "X-Username": username } },
+            );
             if (membersRes.ok) {
               const payload = await membersRes.json();
-              window.dispatchEvent(new CustomEvent('challenge-joined', { detail: { challengeId: createdId, members: payload.members || [] } }));
+              window.dispatchEvent(
+                new CustomEvent("challenge-joined", {
+                  detail: {
+                    challengeId: createdId,
+                    members: payload.members || [],
+                  },
+                }),
+              );
             } else {
-              window.dispatchEvent(new CustomEvent('challenge-joined', { detail: { challengeId: createdId } }));
+              window.dispatchEvent(
+                new CustomEvent("challenge-joined", {
+                  detail: { challengeId: createdId },
+                }),
+              );
             }
           } catch (e) {
-            window.dispatchEvent(new CustomEvent('challenge-joined', { detail: { challengeId: createdId } }));
+            window.dispatchEvent(
+              new CustomEvent("challenge-joined", {
+                detail: { challengeId: createdId },
+              }),
+            );
           }
         }
       } catch (e) {
@@ -93,8 +147,10 @@ function CreateChallengeModal({ closeCreateChallengeModal, onCreateSuccess }) {
       if (onCreateSuccess) onCreateSuccess(result?.data?.challenge || null);
       closeCreateChallengeModal();
     } catch (error) {
-      console.error('챌린지 생성 오류:', error);
-      alert('서버 오류가 발생했습니다.');
+      console.error("챌린지 생성 오류:", error);
+      // show error details to help debug DB issues
+      const message = error instanceof Error ? error.message : String(error);
+      alert("서버 오류가 발생했습니다.\n\n" + message);
     }
   };
 
@@ -113,11 +169,10 @@ function CreateChallengeModal({ closeCreateChallengeModal, onCreateSuccess }) {
           />
         </div>
 
-
         {/* Removed ‘내 이름’ input — username is taken from localStorage on submit */}
         {/* '내 이름' 입력 제거 */}
 
-        <div className="form-row">
+        <div className="form-row" style={{ alignItems: "flex-start" }}>
           <div className="form-group half">
             <label>기간 (일)</label>
             <input
@@ -136,15 +191,32 @@ function CreateChallengeModal({ closeCreateChallengeModal, onCreateSuccess }) {
                 id="new-challenge-category"
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
+                style={{
+                  padding: "12px 15px",
+                  border: "1px solid #096B68",
+                  borderRadius: "10px",
+                  fontSize: "14px",
+                  color: "#333",
+                }}
               >
-                <option value="" disabled>예: 공부</option>
+                <option value="" disabled>
+                  예: 공부
+                </option>
                 <option value="STUDY">공부</option>
                 <option value="EXERCISE">운동</option>
                 <option value="DAILY">일상</option>
               </select>
               <div className="select-arrow">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
                   <polyline points="6 9 12 15 18 9"></polyline>
                 </svg>
               </div>
@@ -152,8 +224,8 @@ function CreateChallengeModal({ closeCreateChallengeModal, onCreateSuccess }) {
           </div>
         </div>
 
-        {(category === 'STUDY' || category === 'EXERCISE') && (
-          <div className="form-row">
+        {(category === "STUDY" || category === "EXERCISE") && (
+          <div className="form-row" style={{ alignItems: "flex-start" }}>
             <div className="form-group half">
               <label>타이머 시간</label>
               <input
@@ -180,6 +252,41 @@ function CreateChallengeModal({ closeCreateChallengeModal, onCreateSuccess }) {
             </div>
           </div>
         )}
+
+        <div className="form-row" style={{ alignItems: "flex-start" }}>
+          <div className="form-group half">
+            <label>인원 수</label>
+            <input
+              type="number"
+              id="new-challenge-max-participants"
+              placeholder="예: 10"
+              min="1"
+              value={maxParticipants}
+              onChange={(e) => setMaxParticipants(e.target.value)}
+            />
+          </div>
+
+          <div className="form-group half">
+            <label>점수 배팅 (선택)</label>
+            <input
+              type="number"
+              id="new-challenge-bet-points"
+              placeholder="예: 100"
+              min="0"
+              value={betPoints}
+              onChange={(e) => setBetPoints(e.target.value)}
+              style={{
+                padding: "12px 15px",
+                border: "1px solid #096B68",
+                borderRadius: "10px",
+                fontSize: "14px",
+                color: "#333",
+                boxSizing: "border-box",
+                width: "100%",
+              }}
+            />
+          </div>
+        </div>
 
         <div className="form-group">
           <label>목표</label>

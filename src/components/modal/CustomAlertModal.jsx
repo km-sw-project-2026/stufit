@@ -1,40 +1,34 @@
-import React from 'react';
+import React from "react";
+import Modal from "../ui/Modal";
+import Button from "../ui/Button";
 
 function CustomAlertModal({ message, onClose }) {
   return (
-    <div id="custom-alert-modal" className="popup-modal" style={{position: 'fixed', inset: 0, zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
-      <div 
-        className="popup-overlay" 
-        onClick={onClose} 
-        style={{position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)'}}
-      ></div>
-      <div 
-        className="popup-content" 
-        style={{ 
-            position: 'relative',
-            width: '400px', 
-            textAlign: 'center', 
-            padding: '40px',
-            backgroundColor: 'white',
-            borderRadius: '12px',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-            zIndex: 3001
+    <Modal open={true} onClose={onClose}>
+      <div
+        style={{
+          padding: "var(--space-10)",
+          textAlign: "center",
+          minWidth: "320px",
         }}
       >
-        <p id="custom-alert-text" style={{ marginBottom: '25px', fontSize: '1.1rem', color: '#333' }}>
-          {message} 
-        </p>
-        <button 
-          id="custom-alert-close" 
-          className="start-challenge-btn" 
-          style={{ width: '120px', margin: '0 auto', padding: '12px', cursor: 'pointer', backgroundColor: '#006d5d', color: 'white', border: 'none', borderRadius: '4px' }}
-          onClick={onClose}
+        <p
+          style={{
+            marginBottom: "var(--space-6)",
+            fontSize: "var(--text-lg)",
+            color: "var(--color-text)",
+            lineHeight: "var(--leading-normal)",
+            fontWeight: 500,
+          }}
         >
+          {message}
+        </p>
+        <Button variant="primary" onClick={onClose}>
           확인
-        </button>
+        </Button>
       </div>
-    </div>
+    </Modal>
   );
-};
+}
 
 export default CustomAlertModal;

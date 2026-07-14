@@ -1,22 +1,22 @@
-import { useState } from 'react';
+import { useState } from "react";
 
 function EditChallengeModal({ onClose }) {
   const [formData, setFormData] = useState({
-    name: '',
-    duration: '',
-    category: '',
-    goal: '',
-    code: ''
+    name: "",
+    duration: "",
+    category: "",
+    goal: "",
+    code: "",
   });
 
   const handleInputChange = (e) => {
     const { id, value } = e.target;
-    const key = id.replace('edit-challenge-', '');
-    setFormData(prev => ({ ...prev, [key]: value }));
+    const key = id.replace("edit-challenge-", "");
+    setFormData((prev) => ({ ...prev, [key]: value }));
   };
 
   const handleSubmit = () => {
-    console.log('Challenge updated:', formData);
+    console.log("Challenge updated:", formData);
     onClose();
   };
 
@@ -54,13 +54,26 @@ function EditChallengeModal({ onClose }) {
                 value={formData.category}
                 onChange={handleInputChange}
               >
-                <option value="" disabled>예: 공부</option>
+                <option value="" disabled>
+                  예: 공부
+                </option>
                 <option value="study">공부</option>
                 <option value="exercise">운동</option>
                 <option value="daily">일상</option>
               </select>
               <div className="select-arrow">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
               </div>
             </div>
           </div>
@@ -85,7 +98,12 @@ function EditChallengeModal({ onClose }) {
             onChange={handleInputChange}
           />
         </div>
-        <button className="update-challenge-btn start-challenge-btn" onClick={handleSubmit}>수정 완료하기</button>
+        <button
+          className="update-challenge-btn start-challenge-btn"
+          onClick={handleSubmit}
+        >
+          수정 완료하기
+        </button>
       </div>
     </div>
   );

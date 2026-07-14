@@ -1,1 +1,37 @@
-{"success":true,"challenges":[{"challenge_id":10,"created_by_user_id":6,"title":"aaa","description":"aaa","goal":"aaa","end_date":"2026-03-12","max_members":10,"is_private":0,"challenge_code":null,"category":"STUDY","timer_hours":1,"timer_minutes":23,"created_at":"2026-02-10 06:03:02","deleted_at":null},{"challenge_id":8,"created_by_user_id":4,"title":"dfdf","description":"dfdfdf","goal":"dfdfdf","end_date":"2026-04-11","max_members":10,"is_private":0,"challenge_code":null,"category":"DAILY","timer_hours":0,"timer_minutes":0,"created_at":"2026-02-10 04:07:48","deleted_at":null}]}
+{
+  "success": true,
+  "challenges": [
+    {
+      "challenge_id": 10,
+      "created_by_user_id": 6,
+      "title": "aaa",
+      "description": "aaa",
+      "goal": "aaa",
+      "end_date": "2026-03-12",
+      "max_members": 10,
+      "is_private": 0,
+      "challenge_code": null,
+      "category": "STUDY",
+      "timer_hours": 1,
+      "timer_minutes": 23,
+      "created_at": "2026-02-10 06:03:02",
+      "deleted_at": null
+    },
+    {
+      "challenge_id": 8,
+      "created_by_user_id": 4,
+      "title": "dfdf",
+      "description": "dfdfdf",
+      "goal": "dfdfdf",
+      "end_date": "2026-04-11",
+      "max_members": 10,
+      "is_private": 0,
+      "challenge_code": null,
+      "category": "DAILY",
+      "timer_hours": 0,
+      "timer_minutes": 0,
+      "created_at": "2026-02-10 04:07:48",
+      "deleted_at": null
+    }
+  ]
+}
