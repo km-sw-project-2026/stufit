@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import Footer from "./Footer";
 import CustomAlertModal from "../modal/CustomAlertModal";
@@ -12,6 +12,14 @@ function Login() {
     message: "",
     onClose: null,
   });
+  const [socialUrls, setSocialUrls] = useState({ naver: null, kakao: null });
+
+  useEffect(() => {
+    fetch("/api/auth/social-config")
+      .then((r) => r.json())
+      .then((data) => setSocialUrls(data))
+      .catch(() => {});
+  }, []);
 
   const showAlert = (message, onClose) => {
     setAlertModal({ show: true, message, onClose: onClose || null });
@@ -91,6 +99,30 @@ function Login() {
           <div className="login-footer-links">
             <span>아이디 찾기</span>
             <span>비밀번호 찾기</span>
+          </div>
+
+          <div className="social-login-section">
+            <p className="social-login-divider">SNS 계정으로 로그인</p>
+            <div className="social-login-buttons">
+              <button
+                className="social-btn naver-btn"
+                onClick={() => {
+                  if (socialUrls.naver) window.location.href = socialUrls.naver;
+                }}
+              >
+                <svg viewBox="0 0 24 24" width="20" height="20"><path fill="#fff" d="M16.273 12.845 7.727 3H3v18h4.727V8.845l8.546 9.845H21V3h-4.727v9.845z"/></svg>
+                네이버 로그인
+              </button>
+              <button
+                className="social-btn kakao-btn"
+                onClick={() => {
+                  if (socialUrls.kakao) window.location.href = socialUrls.kakao;
+                }}
+              >
+                <svg viewBox="0 0 24 24" width="20" height="20"><path fill="#371D1E" d="M12 3C6.48 3 2 6.58 2 11c0 2.75 1.74 5.17 4.36 6.67L5.5 21l4.19-2.3c.76.2 1.54.3 2.31.3 5.52 0 10-3.58 10-8s-4.48-8-10-8z"/></svg>
+                카카오 로그인
+              </button>
+            </div>
           </div>
         </div>
       </div>
