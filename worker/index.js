@@ -64,6 +64,15 @@ export default {
       // ===== 먼저 API가 아닌 경로는 정적 파일로 제공 =====
       if (!pathname.startsWith("/api/")) {
         console.log("[Worker] Non-API path, serving static assets");
+
+        // SPA 라우트: index.html 반환
+        if (pathname === "/social-callback" || pathname === "/social-callback/") {
+          const indexUrl = new URL(request.url);
+          indexUrl.pathname = "/index.html";
+          const indexRequest = new Request(indexUrl, request);
+          if (env.ASSETS) return env.ASSETS.fetch(indexRequest);
+        }
+
         if (env.ASSETS) {
           try {
             // 정적 자산 요청 시도
