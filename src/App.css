@@ -5,16 +5,16 @@ padding: 2rem;
 text-align: center;
 }
 
-/* ─── 소셜 로그인 ─── */
+/* ─── 로그인 페이지 소셜 버튼 꾸미기 ─── */
 .social-login-section {
-  margin-top: 24px;
+  margin-top: 28px;
   width: 100%;
 }
 .social-login-divider {
   text-align: center;
   color: #999;
   font-size: 13px;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
   position: relative;
 }
 .social-login-divider::before,
@@ -30,7 +30,7 @@ text-align: center;
 .social-login-buttons {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 .social-btn {
   display: flex;
@@ -38,17 +38,32 @@ text-align: center;
   justify-content: center;
   gap: 8px;
   width: 100%;
-  padding: 12px;
+  padding: 13px;
   border: none;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 500;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
   cursor: pointer;
-  transition: opacity 0.2s;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
 }
-.social-btn:hover { opacity: 0.9; }
+.social-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+.social-btn:active {
+  transform: translateY(0);
+}
+.social-btn svg {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+}
 .naver-btn { background: #03C75A; color: #fff; }
-.kakao-btn { background: #FEE500; color: #371D1E; }
+.naver-btn:hover { background: #02b350; }
+.kakao-btn { background: #FEE500; color: #381e1f; }
+.kakao-btn:hover { background: #f0d800; }
 
 /* ─── 마이페이지 긴 이름 처리 ─── */
 .profile-info h3 {
