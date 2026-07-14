@@ -21,22 +21,6 @@ function Login() {
       .catch(() => {});
   }, []);
 
-  // 소셜 로그인 callback 처리 (리다이렉트로 전달된 파라미터)
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("socialLogin") === "1") {
-      const userId = params.get("userId");
-      const username = params.get("username");
-      if (userId && username) {
-        localStorage.setItem("username", decodeURIComponent(username));
-        localStorage.setItem("userId", userId);
-        localStorage.setItem("joinDate", new Date().toLocaleDateString("ko-KR"));
-        window.dispatchEvent(new Event("loginStatusChanged"));
-        showAlert("로그인 성공!", () => navigate("/challenge"));
-      }
-    }
-  }, []);
-
   const showAlert = (message, onClose) => {
     setAlertModal({ show: true, message, onClose: onClose || null });
   };

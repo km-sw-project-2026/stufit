@@ -95,13 +95,22 @@ export async function onRequestGet(context: { request: Request; env: any }) {
       ).bind("naver", naverId, userId).run();
     }
 
-    // 4. 로그인 페이지로 리다이렉트 (자동 로그인 처리)
-    const redirectUrl = `${url.origin}/login?socialLogin=1&userId=${userId}&username=${encodeURIComponent(username)}`;
-    return Response.redirect(redirectUrl, 302);
+    // 4. HTML 페이지로 직접 응답 (SPA fallback 우회)
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>로그인 처리중</title></head><body><script>
+      localStorage.setItem("username", ${JSON.stringify(username)});
+      localStorage.setItem("userId", "${userId}");
+      localStorage.setItem("joinDate", new Date().toLocaleDateString("ko-KR"));
+      window.dispatchEvent(new Event("loginStatusChanged"));
+      window.location.href = "/challenge";
+    </script>로그인 처리중...</body></html>`;
+    return new Response(html, {
+      status: 200,
+      headers: { "Content-Type": "text/html; charset=utf-8" },
+    });
   } catch (err: any) {
     console.error("네이버 로그인 에러:", err?.message);
-    const redirectUrl = `${url.origin}/login?error=${encodeURIComponent("소셜 로그인 중 오류가 발생했습니다.")}`;
-    return Response.redirect(redirectUrl, 302);
+    const errorHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>로그인 오류</title></head><body><script>alert("소셜 로그인 중 오류가 발생했습니다.");window.location.href="/login";</script></body></html>`;
+    return new Response(errorHtml, { status: 200, headers: { "Content-Type": "text/html; charset=utf-8" } });
   }
 }
 
