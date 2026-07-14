@@ -6659,6 +6659,24 @@ const SEED_WORD_LIST: string[] = [
 ];
 
 
+/** ─── 필터링: 폭력적/선정적 단어 목록 ──────────────────────── */
+const BLOCKED_WORDS = new Set([
+  "시발","시팔","씨발","씨팔","ㅅㅂ","ㅂㅅ","ㅈㄹ","존나","좆나","좆까","지랄","니미",
+  "개새끼","개세끼","개자식","개소리","개년","개새","미친","미쳤","돌았",
+  "병신","븅신","빙신","찌질","호로","호구","등신","멍청","바보","찐따","똥개",
+  "꼽다","꼽냐","엿","미친놈","미친년","미친개","죽을","뒤질","뒤져",
+  "시발련","씨발련","시팔련","씨팔련",
+  "좆","보지","씹","자지","음경","질","음문","성기",
+  "섹스","쎅스","야동","야설","포르노",
+  "강간","성폭행","성추행","화간","윤간","근친","패륜",
+  "느금마","느개비","애미","애비","엄창","종간나",
+  "ㅗ","ㅗㅗ","시이발","씨이발",
+]);
+
+function isBlockedWord(word: string): boolean {
+  return BLOCKED_WORDS.has(word);
+}
+
 /** 첫 글자 인덱스 */
 const WORD_INDEX = new Map<string, string[]>();
 for (const w of SEED_WORD_LIST) {
@@ -6746,14 +6764,14 @@ async function pickAIWord(
   usedWords: Set<string>,
 ): Promise<string | null> {
   const wikiPool = (await getWikiCandidates(startChar)).filter(
-    (word) => !usedWords.has(word),
+    (word) => !usedWords.has(word) && !isBlockedWord(word),
   );
   if (wikiPool.length > 0) {
     return wikiPool[Math.floor(Math.random() * wikiPool.length)];
   }
 
   const fallbackPool = (WORD_INDEX.get(startChar) || []).filter(
-    (word) => !usedWords.has(word),
+    (word) => !usedWords.has(word) && !isBlockedWord(word),
   );
   if (fallbackPool.length === 0) return null;
   return fallbackPool[Math.floor(Math.random() * fallbackPool.length)];
@@ -7107,6 +7125,11 @@ export const onRequestPatch: PagesFunction = async ({
   if (!word) return json({ message: "단어를 입력해 주세요." }, 400);
   if (word.length < 2)
     return json({ message: "2글자 이상 입력해 주세요." }, 400);
+
+  // 0. 폭력적/선정적 단어 필터링
+  if (isBlockedWord(word)) {
+    return json({ message: "사용할 수 없는 단어입니다.", valid: false }, 400);
+  }
 
   // 1. 끝말잇기 연결 검사
   if (lastWord && !chainOk(lastWord, word)) {
