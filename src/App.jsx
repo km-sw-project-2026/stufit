@@ -7,7 +7,6 @@ import Challenge from "./components/challengeView/Challenge";
 import OngoingChallenge from "./components/challengeView/OngoingChallenge";
 import Login from "./components/main/Login";
 import Signup from "./components/main/Signup";
-import SocialCallback from "./components/main/SocialCallback";
 import Attendance from "./components/attendanceSection/Attendance";
 import Ranking from "./components/rankingView/Ranking";
 import Community from "./components/communityView/Community";
@@ -52,7 +51,6 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/social-callback" element={<SocialCallback />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/challenge" element={<Challenge />} />
         <Route path="/challenge/:id" element={<ChallengeDetailPage />} />

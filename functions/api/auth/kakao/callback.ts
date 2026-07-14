@@ -92,8 +92,8 @@ export async function onRequestGet(context: { request: Request; env: any }) {
       ).bind("kakao", kakaoId, userId).run();
     }
 
-    // 4. 프론트로 리다이렉트
-    const redirectUrl = `${url.origin}/social-callback?provider=kakao&userId=${userId}&username=${encodeURIComponent(username)}`;
+    // 4. 로그인 페이지로 리다이렉트 (자동 로그인 처리)
+    const redirectUrl = `${url.origin}/login?socialLogin=1&userId=${userId}&username=${encodeURIComponent(username)}`;
     return Response.redirect(redirectUrl, 302);
   } catch (err: any) {
     console.error("카카오 로그인 에러:", err?.message);
