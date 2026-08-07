@@ -310,10 +310,22 @@ function CreateChallengeModal({ closeCreateChallengeModal, onCreateSuccess }) {
           />
         </div>
 
-        {/* ❗️여기가 핵심 수정 포인트 */}
-        <button className="start-challenge-btn" onClick={createChallenge}>
-          챌린지 시작하기
-        </button>
+        <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
+          <button
+            className="start-challenge-btn"
+            style={{ flex: 1, marginTop: 0 }}
+            onClick={createChallenge}
+          >
+            챌린지 시작하기
+          </button>
+          <button
+            className="close-challenge-btn"
+            style={{ flex: 1 }}
+            onClick={closeCreateChallengeModal}
+          >
+            닫기
+          </button>
+        </div>
       </div>
     </div>
   );
