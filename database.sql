@@ -206,3 +206,10 @@ INSERT INTO "sqlite_sequence" VALUES('posts',1);
 --     PRIMARY KEY (user_id, challenge_id),
 --     FOREIGN KEY (user_id) REFERENCES users(user_id)
 -- );
+
+CREATE TABLE sessions (
+  session_id TEXT PRIMARY KEY,
+  user_id INTEGER NOT NULL,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(user_id)
+);

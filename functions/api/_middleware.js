@@ -4,53 +4,38 @@
 export async function onRequest(context) {
   const { request, env, next } = context;
 
-  // X-Username 헤더 확인
-  const rawUsername = request.headers.get("X-Username");
-  let username = rawUsername;
-  if (rawUsername) {
-    try {
-      username = decodeURIComponent(rawUsername);
-    } catch {
-      username = rawUsername;
-    }
+  // 쿠키에서 sessionId 확인
+  const cookieHeader = request.headers.get("Cookie");
+  let sessionId = null;
+  if (cookieHeader) {
+    const cookies = cookieHeader.split(";").reduce((acc, cookie) => {
+      const [key, value] = cookie.split("=").map(c => c.trim());
+      acc[key] = value;
+      return acc;
+    }, {});
+    sessionId = cookies["sessionId"];
   }
 
   let userId;
 
-  if (username && env?.D1_DB) {
+  if (sessionId && env?.D1_DB) {
     try {
-      // username으로 userId 조회
-      const userRow = await env.D1_DB.prepare(
-        "SELECT user_id FROM users WHERE username = ?",
+      const sessionRow = await env.D1_DB.prepare(
+        "SELECT user_id FROM sessions WHERE session_id = ?",
       )
-        .bind(username)
+        .bind(sessionId)
         .first();
 
-      if (userRow?.user_id) {
-        userId = userRow.user_id;
+      if (sessionRow?.user_id) {
+        userId = sessionRow.user_id;
       }
     } catch (err) {
-      console.warn("Failed to resolve username to userId:", err);
-    }
-  }
-
-  // Fallback: allow clients to send userId directly (useful for dev or when username lookup fails)
-  if (!userId) {
-    const headerUserId =
-      request.headers.get("X-User-Id") || request.headers.get("X-UserId");
-    if (headerUserId) {
-      const parsed = Number(headerUserId);
-      if (!Number.isNaN(parsed)) {
-        userId = parsed;
-      }
+      console.warn("Failed to resolve sessionId to userId:", err);
     }
   }
 
   if (!userId) {
-    // Add a helpful debug note; avoid leaking sensitive data in production logs.
-    console.debug(
-      "[middleware] userId not resolved from X-Username or X-User-Id",
-    );
+    console.debug("[middleware] userId not resolved from sessionId");
   } else {
     console.debug("[middleware] resolved userId:", userId);
   }
@@ -58,7 +43,14 @@ export async function onRequest(context) {
   // userId를 context에 추가
   context.userId = userId;
 
+  // 헤더에서 잠재적으로 위험한 fallback용 헤더 제거 (보안 패치)
+  const newHeaders = new Headers(request.headers);
+  newHeaders.delete("X-Username");
+  newHeaders.delete("X-User-Id");
+  newHeaders.delete("X-UserId");
+  const newRequest = new Request(request, { headers: newHeaders });
+
   // 다음 핸들러로 전달
-  const response = await next();
+  const response = await next(newRequest);
   return response;
 }
