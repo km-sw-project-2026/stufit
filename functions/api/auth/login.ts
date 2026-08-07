@@ -44,12 +44,25 @@ export async function onRequestPost(context: { request: Request; env: any }) {
       );
     }
 
+    const sessionId = crypto.randomUUID();
+    await env.D1_DB.prepare(
+      "INSERT INTO sessions (session_id, user_id) VALUES (?, ?)"
+    )
+      .bind(sessionId, user.user_id)
+      .run();
+
     return new Response(
       JSON.stringify({
         message: "로그인 성공",
         userId: user.user_id,
       }),
-      { status: 200, headers: { "Content-Type": "application/json" } },
+      { 
+        status: 200, 
+        headers: { 
+          "Content-Type": "application/json",
+          "Set-Cookie": `sessionId=${sessionId}; HttpOnly; Path=/; SameSite=Lax`
+        } 
+      },
     );
   } catch (err) {
     console.error("❌ LOGIN ERROR:", (err as any)?.message);
